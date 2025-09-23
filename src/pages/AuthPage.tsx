@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Car, Zap } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, Car, Zap, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Add fade-in CSS classes
@@ -171,6 +171,19 @@ const AuthPage = () => {
                 <p className="text-sm opacity-80">Nhiều loại xe điện hiện đại</p>
               </div>
             </div>
+            
+            {/* Back to Home button */}
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={() => navigate('/')}
+                className="group flex items-center space-x-3 px-6 py-3 bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 rounded-xl border border-white/30 shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 hover:-translate-y-1"
+              >
+                <ArrowLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" />
+                <span className="text-sm font-semibold">Quay lại trang chủ</span>
+              </button>
+            </div>
+            
+            
           </div>
           
           {/* Decorative elements */}
@@ -183,7 +196,7 @@ const AuthPage = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative">
         <div className="w-full max-w-md relative">
           {/* Toggle buttons - Positioned beautifully with fade effect */}
-          <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="flex justify-center mb-8 z-20">
             <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-full p-1 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
               <button
                 onClick={() => {
@@ -219,7 +232,7 @@ const AuthPage = () => {
           </div>
 
           {/* Form Container with Fade Animation */}
-          <div className="relative w-full mt-8">
+          <div className="relative w-full">
             {/* Login Form */}
             <div 
               className={`transition-all duration-1000 ease-in-out ${
