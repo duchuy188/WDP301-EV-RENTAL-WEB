@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -11,7 +11,9 @@ import {
   Check,
   X,
   Upload,
-  Camera
+  Camera,
+  Image as ImageIcon,
+  Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { mockUser } from '@/data/mockData';
 import { toast } from 'sonner';
 
@@ -30,6 +33,26 @@ const Profile: React.FC = () => {
     email: mockUser.email,
     phone: mockUser.phone,
   });
+  
+  // Document upload states
+  const [documentImages, setDocumentImages] = useState({
+    license: {
+      frontImage: mockUser.licenseImages?.frontImage || null,
+      backImage: mockUser.licenseImages?.backImage || null,
+    },
+    id: {
+      frontImage: mockUser.idImages?.frontImage || null,
+      backImage: mockUser.idImages?.backImage || null,
+    }
+  });
+  
+  const [showDocumentDialog, setShowDocumentDialog] = useState<{
+    type: 'license' | 'id' | null;
+    side: 'front' | 'back' | null;
+  }>({ type: null, side: null });
+  
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     setIsEditing(false);
@@ -43,6 +66,39 @@ const Profile: React.FC = () => {
       phone: mockUser.phone,
     });
     setIsEditing(false);
+  };
+
+  const handleDocumentUpload = (type: 'license' | 'id', side: 'front' | 'back') => {
+    setShowDocumentDialog({ type, side });
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && showDocumentDialog.type && showDocumentDialog.side) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string;
+        setDocumentImages(prev => ({
+          ...prev,
+          [showDocumentDialog.type!]: {
+            ...prev[showDocumentDialog.type!],
+            [showDocumentDialog.side === 'front' ? 'frontImage' : 'backImage']: imageUrl
+          }
+        }));
+        toast.success(`Đã tải lên ảnh ${showDocumentDialog.side === 'front' ? 'mặt trước' : 'mặt sau'} thành công!`);
+      };
+      reader.readAsDataURL(file);
+    }
+    setShowDocumentDialog({ type: null, side: null });
+    // Reset input value để có thể upload cùng file lại
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
+
+  const handleImagePreview = (imageUrl: string) => {
+    setPreviewImage(imageUrl);
   };
 
   const formatDate = (dateString: string) => {
@@ -121,7 +177,11 @@ const Profile: React.FC = () => {
                       </AvatarFallback>
                     </Avatar>
                     {isEditing && (
-                      <button className="absolute bottom-0 right-0 bg-green-600 hover:bg-green-700 text-white rounded-full p-2 transition-colors">
+                      <button 
+                        className="absolute bottom-0 right-0 bg-green-600 hover:bg-green-700 text-white rounded-full p-2 transition-colors"
+                        title="Thay đổi ảnh đại diện"
+                        aria-label="Thay đổi ảnh đại diện"
+                      >
                         <Camera className="h-4 w-4" />
                       </button>
                     )}
@@ -204,44 +264,213 @@ const Profile: React.FC = () => {
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle>Xác thực giấy tờ</CardTitle>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Vui lòng tải lên ảnh mặt trước và mặt sau của giấy tờ để xác thực
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Shield className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="font-medium">Giấy phép lái xe</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">GPLX hạng B1</p>
+                <div className="space-y-6">
+                  {/* Giấy phép lái xe */}
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <Shield className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium">Giấy phép lái xe</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">GPLX hạng B1</p>
+                        </div>
+                      </div>
+                      <Badge className={mockUser.licenseVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                        {mockUser.licenseVerified ? 'Đã xác thực' : 'Chưa xác thực'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Mặt trước GPLX */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Mặt trước</Label>
+                        <div className="relative">
+                          {documentImages.license.frontImage ? (
+                            <div className="relative group">
+                              <img
+                                src={documentImages.license.frontImage}
+                                alt="GPLX mặt trước"
+                                className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-gray-300"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleImagePreview(documentImages.license.frontImage!)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleDocumentUpload('license', 'front')}
+                                >
+                                  <Upload className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors"
+                              onClick={() => handleDocumentUpload('license', 'front')}
+                            >
+                              <ImageIcon className="h-8 w-8 text-gray-400" />
+                              <p className="text-sm text-gray-500 mt-1">Tải lên ảnh</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Mặt sau GPLX */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Mặt sau</Label>
+                        <div className="relative">
+                          {documentImages.license.backImage ? (
+                            <div className="relative group">
+                              <img
+                                src={documentImages.license.backImage}
+                                alt="GPLX mặt sau"
+                                className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-gray-300"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleImagePreview(documentImages.license.backImage!)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleDocumentUpload('license', 'back')}
+                                >
+                                  <Upload className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors"
+                              onClick={() => handleDocumentUpload('license', 'back')}
+                            >
+                              <ImageIcon className="h-8 w-8 text-gray-400" />
+                              <p className="text-sm text-gray-500 mt-1">Tải lên ảnh</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <Badge className={mockUser.licenseVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                      {mockUser.licenseVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                    </Badge>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Shield className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="font-medium">Căn cước công dân</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">CCCD/CMND</p>
+                  {/* Căn cước công dân */}
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <Shield className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium">Căn cước công dân</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">CCCD/CMND</p>
+                        </div>
+                      </div>
+                      <Badge className={mockUser.idVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                        {mockUser.idVerified ? 'Đã xác thực' : 'Chưa xác thực'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Mặt trước CCCD */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Mặt trước</Label>
+                        <div className="relative">
+                          {documentImages.id.frontImage ? (
+                            <div className="relative group">
+                              <img
+                                src={documentImages.id.frontImage}
+                                alt="CCCD mặt trước"
+                                className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-gray-300"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleImagePreview(documentImages.id.frontImage!)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleDocumentUpload('id', 'front')}
+                                >
+                                  <Upload className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors"
+                              onClick={() => handleDocumentUpload('id', 'front')}
+                            >
+                              <ImageIcon className="h-8 w-8 text-gray-400" />
+                              <p className="text-sm text-gray-500 mt-1">Tải lên ảnh</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Mặt sau CCCD */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Mặt sau</Label>
+                        <div className="relative">
+                          {documentImages.id.backImage ? (
+                            <div className="relative group">
+                              <img
+                                src={documentImages.id.backImage}
+                                alt="CCCD mặt sau"
+                                className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-gray-300"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleImagePreview(documentImages.id.backImage!)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleDocumentUpload('id', 'back')}
+                                >
+                                  <Upload className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors"
+                              onClick={() => handleDocumentUpload('id', 'back')}
+                            >
+                              <ImageIcon className="h-8 w-8 text-gray-400" />
+                              <p className="text-sm text-gray-500 mt-1">Tải lên ảnh</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <Badge className={mockUser.idVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                      {mockUser.idVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                    </Badge>
                   </div>
 
                   {(!mockUser.licenseVerified || !mockUser.idVerified) && (
                     <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                       <p className="text-yellow-800 dark:text-yellow-400 text-sm">
-                        Vui lòng hoàn tất xác thực giấy tờ để có thể thuê xe
+                        Vui lòng hoàn tất upload ảnh giấy tờ để có thể thuê xe
                       </p>
-                      <Button className="mt-2 bg-yellow-600 hover:bg-yellow-700">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload giấy tờ
-                      </Button>
                     </div>
                   )}
                 </div>
@@ -339,6 +568,34 @@ const Profile: React.FC = () => {
             </Card>
           </motion.div>
         </div>
+        
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+          aria-label="Upload document image"
+        />
+        
+        {/* Image Preview Dialog */}
+        <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Xem ảnh giấy tờ</DialogTitle>
+            </DialogHeader>
+            {previewImage && (
+              <div className="flex justify-center">
+                <img
+                  src={previewImage}
+                  alt="Preview"
+                  className="max-w-full max-h-96 object-contain rounded-lg"
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
