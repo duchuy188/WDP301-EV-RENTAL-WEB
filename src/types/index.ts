@@ -20,6 +20,11 @@ export interface Booking {
   createdAt: string;
 }
 
+export interface DocumentImages {
+  frontImage?: string;
+  backImage?: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -29,6 +34,8 @@ export interface User {
   licenseVerified: boolean;
   idVerified: boolean;
   memberSince: string;
+  licenseImages?: DocumentImages;
+  idImages?: DocumentImages;
 }
 
 export interface FAQ {

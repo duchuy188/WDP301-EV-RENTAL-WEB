@@ -105,6 +105,14 @@ export const mockUser: User = {
   licenseVerified: true,
   idVerified: true,
   memberSince: '2023-06-15',
+  licenseImages: {
+    frontImage: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    backImage: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
+  },
+  idImages: {
+    frontImage: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    backImage: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
+  }
 };
 
 export const mockTestimonials: Testimonial[] = [
