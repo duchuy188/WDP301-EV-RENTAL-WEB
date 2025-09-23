@@ -14,8 +14,7 @@ import ReturnCar from './pages/ReturnCar';
 import History from './pages/History';
 import Profile from './pages/Profile';
 import Support from './pages/Support';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import AuthPage from './pages/AuthPage';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Terms from './pages/Terms';
@@ -28,8 +27,9 @@ function App() {
           <div className="min-h-screen bg-background text-foreground">
             <Routes>
             {/* Authentication routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/register" element={<AuthPage />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/terms" element={<Terms />} />              {/* Main application routes */}
