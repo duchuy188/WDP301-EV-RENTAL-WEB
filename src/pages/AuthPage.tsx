@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,10 +36,25 @@ if (typeof document !== 'undefined') {
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, register: registerUser } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  
+  // Set initial state based on URL
+  const [isLogin, setIsLogin] = useState(() => {
+    return location.pathname === '/login' || location.pathname === '/auth';
+  });
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Update form state when URL changes
+  useEffect(() => {
+    if (location.pathname === '/login' || location.pathname === '/auth') {
+      setIsLogin(true);
+    } else if (location.pathname === '/register') {
+      setIsLogin(false);
+    }
+  }, [location.pathname]);
   
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -198,7 +213,7 @@ const AuthPage = () => {
             <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-full p-1 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
               <button
                 onClick={() => {
-                  setIsLogin(true);
+                  navigate('/login');
                   setError('');
                   setShowPassword(false);
                   setShowConfirmPassword(false);
@@ -213,7 +228,7 @@ const AuthPage = () => {
               </button>
               <button
                 onClick={() => {
-                  setIsLogin(false);
+                  navigate('/register');
                   setError('');
                   setShowPassword(false);
                   setShowConfirmPassword(false);

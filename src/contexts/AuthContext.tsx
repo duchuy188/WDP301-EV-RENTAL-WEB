@@ -147,30 +147,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         fullname: userData.fullName
       });
       
-      if (response.success && response.data) {
-        const newUser = response.data.user;
-        setUser(newUser);
-        localStorage.setItem('user', JSON.stringify(newUser));
-        localStorage.setItem('token', response.data.token);
-      } else if (response.token) {
-        // Trường hợp response giống như login
-        const token = response.token;
-        const tempUser = {
-          id: 'temp-id',
-          email: userData.email,
-          fullname: userData.fullName,
-          role: 'user',
-          avatar: '',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        setUser(tempUser);
-        localStorage.setItem('user', JSON.stringify(tempUser));
-        localStorage.setItem('token', token);
-      } else {
+      // Don't automatically log in the user after registration
+      // Just check if registration was successful
+      if (!response.success && !response.token) {
         throw new Error(response.message || 'Đăng ký thất bại');
       }
+      
+      // Registration successful, no need to set user or store tokens
+      // The user will be redirected to login page
+      
     } catch (error: any) {
       console.error('Register error:', error);
       throw new Error(error.response?.data?.message || error.message || 'Đăng ký thất bại');

@@ -85,7 +85,10 @@ const Register = () => {
        // Add required phone field - you may want to add a phone input field
         password: formData.password
       });
-      navigate('/');
+      // Navigate to login page after successful registration
+      navigate('/login', { 
+        state: { message: 'Đăng ký thành công! Vui lòng đăng nhập.' }
+      });
     } catch (err: any) {
       setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {

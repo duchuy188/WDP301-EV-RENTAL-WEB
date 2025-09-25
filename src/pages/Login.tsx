@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { LoginFormData, getFormErrors, validateField } from '@/utils/validation'
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -19,7 +20,17 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Check for success message from registration
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the state to prevent showing message on refresh
+      window.history.replaceState(null, '');
+    }
+  }, [location.state]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,8 +47,9 @@ const Login = () => {
       }));
     }
     
-    // Clear general error when user starts typing
+    // Clear general error and success message when user starts typing
     if (error) setError('');
+    if (successMessage) setSuccessMessage('');
 
     // Real-time validation for current field
     const fieldError = validateField(name, value);
@@ -92,6 +104,11 @@ const Login = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {successMessage && (
+              <Alert>
+                <AlertDescription>{successMessage}</AlertDescription>
+              </Alert>
+            )}
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
