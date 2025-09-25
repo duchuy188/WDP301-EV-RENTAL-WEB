@@ -11,9 +11,12 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  success: boolean;
-  message: string;
-  data: {
+  success?: boolean;
+  message?: string;
+  token: string;
+  refreshToken?: string;
+  [key: string]: any; // Để hỗ trợ các field khác từ response
+  data?: {
     user: profile;
     token: string;
   };

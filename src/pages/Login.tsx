@@ -73,8 +73,9 @@ const Login = () => {
     try {
       await login(formData.email, formData.password);
       navigate('/');
-    } catch (err) {
-      setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+    } catch (err: any) {
+      console.error('Login error in component:', err);
+      setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
     } finally {
       setLoading(false);
     }

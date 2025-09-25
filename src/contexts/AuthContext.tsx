@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@/types/auth';
+import { profile } from '@/types/auth';
 import { authAPI } from '@/api/authAPI';
 
 interface AuthContextType {
-  user: User | null;
+  user: profile | null;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
@@ -32,7 +32,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -76,16 +76,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Gọi API login thật
       const response = await authAPI.login({ email, password });
       
-      if (response.success) {
-        const userData = response.data.user;
+      // Dựa trên console log, response có token ở level đầu tiên
+      if (response.token) {
+        const token = response.token;
+        const refreshToken = response.refreshToken;
+        
+        // Lấy user data từ response (tên field có thể thay đổi)
+        let userData: any = null;
+        
+        // Thử các field có thể chứa user data
+        for (const key in response) {
+          if (key !== 'token' && key !== 'refreshToken' && typeof response[key] === 'object' && response[key] !== null) {
+            userData = response[key];
+            break;
+          }
+        }
+        
+        // Nếu không tìm thấy user data trong response, tạo một object user cơ bản
+        if (!userData) {
+          userData = {
+            id: 'temp-id',
+            email: email,
+            fullname: 'User',
+            role: 'user',
+            avatar: '',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+        }
+        
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('token', token);
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
+        
+        // Sau khi login thành công, có thể gọi API để lấy profile đầy đủ
+        try {
+          const profileResponse = await authAPI.getProfile();
+          if (profileResponse.success) {
+            setUser(profileResponse.data);
+            localStorage.setItem('user', JSON.stringify(profileResponse.data));
+          }
+        } catch (profileError) {
+          // Could not fetch profile, using basic user data
+        }
+        
       } else {
-        throw new Error(response.message || 'Đăng nhập thất bại');
+        console.error('Login failed: No token in response');
+        throw new Error('Đăng nhập thất bại - không nhận được token');
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
       throw new Error(error.response?.data?.message || error.message || 'Đăng nhập thất bại');
     } finally {
       setIsLoading(false);
@@ -102,11 +147,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         fullname: userData.fullName
       });
       
-      if (response.success) {
+      if (response.success && response.data) {
         const newUser = response.data.user;
         setUser(newUser);
         localStorage.setItem('user', JSON.stringify(newUser));
         localStorage.setItem('token', response.data.token);
+      } else if (response.token) {
+        // Trường hợp response giống như login
+        const token = response.token;
+        const tempUser = {
+          id: 'temp-id',
+          email: userData.email,
+          fullname: userData.fullName,
+          role: 'user',
+          avatar: '',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        setUser(tempUser);
+        localStorage.setItem('user', JSON.stringify(tempUser));
+        localStorage.setItem('token', token);
       } else {
         throw new Error(response.message || 'Đăng ký thất bại');
       }
