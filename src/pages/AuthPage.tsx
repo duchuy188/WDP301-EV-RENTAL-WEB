@@ -46,6 +46,7 @@ const AuthPage = () => {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   // Update form state when URL changes
   useEffect(() => {
@@ -55,6 +56,15 @@ const AuthPage = () => {
       setIsLogin(false);
     }
   }, [location.pathname]);
+
+  // Check for success message from registration
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the state to prevent showing message on refresh
+      window.history.replaceState(null, '');
+    }
+  }, [location.state]);
   
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -78,6 +88,7 @@ const AuthPage = () => {
     const { name, value } = e.target;
     setLoginData(prev => ({ ...prev, [name]: value }));
     if (error) setError('');
+    if (successMessage) setSuccessMessage('');
   };
 
   const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,8 +111,10 @@ const AuthPage = () => {
     try {
       await login(loginData.email, loginData.password);
       navigate('/');
-    } catch (err) {
-      setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      // Set specific error message from the error
+      setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
     } finally {
       setLoading(false);
     }
@@ -144,9 +157,14 @@ const AuthPage = () => {
         email: registerData.email,
         password: registerData.password
       });
-      navigate('/');
-    } catch (err) {
-      setError('Đăng ký thất bại. Vui lòng thử lại.');
+      // Navigate to login page with success message
+      navigate('/login', { 
+        state: { message: 'Đăng ký thành công! Vui lòng đăng nhập.' }
+      });
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      // Set specific error message from the error
+      setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -263,6 +281,11 @@ const AuthPage = () => {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleLoginSubmit} className="space-y-4">
+                    {successMessage && (
+                      <Alert>
+                        <AlertDescription>{successMessage}</AlertDescription>
+                      </Alert>
+                    )}
                     {error && (
                       <Alert variant="destructive">
                         <AlertDescription>{error}</AlertDescription>

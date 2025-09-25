@@ -147,18 +147,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         fullname: userData.fullName
       });
       
-      // Don't automatically log in the user after registration
-      // Just check if registration was successful
-      if (!response.success && !response.token) {
+      // Check if registration was successful
+      // If response has success field, check it. Otherwise, if we get a response without error, consider it success
+      if (response.success === false) {
         throw new Error(response.message || 'Đăng ký thất bại');
       }
       
-      // Registration successful, no need to set user or store tokens
-      // The user will be redirected to login page
+      // Registration successful - response.success is true or undefined (meaning success)
+      // No need to set user or store tokens as user should login manually
       
     } catch (error: any) {
       console.error('Register error:', error);
-      throw new Error(error.response?.data?.message || error.message || 'Đăng ký thất bại');
+      // Check if error has response data with message
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('Đăng ký thất bại');
+      }
     } finally {
       setIsLoading(false);
     }
