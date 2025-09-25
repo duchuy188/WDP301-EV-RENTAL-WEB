@@ -57,8 +57,22 @@ export const authAPI = {
 
   // Logout
   logout: async () => {
-    const response = await apiClient.post('/auth/logout');
-    return response.data;
+    try {
+      // Lấy token để gửi kèm nếu server cần
+      const token = localStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      // Gửi request với token và refresh token nếu có
+      const response = await apiClient.post('/auth/logout', {
+        token,
+        refreshToken
+      });
+      return response.data;
+    } catch (error) {
+      // Log error nhưng không throw để không làm crash logout process
+      console.warn('Logout API error:', error);
+      return { success: false, message: 'Logout API failed but local cleanup will continue' };
+    }
   },
 
   // Verify email

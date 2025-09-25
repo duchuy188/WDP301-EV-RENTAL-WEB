@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Menu, 
@@ -10,8 +10,7 @@ import {
   User, 
   Settings, 
   LogOut,
-  Zap,
-  LogIn
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -24,12 +23,24 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user, logout, isAuthenticated } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Đăng xuất thành công",
+      description: "Bạn đã đăng xuất khỏi hệ thống",
+    });
+    navigate('/');
+  };
 
   const navItems = [
     { path: '/', label: 'Trang chủ' },
@@ -104,15 +115,15 @@ const Header: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src="" alt={user?.fullName || ''} />
-                      <AvatarFallback>{user?.fullName?.charAt(0) || 'U'}</AvatarFallback>
+                      <AvatarImage src="" alt={user?.fullname || ''} />
+                      <AvatarFallback>{user?.fullname?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user?.fullName}</p>
+                      <p className="font-medium">{user?.fullname}</p>
                       <p className="w-[200px] truncate text-sm text-muted-foreground">
                         {user?.email}
                       </p>
@@ -130,7 +141,7 @@ const Header: React.FC = () => {
                     <span>Cài đặt</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout}>
+                  <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Đăng xuất</span>
                   </DropdownMenuItem>

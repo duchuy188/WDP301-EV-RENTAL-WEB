@@ -192,19 +192,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = async () => {
+  const logout = () => {
     try {
-      // Gọi API logout
-      await authAPI.logout();
+      // Gọi API logout trong background, không chờ kết quả
+      // vì việc dọn dẹp local storage là quan trọng nhất
+      authAPI.logout().catch((error) => {
+        console.warn('Logout API call failed, but continuing with local cleanup:', error);
+      });
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      // Dọn dẹp local storage dù có lỗi hay không
-      setUser(null);
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
     }
+    
+    // Dọn dẹp local storage ngay lập tức để đảm bảo user được logout
+    setUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
   };
 
   const value: AuthContextType = {
