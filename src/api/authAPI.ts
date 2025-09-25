@@ -21,7 +21,10 @@ export const authAPI = {
     const response = await apiClient.post('/auth/register', data);
     return response.data;
   },
-
+ refreshToken: async (refreshToken: string) => {
+    const response = await apiClient.post('/auth/refresh-token', { refreshToken });
+    return response.data;
+  },
   // Forgot password
   forgotPassword: async (data: ForgotPasswordRequest) => {
     const response = await apiClient.post('/auth/forgot-password', data);
