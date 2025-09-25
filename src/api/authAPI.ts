@@ -5,7 +5,8 @@ import {
   AuthResponse, 
   profile, 
   ForgotPasswordRequest, 
-  ResetPasswordRequest 
+  ResetPasswordRequest,
+  UpdateProfileRequest
 } from '@/types/auth';
 
 // Auth API functions
@@ -44,9 +45,26 @@ export const authAPI = {
   },
 
   // Update profile
-  updateProfile: async (data: Partial<profile>) => {
-    const response = await apiClient.put('/auth/profile', data);
-    return response.data;
+  updateProfile: async (data: UpdateProfileRequest): Promise<{ success: boolean; message: string; data: profile }> => {
+    // Nếu có file avatar, sử dụng FormData
+    if (data.avatar instanceof File) {
+      const formData = new FormData();
+      formData.append('fullname', data.fullname);
+      formData.append('phone', data.phone);
+      formData.append('address', data.address);
+      formData.append('avatar', data.avatar);
+      
+      const response = await apiClient.put('/auth/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } else {
+      // Nếu không có file, gửi JSON thông thường
+      const response = await apiClient.put('/auth/profile', data);
+      return response.data;
+    }
   },
 
   // Change password

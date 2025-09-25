@@ -43,3 +43,10 @@ export interface ResetPasswordRequest {
   token: string;
   password: string;
 }
+
+export interface UpdateProfileRequest {
+  fullname: string;
+  phone: string;
+  address: string;
+  avatar?: string | File; // Có thể là string (URL) hoặc File object
+}
