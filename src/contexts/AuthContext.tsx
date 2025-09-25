@@ -43,25 +43,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (savedUser && token) {
         try {
-          // Verify token và lấy thông tin user mới nhất
-          const response = await authAPI.getProfile();
-          if (response.success) {
-            setUser(response.data);
-            localStorage.setItem('user', JSON.stringify(response.data));
-          } else {
-            // Token không hợp lệ, xóa dữ liệu
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-          }
-        } catch (error) {
-          // Lỗi khi verify token, sử dụng dữ liệu cũ hoặc xóa
-          console.error('Auth check error:', error);
+          // Sử dụng dữ liệu đã lưu trước
+          const userData = JSON.parse(savedUser);
+          setUser(userData);
+          
+          // Sau đó verify token và cập nhật thông tin mới nhất (không chặn UI)
           try {
-            setUser(JSON.parse(savedUser));
-          } catch {
+            const response = await authAPI.getProfile();
+            if (response.success && response.data) {
+              // Cập nhật thông tin mới nếu có
+              setUser(response.data);
+              localStorage.setItem('user', JSON.stringify(response.data));
+            }
+          } catch (profileError) {
+            // Nếu token không hợp lệ, xóa dữ liệu
+            console.warn('Token verification failed, clearing auth data');
             localStorage.removeItem('user');
             localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            setUser(null);
           }
+        } catch (parseError) {
+          // Dữ liệu user không hợp lệ, xóa tất cả
+          console.error('Invalid saved user data:', parseError);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
         }
       }
       setIsLoading(false);
@@ -73,55 +80,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Gọi API login thật
+      // Gọi API login
       const response = await authAPI.login({ email, password });
       
-      // Dựa trên console log, response có token ở level đầu tiên
       if (response.token) {
         const token = response.token;
         const refreshToken = response.refreshToken;
         
-        // Lấy user data từ response (tên field có thể thay đổi)
-        let userData: any = null;
-        
-        // Thử các field có thể chứa user data
-        for (const key in response) {
-          if (key !== 'token' && key !== 'refreshToken' && typeof response[key] === 'object' && response[key] !== null) {
-            userData = response[key];
-            break;
-          }
-        }
-        
-        // Nếu không tìm thấy user data trong response, tạo một object user cơ bản
-        if (!userData) {
-          userData = {
-            id: 'temp-id',
-            email: email,
-            fullname: 'User',
-            role: 'user',
-            avatar: '',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-        }
-        
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+        // Lưu token trước
         localStorage.setItem('token', token);
         if (refreshToken) {
           localStorage.setItem('refreshToken', refreshToken);
         }
         
-        // Sau khi login thành công, có thể gọi API để lấy profile đầy đủ
-        try {
-          const profileResponse = await authAPI.getProfile();
-          if (profileResponse.success) {
-            setUser(profileResponse.data);
-            localStorage.setItem('user', JSON.stringify(profileResponse.data));
+        // Thử lấy user data từ response login trước
+        let userData = null;
+        
+        // Kiểm tra xem response có chứa user data không
+        if (response.data && response.data.user) {
+          userData = response.data.user;
+        } else if (response.user) {
+          userData = response.user;
+        }
+        
+        // Nếu có user data từ login response, sử dụng luôn
+        if (userData) {
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+        } else {
+          // Nếu không có, gọi API getProfile
+          try {
+            // Đợi một chút để đảm bảo token đã được set
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const profileResponse = await authAPI.getProfile();
+            if (profileResponse.success && profileResponse.data) {
+              setUser(profileResponse.data);
+              localStorage.setItem('user', JSON.stringify(profileResponse.data));
+            } else {
+              throw new Error('Không thể lấy thông tin profile');
+            }
+          } catch (profileError) {
+            console.error('Profile fetch error:', profileError);
+            // Nếu không lấy được profile, tạo user data cơ bản từ thông tin login
+            const basicUserData = {
+              id: `user_${Date.now()}`, // Tạo ID duy nhất thay vì temp-id
+              email: email,
+              fullname: email.split('@')[0], // Lấy phần trước @ làm tên
+              role: 'user',
+              avatar: '',
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            setUser(basicUserData);
+            localStorage.setItem('user', JSON.stringify(basicUserData));
+            console.warn('Using basic user data due to profile fetch error');
           }
-        } catch (profileError) {
-          // Could not fetch profile, using basic user data
         }
         
       } else {
@@ -131,6 +146,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       console.error('Login error:', error);
       console.error('Error response:', error.response?.data);
+      
+      // Xóa token nếu có lỗi
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      
       throw new Error(error.response?.data?.message || error.message || 'Đăng nhập thất bại');
     } finally {
       setIsLoading(false);
@@ -182,6 +203,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       localStorage.removeItem('user');
       localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
     }
   };
 
