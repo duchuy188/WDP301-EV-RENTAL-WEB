@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -23,26 +23,29 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { mockUser } from '@/data/mockData';
 import { toast } from 'sonner';
+import { authAPI } from '@/api/authAPI';
+import { profile } from '@/types/auth';
 
 const Profile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<profile | null>(null);
   const [formData, setFormData] = useState({
-    name: mockUser.name,
-    email: mockUser.email,
-    phone: mockUser.phone,
+    fullname: '',
+    email: '',
+    phone: '',
   });
   
   // Document upload states
   const [documentImages, setDocumentImages] = useState({
     license: {
-      frontImage: mockUser.licenseImages?.frontImage || null,
-      backImage: mockUser.licenseImages?.backImage || null,
+      frontImage: null as string | null,
+      backImage: null as string | null,
     },
     id: {
-      frontImage: mockUser.idImages?.frontImage || null,
-      backImage: mockUser.idImages?.backImage || null,
+      frontImage: null as string | null,
+      backImage: null as string | null,
     }
   });
   
@@ -54,17 +57,53 @@ const Profile: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast.success('Cập nhật hồ sơ thành công!');
+  // Fetch user profile on component mount
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await authAPI.getProfile();
+      if (response.success) {
+        setUser(response.data);
+        setFormData({
+          fullname: response.data.fullname,
+          email: response.data.email,
+          phone: response.data.phone || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast.error('Không thể tải thông tin hồ sơ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const response = await authAPI.updateProfile(formData);
+      if (response.success) {
+        setUser(prev => prev ? { ...prev, ...formData } : null);
+        setIsEditing(false);
+        toast.success('Cập nhật hồ sơ thành công!');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Cập nhật hồ sơ thất bại');
+    }
   };
 
   const handleCancel = () => {
-    setFormData({
-      name: mockUser.name,
-      email: mockUser.email,
-      phone: mockUser.phone,
-    });
+    if (user) {
+      setFormData({
+        fullname: user.fullname,
+        email: user.email,
+        phone: user.phone || '',
+      });
+    }
     setIsEditing(false);
   };
 
@@ -125,6 +164,12 @@ const Profile: React.FC = () => {
           </p>
         </motion.div>
 
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          </div>
+        ) : user ? (
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Card */}
           <motion.div
@@ -171,9 +216,9 @@ const Profile: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
+                      <AvatarImage src={user.avatar} alt={user.fullname} />
                       <AvatarFallback className="text-lg">
-                        {mockUser.name.charAt(0)}
+                        {user.fullname.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     {isEditing && (
@@ -188,10 +233,10 @@ const Profile: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      {mockUser.name}
+                      {user.fullname}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-300">
-                      Thành viên từ {formatDate(mockUser.memberSince)}
+                      Thành viên từ {formatDate(user.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -201,17 +246,17 @@ const Profile: React.FC = () => {
                 {/* Form Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Họ và tên</Label>
+                    <Label htmlFor="fullname">Họ và tên</Label>
                     {isEditing ? (
                       <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        id="fullname"
+                        value={formData.fullname}
+                        onChange={(e) => setFormData(prev => ({ ...prev, fullname: e.target.value }))}
                       />
                     ) : (
                       <div className="flex items-center space-x-2 p-2 border rounded-md bg-gray-50 dark:bg-gray-700">
                         <User className="h-4 w-4 text-gray-400" />
-                        <span>{mockUser.name}</span>
+                        <span>{user.fullname}</span>
                       </div>
                     )}
                   </div>
@@ -228,12 +273,12 @@ const Profile: React.FC = () => {
                     ) : (
                       <div className="flex items-center space-x-2 p-2 border rounded-md bg-gray-50 dark:bg-gray-700">
                         <Mail className="h-4 w-4 text-gray-400" />
-                        <span>{mockUser.email}</span>
+                        <span>{user.email}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* <div className="space-y-2">
+                  <div className="space-y-2">
                     <Label htmlFor="phone">Số điện thoại</Label>
                     {isEditing ? (
                       <Input
@@ -244,16 +289,16 @@ const Profile: React.FC = () => {
                     ) : (
                       <div className="flex items-center space-x-2 p-2 border rounded-md bg-gray-50 dark:bg-gray-700">
                         <Phone className="h-4 w-4 text-gray-400" />
-                        <span>{mockUser.phone}</span>
+                        <span>{user.phone || 'Chưa cập nhật'}</span>
                       </div>
                     )}
-                  </div> */}
+                  </div>
 
                   <div className="space-y-2">
                     <Label>Thành viên từ</Label>
                     <div className="flex items-center space-x-2 p-2 border rounded-md bg-gray-50 dark:bg-gray-700">
                       <Calendar className="h-4 w-4 text-gray-400" />
-                      <span>{formatDate(mockUser.memberSince)}</span>
+                      <span>{formatDate(user.createdAt)}</span>
                     </div>
                   </div>
                 </div>
@@ -280,8 +325,8 @@ const Profile: React.FC = () => {
                           <p className="text-sm text-gray-600 dark:text-gray-300">GPLX hạng B1</p>
                         </div>
                       </div>
-                      <Badge className={mockUser.licenseVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                        {mockUser.licenseVerified ? 'Đã xác thực' : 'Chưa xác thực'}
+                      <Badge className="bg-yellow-100 text-yellow-800">
+                        Chưa xác thực
                       </Badge>
                     </div>
                     
@@ -378,8 +423,8 @@ const Profile: React.FC = () => {
                           <p className="text-sm text-gray-600 dark:text-gray-300">CCCD/CMND</p>
                         </div>
                       </div>
-                      <Badge className={mockUser.idVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                        {mockUser.idVerified ? 'Đã xác thực' : 'Chưa xác thực'}
+                      <Badge className="bg-yellow-100 text-yellow-800">
+                        Chưa xác thực
                       </Badge>
                     </div>
                     
@@ -466,13 +511,11 @@ const Profile: React.FC = () => {
                     </div>
                   </div>
 
-                  {(!mockUser.licenseVerified || !mockUser.idVerified) && (
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                      <p className="text-yellow-800 dark:text-yellow-400 text-sm">
-                        Vui lòng hoàn tất upload ảnh giấy tờ để có thể thuê xe
-                      </p>
-                    </div>
-                  )}
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                    <p className="text-yellow-800 dark:text-yellow-400 text-sm">
+                      Vui lòng hoàn tất upload ảnh giấy tờ để có thể thuê xe
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -568,6 +611,11 @@ const Profile: React.FC = () => {
             </Card>
           </motion.div>
         </div>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-gray-600 dark:text-gray-300">Không thể tải thông tin hồ sơ</p>
+          </div>
+        )}
         
         {/* Hidden file input */}
         <input

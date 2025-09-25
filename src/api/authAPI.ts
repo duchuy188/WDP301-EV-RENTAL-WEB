@@ -3,7 +3,7 @@ import {
   LoginRequest, 
   RegisterRequest, 
   AuthResponse, 
-  User, 
+  profile, 
   ForgotPasswordRequest, 
   ResetPasswordRequest 
 } from '@/types/auth';
@@ -35,13 +35,13 @@ export const authAPI = {
   },
 
   // Get current user profile
-  getProfile: async (): Promise<{ success: boolean; data: User }> => {
+  getProfile: async (): Promise<{ success: boolean; data: profile }> => {
     const response = await apiClient.get('/auth/profile');
     return response.data;
   },
 
   // Update profile
-  updateProfile: async (data: Partial<User>) => {
+  updateProfile: async (data: Partial<profile>) => {
     const response = await apiClient.put('/auth/profile', data);
     return response.data;
   },

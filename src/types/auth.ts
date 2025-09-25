@@ -14,17 +14,18 @@ export interface AuthResponse {
   success: boolean;
   message: string;
   data: {
-    user: User;
+    user: profile;
     token: string;
   };
 }
 
-export interface User {
+export interface profile {
   id: string;
   email: string;
   fullname: string;
   phone?: string;
   role: string;
+  avatar: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
