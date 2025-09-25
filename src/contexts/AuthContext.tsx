@@ -1,11 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  phone?: string;
-}
+import { User } from '@/types/auth';
+import { authAPI } from '@/api/authAPI';
 
 interface AuthContextType {
   user: User | null;
@@ -19,7 +14,6 @@ interface AuthContextType {
 interface RegisterData {
   fullName: string;
   email: string;
-  phone: string;
   password: string;
 }
 
@@ -43,37 +37,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check if user is already logged in on app start
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('user');
+    const checkAuth = async () => {
+      const savedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (savedUser && token) {
+        try {
+          // Verify token và lấy thông tin user mới nhất
+          const response = await authAPI.getProfile();
+          if (response.success) {
+            setUser(response.data);
+            localStorage.setItem('user', JSON.stringify(response.data));
+          } else {
+            // Token không hợp lệ, xóa dữ liệu
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+          }
+        } catch (error) {
+          // Lỗi khi verify token, sử dụng dữ liệu cũ hoặc xóa
+          console.error('Auth check error:', error);
+          try {
+            setUser(JSON.parse(savedUser));
+          } catch {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+          }
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Gọi API login thật
+      const response = await authAPI.login({ email, password });
       
-      // Here you would typically make an API call to authenticate
-      // For demo purposes, we'll accept any email/password
-      const userData: User = {
-        id: '1',
-        email,
-        fullName: 'Người dùng Demo',
-        phone: '0123456789'
-      };
-      
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-    } catch (error) {
-      throw new Error('Đăng nhập thất bại');
+      if (response.success) {
+        const userData = response.data.user;
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', response.data.token);
+      } else {
+        throw new Error(response.message || 'Đăng nhập thất bại');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Đăng nhập thất bại');
     } finally {
       setIsLoading(false);
     }
@@ -82,29 +95,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Here you would typically make an API call to register
-      const newUser: User = {
-        id: Date.now().toString(),
+      // Gọi API register thật
+      const response = await authAPI.register({
         email: userData.email,
-        fullName: userData.fullName,
-        phone: userData.phone
-      };
+        password: userData.password,
+        fullname: userData.fullName
+      });
       
-      setUser(newUser);
-      localStorage.setItem('user', JSON.stringify(newUser));
-    } catch (error) {
-      throw new Error('Đăng ký thất bại');
+      if (response.success) {
+        const newUser = response.data.user;
+        setUser(newUser);
+        localStorage.setItem('user', JSON.stringify(newUser));
+        localStorage.setItem('token', response.data.token);
+      } else {
+        throw new Error(response.message || 'Đăng ký thất bại');
+      }
+    } catch (error: any) {
+      console.error('Register error:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Đăng ký thất bại');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+  const logout = async () => {
+    try {
+      // Gọi API logout
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Dọn dẹp local storage dù có lỗi hay không
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
   };
 
   const value: AuthContextType = {

@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail, ArrowLeft, CheckCircle, Loader2, Shield } from 'lucide-react';
+import { authAPI } from '@/api/authAPI';
+import { toast } from 'sonner';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -54,18 +56,38 @@ const ForgotPassword = () => {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call forgot password API
+      const response = await authAPI.forgotPassword({ email });
       
-      // Here you would typically make an API call to send reset password email
-      console.log('Password reset request for:', email);
+      if (response.success) {
+        setSent(true);
+        setResendCountdown(60); // 60 seconds countdown
+        toast.success("Email đặt lại mật khẩu đã được gửi thành công!");
+      } else {
+        setError(response.message || 'Có lỗi xảy ra khi gửi email. Vui lòng thử lại.');
+      }
       
-      // For demo purposes, simulate successful email sending
-      setSent(true);
-      setResendCountdown(60); // 60 seconds countdown
+    } catch (err: any) {
+      console.error('Forgot password error:', err);
       
-    } catch (err) {
-      setError('Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau vài phút.');
+      // Handle different types of errors
+      if (err.response) {
+        // Server responded with error status
+        const errorMessage = err.response.data?.message || 'Có lỗi xảy ra từ phía server.';
+        if (err.response.status === 404) {
+          setError('Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại.');
+        } else if (err.response.status === 429) {
+          setError('Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.');
+        } else {
+          setError(errorMessage);
+        }
+      } else if (err.request) {
+        // Network error
+        setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+      } else {
+        // Other errors
+        setError('Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau.');
+      }
     } finally {
       setLoading(false);
     }
@@ -76,12 +98,32 @@ const ForgotPassword = () => {
     setError('');
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Resend password reset email for:', email);
-      setResendCountdown(60); // Reset countdown
-    } catch (err) {
-      setError('Có lỗi xảy ra khi gửi lại email. Vui lòng thử lại sau.');
+      // Call forgot password API again
+      const response = await authAPI.forgotPassword({ email });
+      
+      if (response.success) {
+        setResendCountdown(60); // Reset countdown
+        toast.success("Email đặt lại mật khẩu đã được gửi lại thành công!");
+      } else {
+        setError(response.message || 'Có lỗi xảy ra khi gửi lại email. Vui lòng thử lại.');
+      }
+      
+    } catch (err: any) {
+      console.error('Resend email error:', err);
+      
+      // Handle different types of errors
+      if (err.response) {
+        const errorMessage = err.response.data?.message || 'Có lỗi xảy ra từ phía server.';
+        if (err.response.status === 429) {
+          setError('Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.');
+        } else {
+          setError(errorMessage);
+        }
+      } else if (err.request) {
+        setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+      } else {
+        setError('Có lỗi xảy ra khi gửi lại email. Vui lòng thử lại sau.');
+      }
     } finally {
       setLoading(false);
     }

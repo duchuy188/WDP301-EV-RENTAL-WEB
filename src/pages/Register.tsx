@@ -6,16 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { RegisterFormData, getFormErrors, validateField } from '@/utils/validation';
 
 const Register = () => {
   const navigate = useNavigate();
   const { register: registerUser } = useAuth();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterFormData>({
     fullName: '',
     email: '',
-    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -24,6 +24,7 @@ const Register = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -31,50 +32,48 @@ const Register = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
+    
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+    
+    // Clear general error when user starts typing
     if (error) setError('');
-  };
 
-  const validateForm = () => {
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
-      return 'Vui lòng điền đầy đủ thông tin';
-    }
+    // Real-time validation for current field
+    const fieldError = validateField(name, value, {
+      password: name === 'confirmPassword' ? formData.password : undefined,
+      acceptTerms
+    });
     
-    if (formData.password.length < 6) {
-      return 'Mật khẩu phải có ít nhất 6 ký tự';
+    if (fieldError) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [name]: fieldError
+      }));
     }
-    
-    if (formData.password !== formData.confirmPassword) {
-      return 'Mật khẩu xác nhận không khớp';
-    }
-    
-    if (!acceptTerms) {
-      return 'Vui lòng đồng ý với điều khoản sử dụng';
-    }
-    
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      return 'Email không hợp lệ';
-    }
-    
-    // Basic phone validation
-    const phoneRegex = /^[0-9]{10,11}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      return 'Số điện thoại không hợp lệ';
-    }
-    
-    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setFieldErrors({});
 
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+    // Get all validation errors
+    const errors = getFormErrors(formData, 'register', { acceptTerms });
+    
+    if (errors.length > 0) {
+      // Set field-specific errors
+      const errorMap: Record<string, string> = {};
+      errors.forEach(error => {
+        errorMap[error.field] = error.message;
+      });
+      setFieldErrors(errorMap);
       setLoading(false);
       return;
     }
@@ -83,12 +82,12 @@ const Register = () => {
       await registerUser({
         fullName: formData.fullName,
         email: formData.email,
-        phone: formData.phone,
+       // Add required phone field - you may want to add a phone input field
         password: formData.password
       });
       navigate('/');
-    } catch (err) {
-      setError('Đăng ký thất bại. Vui lòng thử lại.');
+    } catch (err: any) {
+      setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -122,10 +121,13 @@ const Register = () => {
                   placeholder="Nguyễn Văn A"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  className="pl-10"
+                  className={`pl-10 ${fieldErrors.fullName ? 'border-red-500 focus:ring-red-500' : ''}`}
                   required
                 />
               </div>
+              {fieldErrors.fullName && (
+                <p className="text-sm text-red-600 mt-1">{fieldErrors.fullName}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -139,27 +141,13 @@ const Register = () => {
                   placeholder="example@email.com"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="pl-10"
+                  className={`pl-10 ${fieldErrors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
                   required
                 />
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="phone">Số điện thoại</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="0123456789"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="pl-10"
-                  required
-                />
-              </div>
+              {fieldErrors.email && (
+                <p className="text-sm text-red-600 mt-1">{fieldErrors.email}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -173,7 +161,7 @@ const Register = () => {
                   placeholder="Nhập mật khẩu"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="pl-10 pr-10"
+                  className={`pl-10 pr-10 ${fieldErrors.password ? 'border-red-500 focus:ring-red-500' : ''}`}
                   required
                 />
                 <Button
@@ -190,6 +178,9 @@ const Register = () => {
                   )}
                 </Button>
               </div>
+              {fieldErrors.password && (
+                <p className="text-sm text-red-600 mt-1">{fieldErrors.password}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -203,7 +194,7 @@ const Register = () => {
                   placeholder="Nhập lại mật khẩu"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="pl-10 pr-10"
+                  className={`pl-10 pr-10 ${fieldErrors.confirmPassword ? 'border-red-500 focus:ring-red-500' : ''}`}
                   required
                 />
                 <Button
@@ -220,20 +211,37 @@ const Register = () => {
                   )}
                 </Button>
               </div>
+              {fieldErrors.confirmPassword && (
+                <p className="text-sm text-red-600 mt-1">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="terms"
-                checked={acceptTerms}
-                onCheckedChange={setAcceptTerms}
-              />
-              <Label htmlFor="terms" className="text-sm">
-                Tôi đồng ý với{' '}
-                <Link to="/terms" className="text-primary underline">
-                  điều khoản sử dụng
-                </Link>
-              </Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="terms"
+                  checked={acceptTerms}
+                  onCheckedChange={(checked) => {
+                    setAcceptTerms(!!checked);
+                    // Clear terms error when user checks the box
+                    if (fieldErrors.terms && checked) {
+                      setFieldErrors(prev => ({
+                        ...prev,
+                        terms: ''
+                      }));
+                    }
+                  }}
+                />
+                <Label htmlFor="terms" className="text-sm">
+                  Tôi đồng ý với{' '}
+                  <Link to="/terms" className="text-primary underline">
+                    điều khoản sử dụng
+                  </Link>
+                </Label>
+              </div>
+              {fieldErrors.terms && (
+                <p className="text-sm text-red-600 mt-1">{fieldErrors.terms}</p>
+              )}
             </div>
             
             <Button type="submit" className="w-full" disabled={loading}>

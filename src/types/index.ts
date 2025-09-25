@@ -1,3 +1,8 @@
+
+// Export auth interfaces from auth.ts
+export * from './auth';
+
+
 export interface Car {
   id: string;
   name: string;
@@ -25,7 +30,7 @@ export interface DocumentImages {
   backImage?: string;
 }
 
-export interface User {
+export interface UserProfile {
   id: string;
   name: string;
   email: string;

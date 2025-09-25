@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Car, Zap, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Car, Zap, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Add fade-in CSS classes
@@ -51,7 +51,6 @@ const AuthPage = () => {
   const [registerData, setRegisterData] = useState({
     fullName: '',
     email: '',
-    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -99,7 +98,7 @@ const AuthPage = () => {
     setError('');
 
     // Validation
-    if (!registerData.fullName || !registerData.email || !registerData.phone || 
+    if (!registerData.fullName || !registerData.email || 
         !registerData.password || !registerData.confirmPassword) {
       setError('Vui lòng điền đầy đủ thông tin');
       setLoading(false);
@@ -128,7 +127,6 @@ const AuthPage = () => {
       await registerUser({
         fullName: registerData.fullName,
         email: registerData.email,
-        phone: registerData.phone,
         password: registerData.password
       });
       navigate('/');
@@ -385,7 +383,7 @@ const AuthPage = () => {
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                       <Label htmlFor="register-phone">Số điện thoại</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -400,7 +398,7 @@ const AuthPage = () => {
                           required
                         />
                       </div>
-                    </div>
+                    </div> */}
                     
                     <div className="space-y-2">
                       <Label htmlFor="register-password">Mật khẩu</Label>

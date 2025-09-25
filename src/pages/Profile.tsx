@@ -233,7 +233,7 @@ const Profile: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="phone">Số điện thoại</Label>
                     {isEditing ? (
                       <Input
@@ -247,7 +247,7 @@ const Profile: React.FC = () => {
                         <span>{mockUser.phone}</span>
                       </div>
                     )}
-                  </div>
+                  </div> */}
 
                   <div className="space-y-2">
                     <Label>Thành viên từ</Label>
