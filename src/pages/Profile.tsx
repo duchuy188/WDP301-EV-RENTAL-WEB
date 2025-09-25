@@ -26,15 +26,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { authAPI } from '@/api/authAPI';
 import { profile } from '@/types/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Profile: React.FC = () => {
+  const { user: authUser, isLoading: authLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<profile | null>(null);
   const [formData, setFormData] = useState({
     fullname: '',
     email: '',
     phone: '',
+    address: '',
   });
   
   // Document upload states
@@ -57,26 +60,44 @@ const Profile: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch user profile on component mount
+  // Use auth context user data and fetch fresh profile data
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (authUser) {
+      setUser(authUser);
+      setFormData({
+        fullname: authUser.fullname || '',
+        email: authUser.email || '',
+        phone: authUser.phone || '',
+        address: authUser.address || '',
+      });
+      
+      // Try to fetch fresh profile data
+      fetchProfile();
+    }
+  }, [authUser]);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
       const response = await authAPI.getProfile();
-      if (response.success) {
+      if (response.success && response.data) {
         setUser(response.data);
         setFormData({
-          fullname: response.data.fullname,
-          email: response.data.email,
+          fullname: response.data.fullname || '',
+          email: response.data.email || '',
           phone: response.data.phone || '',
+          address: response.data.address || '',
         });
+        
+        // Update localStorage with fresh data
+        localStorage.setItem('user', JSON.stringify(response.data));
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      toast.error('Không thể tải thông tin hồ sơ');
+      // Don't show error toast if we already have user data from context
+      if (!authUser) {
+        toast.error('Không thể tải thông tin hồ sơ');
+      }
     } finally {
       setLoading(false);
     }
@@ -84,15 +105,26 @@ const Profile: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      setLoading(true);
       const response = await authAPI.updateProfile(formData);
       if (response.success) {
-        setUser(prev => prev ? { ...prev, ...formData } : null);
+        const updatedUser = { ...user, ...formData } as profile;
+        setUser(updatedUser);
         setIsEditing(false);
+        
+        // Update localStorage with the new data
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        // Fetch fresh profile data to ensure we have the latest from server
+        await fetchProfile();
+        
         toast.success('Cập nhật hồ sơ thành công!');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Cập nhật hồ sơ thất bại');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,6 +134,7 @@ const Profile: React.FC = () => {
         fullname: user.fullname,
         email: user.email,
         phone: user.phone || '',
+        address: user.address || '',
       });
     }
     setIsEditing(false);
@@ -164,7 +197,7 @@ const Profile: React.FC = () => {
           </p>
         </motion.div>
 
-        {loading ? (
+        {(authLoading || loading) ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
           </div>

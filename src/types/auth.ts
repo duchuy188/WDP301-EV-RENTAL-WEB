@@ -29,6 +29,7 @@ export interface profile {
   phone?: string;
   role: string;
   avatar: string;
+  address?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
