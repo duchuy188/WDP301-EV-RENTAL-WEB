@@ -9,6 +9,8 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
+  setUserProfile: (data: profile) => void; // cập nhật ngay lập tức context & localStorage
+  refreshProfile: () => Promise<void>; // gọi API lấy profile mới nhất
 }
 
 interface RegisterData {
@@ -50,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Sau đó verify token và cập nhật thông tin mới nhất (không chặn UI)
           try {
             const response = await authAPI.getProfile();
-            if (response.success && response.data) {
+            if (response && response.data) {
               // Cập nhật thông tin mới nếu có
               setUser(response.data);
               localStorage.setItem('user', JSON.stringify(response.data));
@@ -114,7 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await new Promise(resolve => setTimeout(resolve, 100));
             
             const profileResponse = await authAPI.getProfile();
-            if (profileResponse.success && profileResponse.data) {
+            if (profileResponse && profileResponse.data) {
               setUser(profileResponse.data);
               localStorage.setItem('user', JSON.stringify(profileResponse.data));
             } else {
@@ -216,7 +218,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     isLoading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    setUserProfile: (data: profile) => {
+      setUser(data);
+      localStorage.setItem('user', JSON.stringify(data));
+    },
+    refreshProfile: async () => {
+      try {
+        const resp = await authAPI.getProfile();
+        if (resp?.data) {
+          setUser(resp.data);
+          localStorage.setItem('user', JSON.stringify(resp.data));
+        }
+      } catch (e) {
+        // silent
+      }
+    }
   };
 
   return (

@@ -19,20 +19,27 @@ import {
 } from '@/components/Profile';
 
 const Profile: React.FC = () => {
-  const { user: authUser, isLoading: authLoading } = useAuth();
+  const { user: authUser, isLoading: authLoading, setUserProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<profile | null>(null);
   const [formData, setFormData] = useState({
     fullname: '',
-    email: '',
     phone: '',
-    address: '',
+    address: ''
   });
+
+  // Chống toast success bị lặp lại liên tục
+  const lastToastRef = useRef<{ msg: string; time: number } | null>(null);
+  const safeToastSuccess = (msg: string) => {
+    const now = Date.now();
+    if (!lastToastRef.current || lastToastRef.current.msg !== msg || (now - lastToastRef.current.time) > 5000) {
+      toast.success(msg);
+      lastToastRef.current = { msg, time: now };
+    }
+  };
   
-  // Avatar file state
-  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  // Avatar functionality removed per request
   
   // Document upload states
   const [documentImages, setDocumentImages] = useState({
@@ -60,37 +67,43 @@ const Profile: React.FC = () => {
       setUser(authUser);
       setFormData({
         fullname: authUser.fullname || '',
-        email: authUser.email || '',
         phone: authUser.phone || '',
         address: authUser.address || '',
+        
       });
-      
-      // Try to fetch fresh profile data
-      fetchProfile();
     }
+    
+    // Always try to fetch fresh profile data from server
+    fetchProfile();
   }, [authUser]);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
+      
       const response = await authAPI.getProfile();
-      if (response.success && response.data) {
+      
+      if (response && response.data) {
         setUser(response.data);
         setFormData({
           fullname: response.data.fullname || '',
-          email: response.data.email || '',
           phone: response.data.phone || '',
           address: response.data.address || '',
+          
         });
         
         // Update localStorage with fresh data
         localStorage.setItem('user', JSON.stringify(response.data));
+  // Không toast ở đây để tránh spam khi load trang
+      } else {
+        throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      // Don't show error toast if we already have user data from context
+      // Only show error toast if we don't have fallback data
       if (!authUser) {
         toast.error('Không thể tải thông tin hồ sơ');
+      } else {
+        toast.error('Không thể làm mới thông tin hồ sơ');
       }
     } finally {
       setLoading(false);
@@ -98,6 +111,10 @@ const Profile: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!hasChanges()) {
+      setIsEditing(false);
+      return;
+    }
     try {
       setLoading(true);
       
@@ -107,89 +124,73 @@ const Profile: React.FC = () => {
         phone: formData.phone,
         address: formData.address,
       };
-      
-      // Nếu có file avatar được chọn, thêm vào data
-      if (selectedAvatarFile) {
-        updateData.avatar = selectedAvatarFile;
-      }
+      // Avatar fields removed
       
       const response = await authAPI.updateProfile(updateData);
       if (response.success) {
-        // Cập nhật user state với data mới từ server
-        setUser(response.data);
+        // Cập nhật user state context & localStorage ngay lập tức
+        setUserProfile(response.data);
+        setUser(response.data); // local state backup
         setFormData({
           fullname: response.data.fullname,
-          email: response.data.email,
           phone: response.data.phone || '',
-          address: response.data.address || '',
+          address: response.data.address || ''
         });
         setIsEditing(false);
         
-        // Reset avatar states
-        setSelectedAvatarFile(null);
-        setAvatarPreview(null);
+  // Avatar states removed
         
         // Update localStorage with the new data
         localStorage.setItem('user', JSON.stringify(response.data));
         
-        toast.success('Cập nhật hồ sơ thành công!');
+  safeToastSuccess('Cập nhật hồ sơ thành công!');
+  // Bỏ refreshProfile ngay lập tức vì có thể backend chưa kịp trả về avatar mới (async xử lý) -> dễ bị ghi đè avatar mới bằng dữ liệu cũ
+  // Nếu cần đồng bộ sau, có thể thêm nút hoặc setTimeout(() => refreshProfile(), 1500)
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Cập nhật hồ sơ thất bại');
+      const msg = (error as Error)?.message || 'Cập nhật hồ sơ thất bại';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
+  };
+
+  const hasChanges = () => {
+    if (!user) return true;
+    const basicChanged = user.fullname !== formData.fullname || (user.phone || '') !== formData.phone || (user.address || '') !== formData.address;
+  return basicChanged;
   };
 
   const handleCancel = () => {
     if (user) {
       setFormData({
         fullname: user.fullname,
-        email: user.email,
         phone: user.phone || '',
         address: user.address || '',
+        
       });
     }
     setIsEditing(false);
     
-    // Reset avatar states
-    setSelectedAvatarFile(null);
-    setAvatarPreview(null);
+  // Avatar states removed
   };
 
-  // Avatar upload handlers
-  const handleAvatarFileSelect = (file: File) => {
-    setSelectedAvatarFile(file);
-    
-    // Create preview URL
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setAvatarPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleAvatarUploadClick = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        handleAvatarFileSelect(file);
-      }
-    };
-    input.click();
-  };
+  // Avatar handlers removed
 
   const handleFormDataChange = (data: {
     fullname: string;
-    email: string;
     phone: string;
     address: string;
+    
   }) => {
-    setFormData(data);
+    setFormData(prev => ({
+      ...prev,
+      ...data,
+      
+    }));
+
+    // Cập nhật preview ngay khi người dùng dán URL (nếu chưa chọn file)
+    // Avatar preview logic removed
   };
 
   const handleDocumentUpload = (type: 'license' | 'id', side: 'front' | 'back') => {
@@ -243,7 +244,12 @@ const Profile: React.FC = () => {
 
         {(authLoading || loading) ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-300">
+                Đang tải...
+              </p>
+            </div>
           </div>
         ) : user ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -279,6 +285,7 @@ const Profile: React.FC = () => {
                           size="sm"
                           onClick={handleSave}
                           className="bg-green-600 hover:bg-green-700"
+                          disabled={loading || !hasChanges()}
                         >
                           <Check className="mr-2 h-4 w-4" />
                           Lưu
@@ -288,12 +295,7 @@ const Profile: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <ProfileHeader 
-                    user={user} 
-                    isEditing={isEditing} 
-                    onAvatarUpload={handleAvatarUploadClick}
-                    avatarPreview={avatarPreview}
-                  />
+                  <ProfileHeader user={user} />
                   
                   <Separator />
                   

@@ -40,30 +40,95 @@ export const authAPI = {
 
   // Get current user profile
   getProfile: async (): Promise<{ success: boolean; data: profile }> => {
-    const response = await apiClient.get('/auth/profile');
-    return response.data;
+    try {
+      const response = await apiClient.get('/auth/profile');
+      
+      // Kiểm tra nếu response.data là object user trực tiếp (không có success field)
+      if (response.data && response.data.id) {
+        return {
+          success: true,
+          data: response.data
+        };
+      }
+      
+      // Nếu có success field thì return như bình thường
+      if (response.data.success !== undefined) {
+        return response.data;
+      }
+      
+      // Fallback: nếu có data thì coi như thành công
+      if (response.data) {
+        return {
+          success: true,
+          data: response.data
+        };
+      }
+      
+      throw new Error('Invalid response format');
+    } catch (error) {
+      throw error;
+    }
   },
 
-  // Update profile
+  // Update profile (luôn dùng FormData để tránh server mismatch, kể cả không đổi avatar)
   updateProfile: async (data: UpdateProfileRequest): Promise<{ success: boolean; message: string; data: profile }> => {
-    // Nếu có file avatar, sử dụng FormData
-    if (data.avatar instanceof File) {
+    const normalize = (payload: any) => {
+      if (!payload) throw new Error('Response rỗng');
+      if (payload.id && !payload.data && !payload.profile) {
+        return { success: true, message: payload.message || 'OK', data: payload };
+      }
+      if (payload.data && payload.data.id) {
+        return { success: payload.success !== false, message: payload.message || 'OK', data: payload.data };
+      }
+      if (payload.profile && payload.profile.id) {
+        return { success: true, message: payload.message || 'OK', data: payload.profile };
+      }
+      throw new Error('Response không hợp lệ');
+    };
+
+    try {
       const formData = new FormData();
-      formData.append('fullname', data.fullname);
-      formData.append('phone', data.phone);
-      formData.append('address', data.address);
-      formData.append('avatar', data.avatar);
-      
-      const response = await apiClient.put('/auth/profile', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data;
-    } else {
-      // Nếu không có file, gửi JSON thông thường
-      const response = await apiClient.put('/auth/profile', data);
-      return response.data;
+      if (data.fullname !== undefined) formData.append('fullname', data.fullname ?? '');
+      if (data.phone !== undefined) formData.append('phone', data.phone ?? '');
+      if (data.address !== undefined) formData.append('address', data.address ?? '');
+      // Một số backend có thể mong đợi 'fullName' (camel khác) -> thêm dự phòng
+      if (data.fullname !== undefined) formData.append('fullName', data.fullname ?? '');
+      if (data.avatar instanceof File) {
+        formData.append('avatar', data.avatar, data.avatar.name);
+        // Dự phòng: một số API dùng field 'file'
+        formData.append('file', data.avatar, data.avatar.name);
+      } else if (typeof data.avatar === 'string') {
+        formData.append('avatar', data.avatar); // có thể là URL hiện tại (giúp backend biết không đổi?)
+      }
+
+      // DEBUG: log keys (chỉ ở dev build)
+      if (import.meta.env.DEV) {
+        const entries: Record<string, any> = {};
+        formData.forEach((v, k) => {
+          entries[k] = v instanceof File ? `File(name=${v.name}, size=${v.size})` : v;
+        });
+        // eslint-disable-next-line no-console
+        console.log('[updateProfile] FormData entries:', entries);
+      }
+
+      const response = await apiClient.put('/auth/profile', formData);
+      return normalize(response.data);
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const raw = error?.response?.data;
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('[updateProfile] error status:', status, 'raw:', raw);
+      }
+      let message = 'Cập nhật hồ sơ thất bại';
+      if (typeof raw === 'string') {
+        if (!raw.startsWith('<')) message = raw;
+      } else if (raw?.message) {
+        message = raw.message;
+      } else if (status === 500 && raw?.error) {
+        message = raw.error;
+      }
+      throw new Error(message + (status ? ` (HTTP ${status})` : ''));
     }
   },
 
