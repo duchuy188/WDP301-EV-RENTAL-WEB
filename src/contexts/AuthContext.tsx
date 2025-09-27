@@ -180,160 +180,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loginWithGoogle = async (googleCredential: any): Promise<void> => {
     setIsLoading(true);
     try {
-      console.log('Received Google credential:', googleCredential);
-      
-      // Extract user info from Google credential
-      let googleUserInfo: any = {};
-      
-      // Handle different possible formats
+      let idToken = '';
       if (typeof googleCredential === 'string') {
-        // If it's just a credential string
-        try {
-          const base64Url = googleCredential.split('.')[1];
-          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-          }).join(''));
-          
-          const decoded = JSON.parse(jsonPayload);
-          googleUserInfo = {
-            email: decoded.email,
-            name: decoded.name,
-            imageUrl: decoded.picture,
-            googleId: decoded.sub
-          };
-        } catch (decodeError) {
-          console.error('Error decoding Google JWT string:', decodeError);
-          throw new Error('Không thể xử lý thông tin từ Google');
-        }
-      } else if (googleCredential && googleCredential.credential) {
-        // New Google Identity Services format with credential property
-        try {
-          const base64Url = googleCredential.credential.split('.')[1];
-          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-          }).join(''));
-          
-          const decoded = JSON.parse(jsonPayload);
-          googleUserInfo = {
-            email: decoded.email,
-            name: decoded.name,
-            imageUrl: decoded.picture,
-            googleId: decoded.sub
-          };
-        } catch (decodeError) {
-          console.error('Error decoding Google JWT from object:', decodeError);
-          throw new Error('Không thể xử lý thông tin từ Google');
-        }
-      } else if (googleCredential && googleCredential.profileObj) {
-        // Legacy Google Sign-In format
-        googleUserInfo = {
-          email: googleCredential.profileObj.email,
-          name: googleCredential.profileObj.name,
-          imageUrl: googleCredential.profileObj.imageUrl,
-          googleId: googleCredential.profileObj.googleId
-        };
-      } else if (googleCredential && googleCredential.email) {
-        // Direct user info format
-        googleUserInfo = {
-          email: googleCredential.email,
-          name: googleCredential.name || googleCredential.displayName,
-          imageUrl: googleCredential.imageUrl || googleCredential.photoURL,
-          googleId: googleCredential.googleId || googleCredential.uid
-        };
+        idToken = googleCredential;
+      } else if (googleCredential && (googleCredential as any).credential) {
+        idToken = (googleCredential as any).credential;
+      } else if (googleCredential && (googleCredential as any).tokenObj?.id_token) {
+        idToken = (googleCredential as any).tokenObj.id_token;
       } else {
-        console.error('Unrecognized Google credential format:', googleCredential);
-        throw new Error('Định dạng dữ liệu Google không hợp lệ');
+        throw new Error('Không lấy được idToken từ Google credential');
       }
 
-      console.log('Google user info:', googleUserInfo);
-
-      // Attempt to call backend API for Google login
-      try {
-        // If you have a Google login API endpoint
-        const response = await authAPI.loginWithGoogle({
-          credential: googleCredential.credential || googleCredential,
-          userInfo: googleUserInfo
-        });
-        
-        if (response.token) {
-          const token = response.token;
-          const refreshToken = response.refreshToken;
-          
-          // Save tokens
-          localStorage.setItem('token', token);
-          if (refreshToken) {
-            localStorage.setItem('refreshToken', refreshToken);
-          }
-          
-          // Get user data from response
-          let userData = null;
-          if (response.data && response.data.user) {
-            userData = response.data.user;
-          } else if (response.user) {
-            userData = response.user;
-          }
-          
-          if (userData) {
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-          } else {
-            // Fallback to create user data from Google info
-            const googleUserData = {
-              id: `google_${googleUserInfo.googleId || Date.now()}`,
-              email: googleUserInfo.email,
-              fullname: googleUserInfo.name,
-              role: 'user',
-              avatar: googleUserInfo.imageUrl || '',
-              isActive: true,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              provider: 'google',
-              googleId: googleUserInfo.googleId
-            };
-            setUser(googleUserData);
-            localStorage.setItem('user', JSON.stringify(googleUserData));
-          }
-        } else {
-          throw new Error('Không nhận được token từ server');
+      const response = await authAPI.googleLogin(idToken);
+      if (response.token && response.user) {
+        localStorage.setItem('token', response.token);
+        if (response.refreshToken) {
+          localStorage.setItem('refreshToken', response.refreshToken);
         }
-
-      } catch (apiError: any) {
-        console.warn('Backend Google login API not available or failed:', apiError);
-        
-        // Fallback: Create user session locally
-        // This is for demo purposes - in production, you should always verify with backend
-        const fallbackToken = `google_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const googleUserData = {
-          id: `google_${googleUserInfo.googleId || Date.now()}`,
-          email: googleUserInfo.email,
-          fullname: googleUserInfo.name,
-          role: 'user',
-          avatar: googleUserInfo.imageUrl || '',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          provider: 'google',
-          googleId: googleUserInfo.googleId
-        };
-
-        // Save fallback data
-        localStorage.setItem('token', fallbackToken);
-        localStorage.setItem('user', JSON.stringify(googleUserData));
-        setUser(googleUserData);
-        
-        console.warn('Using fallback Google login - ensure backend integration for production');
+        setUser(response.user);
+        localStorage.setItem('user', JSON.stringify(response.user));
+      } else {
+        throw new Error('Không nhận được token từ server');
       }
-
     } catch (error: any) {
-      console.error('Google login error:', error);
-      
-      // Clean up on error
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
-      
       throw new Error(error.message || 'Đăng nhập Google thất bại');
     } finally {
       setIsLoading(false);
@@ -343,16 +215,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      // Gọi API register thật
-      const response = await authAPI.register({
-        email: userData.email,
-        password: userData.password,
-        fullname: userData.fullName
-      });
+      const response = await authAPI.register(userData);
       
-      // Check if registration was successful
-      // If response has success field, check it. Otherwise, if we get a response without error, consider it success
-      if (response.success === false) {
+      if (response.success) {
+        // Đăng ký thành công, có thể tự động đăng nhập hoặc thông báo cho người dùng
+        // Ở đây mình sẽ để yên cho người dùng tự đăng nhập
+      } else {
         throw new Error(response.message || 'Đăng ký thất bại');
       }
       

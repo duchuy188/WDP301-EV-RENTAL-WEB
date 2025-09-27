@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Check, X } from 'lucide-react';
+import { Edit, Check, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { authAPI } from '@/api/authAPI';
 import { profile, UpdateProfileRequest } from '@/types/auth';
@@ -39,8 +40,6 @@ const Profile: React.FC = () => {
     }
   };
   
-  // Avatar functionality removed per request
-  
   // Document upload states
   const [documentImages, setDocumentImages] = useState({
     license: {
@@ -69,7 +68,6 @@ const Profile: React.FC = () => {
         fullname: authUser.fullname || '',
         phone: authUser.phone || '',
         address: authUser.address || '',
-        
       });
     }
     
@@ -77,9 +75,38 @@ const Profile: React.FC = () => {
     fetchProfile();
   }, [authUser]);
 
+  // Check if user is logged in with Google
+  const isGoogleUser = () => {
+    return user?.provider === 'google' || user?.googleId || (user as any)?.loginProvider === 'google';
+  };
+
+  // Get Google-specific data
+  const getGoogleUserInfo = () => {
+    if (!isGoogleUser() || !user) return null;
+    
+    return {
+      googleId: user.googleId || (user as any).googleId,
+      provider: user.provider || (user as any).loginProvider || 'google',
+      avatar: user.avatar || (user as any).imageUrl || (user as any).photoURL,
+      verifiedEmail: true // Google emails are always verified
+    };
+  };
+
   const fetchProfile = async () => {
     try {
       setLoading(true);
+      
+      // If user is logged in with Google and we don't have backend API, skip API call
+      if (isGoogleUser() && authUser) {
+        console.log('Google user detected, using local data');
+        setUser(authUser);
+        setFormData({
+          fullname: authUser.fullname || '',
+          phone: authUser.phone || '',
+          address: authUser.address || '',
+        });
+        return;
+      }
       
       const response = await authAPI.getProfile();
       
@@ -89,16 +116,20 @@ const Profile: React.FC = () => {
           fullname: response.data.fullname || '',
           phone: response.data.phone || '',
           address: response.data.address || '',
-          
         });
         
         // Update localStorage with fresh data
         localStorage.setItem('user', JSON.stringify(response.data));
-  // Không toast ở đây để tránh spam khi load trang
       } else {
         throw new Error('Invalid response format');
       }
     } catch (error) {
+      // For Google users, don't show error if we have fallback data
+      if (isGoogleUser() && authUser) {
+        console.log('Using Google user fallback data');
+        return;
+      }
+      
       // Only show error toast if we don't have fallback data
       if (!authUser) {
         toast.error('Không thể tải thông tin hồ sơ');
@@ -115,6 +146,7 @@ const Profile: React.FC = () => {
       setIsEditing(false);
       return;
     }
+    
     try {
       setLoading(true);
       
@@ -124,29 +156,60 @@ const Profile: React.FC = () => {
         phone: formData.phone,
         address: formData.address,
       };
-      // Avatar fields removed
       
-      const response = await authAPI.updateProfile(updateData);
-      if (response.success) {
-        // Cập nhật user state context & localStorage ngay lập tức
-        setUserProfile(response.data);
-        setUser(response.data); // local state backup
-        setFormData({
-          fullname: response.data.fullname,
-          phone: response.data.phone || '',
-          address: response.data.address || ''
-        });
-        setIsEditing(false);
-        
-  // Avatar states removed
-        
-        // Update localStorage with the new data
-        localStorage.setItem('user', JSON.stringify(response.data));
-        
-  safeToastSuccess('Cập nhật hồ sơ thành công!');
-  // Bỏ refreshProfile ngay lập tức vì có thể backend chưa kịp trả về avatar mới (async xử lý) -> dễ bị ghi đè avatar mới bằng dữ liệu cũ
-  // Nếu cần đồng bộ sau, có thể thêm nút hoặc setTimeout(() => refreshProfile(), 1500)
+      // For Google users, if backend doesn't exist, save locally
+      if (isGoogleUser()) {
+        try {
+          const response = await authAPI.updateProfile(updateData);
+          if (response.success) {
+            // Backend update successful
+            setUserProfile(response.data);
+            setUser(response.data);
+            setFormData({
+              fullname: response.data.fullname,
+              phone: response.data.phone || '',
+              address: response.data.address || ''
+            });
+            localStorage.setItem('user', JSON.stringify(response.data));
+            safeToastSuccess('Cập nhật hồ sơ thành công!');
+          }
+        } catch (apiError) {
+          console.warn('Backend update failed for Google user, saving locally:', apiError);
+          
+          // Fallback: Update local storage for Google users
+          if (user) {
+            const updatedUser = {
+              ...user,
+              fullname: updateData.fullname,
+              phone: updateData.phone,
+              address: updateData.address,
+              updatedAt: new Date().toISOString()
+            };
+            
+            setUser(updatedUser);
+            setUserProfile(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            safeToastSuccess('Cập nhật hồ sơ thành công (lưu cục bộ)!');
+          }
+        }
+      } else {
+        // Regular user - use backend API
+        const response = await authAPI.updateProfile(updateData);
+        if (response.success) {
+          setUserProfile(response.data);
+          setUser(response.data);
+          setFormData({
+            fullname: response.data.fullname,
+            phone: response.data.phone || '',
+            address: response.data.address || ''
+          });
+          localStorage.setItem('user', JSON.stringify(response.data));
+          safeToastSuccess('Cập nhật hồ sơ thành công!');
+        }
       }
+      
+      setIsEditing(false);
+      
     } catch (error) {
       const msg = (error as Error)?.message || 'Cập nhật hồ sơ thất bại';
       toast.error(msg);
@@ -158,7 +221,7 @@ const Profile: React.FC = () => {
   const hasChanges = () => {
     if (!user) return true;
     const basicChanged = user.fullname !== formData.fullname || (user.phone || '') !== formData.phone || (user.address || '') !== formData.address;
-  return basicChanged;
+    return basicChanged;
   };
 
   const handleCancel = () => {
@@ -167,30 +230,20 @@ const Profile: React.FC = () => {
         fullname: user.fullname,
         phone: user.phone || '',
         address: user.address || '',
-        
       });
     }
     setIsEditing(false);
-    
-  // Avatar states removed
   };
-
-  // Avatar handlers removed
 
   const handleFormDataChange = (data: {
     fullname: string;
     phone: string;
     address: string;
-    
   }) => {
     setFormData(prev => ({
       ...prev,
       ...data,
-      
     }));
-
-    // Cập nhật preview ngay khi người dùng dán URL (nếu chưa chọn file)
-    // Avatar preview logic removed
   };
 
   const handleDocumentUpload = (type: 'license' | 'id', side: 'front' | 'back') => {
@@ -226,6 +279,8 @@ const Profile: React.FC = () => {
     setPreviewImage(imageUrl);
   };
 
+  const googleInfo = getGoogleUserInfo();
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -234,12 +289,47 @@ const Profile: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Tài khoản của tôi
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              Tài khoản của tôi
+            </h1>
+            {isGoogleUser() && (
+              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                <Shield className="w-3 h-3 mr-1" />
+                Google Account
+              </Badge>
+            )}
+          </div>
+          <p className="text-lg text-gray-600 dark:text-gray-300 mt-4">
             Quản lý thông tin cá nhân và cài đặt tài khoản
           </p>
+          
+          {/* Google Account Info */}
+          {isGoogleUser() && googleInfo && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+            >
+              <div className="flex items-center gap-3">
+                {googleInfo.avatar && (
+                  <img
+                    src={googleInfo.avatar}
+                    alt="Google Avatar"
+                    className="w-8 h-8 rounded-full"
+                  />
+                )}
+                <div>
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Đăng nhập bằng Google
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    {googleInfo.verifiedEmail && "Email đã được xác minh"} • ID: {googleInfo.googleId || 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         {(authLoading || loading) ? (
@@ -262,7 +352,14 @@ const Profile: React.FC = () => {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle>Thông tin cá nhân</CardTitle>
+                    <div className="flex items-center gap-3">
+                      <CardTitle>Thông tin cá nhân</CardTitle>
+                      {isGoogleUser() && (
+                        <Badge variant="outline" className="text-xs">
+                          Tài khoản Google
+                        </Badge>
+                      )}
+                    </div>
                     {!isEditing ? (
                       <Button
                         variant="outline"
@@ -305,6 +402,41 @@ const Profile: React.FC = () => {
                     formData={formData}
                     onFormDataChange={handleFormDataChange}
                   />
+                  
+                  {/* Google-specific information */}
+                  {isGoogleUser() && googleInfo && (
+                    <>
+                      <Separator />
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Thông tin tài khoản Google
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">Google ID:</span>
+                            <p className="font-mono text-xs mt-1 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                              {googleInfo.googleId || 'N/A'}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">Nhà cung cấp:</span>
+                            <p className="mt-1 flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-blue-500" />
+                              {googleInfo.provider}
+                            </p>
+                          </div>
+                        </div>
+                        {isGoogleUser() && (
+                          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                            <p className="text-xs text-amber-800 dark:text-amber-200">
+                              💡 <strong>Lưu ý:</strong> Một số thông tin có thể được đồng bộ từ tài khoản Google của bạn. 
+                              Thay đổi sẽ được lưu cục bộ nếu chưa tích hợp với backend.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
