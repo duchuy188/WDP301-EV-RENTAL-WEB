@@ -1,25 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  phone?: string;
-}
+import { profile } from '@/types/auth';
+import { authAPI } from '@/api/authAPI';
 
 interface AuthContextType {
-  user: User | null;
+  user: profile | null;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
+  setUserProfile: (data: profile) => void; // cập nhật ngay lập tức context & localStorage
+  refreshProfile: () => Promise<void>; // gọi API lấy profile mới nhất
 }
 
 interface RegisterData {
   fullName: string;
   email: string;
-  phone: string;
   password: string;
 }
 
@@ -38,42 +34,127 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check if user is already logged in on app start
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('user');
+    const checkAuth = async () => {
+      const savedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (savedUser && token) {
+        try {
+          // Sử dụng dữ liệu đã lưu trước
+          const userData = JSON.parse(savedUser);
+          setUser(userData);
+          
+          // Sau đó verify token và cập nhật thông tin mới nhất (không chặn UI)
+          try {
+            const response = await authAPI.getProfile();
+            if (response && response.data) {
+              // Cập nhật thông tin mới nếu có
+              setUser(response.data);
+              localStorage.setItem('user', JSON.stringify(response.data));
+            }
+          } catch (profileError) {
+            // Nếu token không hợp lệ, xóa dữ liệu
+            console.warn('Token verification failed, clearing auth data');
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            setUser(null);
+          }
+        } catch (parseError) {
+          // Dữ liệu user không hợp lệ, xóa tất cả
+          console.error('Invalid saved user data:', parseError);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Gọi API login
+      const response = await authAPI.login({ email, password });
       
-      // Here you would typically make an API call to authenticate
-      // For demo purposes, we'll accept any email/password
-      const userData: User = {
-        id: '1',
-        email,
-        fullName: 'Người dùng Demo',
-        phone: '0123456789'
-      };
+      if (response.token) {
+        const token = response.token;
+        const refreshToken = response.refreshToken;
+        
+        // Lưu token trước
+        localStorage.setItem('token', token);
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
+        
+        // Thử lấy user data từ response login trước
+        let userData = null;
+        
+        // Kiểm tra xem response có chứa user data không
+        if (response.data && response.data.user) {
+          userData = response.data.user;
+        } else if (response.user) {
+          userData = response.user;
+        }
+        
+        // Nếu có user data từ login response, sử dụng luôn
+        if (userData) {
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+        } else {
+          // Nếu không có, gọi API getProfile
+          try {
+            // Đợi một chút để đảm bảo token đã được set
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const profileResponse = await authAPI.getProfile();
+            if (profileResponse && profileResponse.data) {
+              setUser(profileResponse.data);
+              localStorage.setItem('user', JSON.stringify(profileResponse.data));
+            } else {
+              throw new Error('Không thể lấy thông tin profile');
+            }
+          } catch (profileError) {
+            console.error('Profile fetch error:', profileError);
+            // Nếu không lấy được profile, tạo user data cơ bản từ thông tin login
+            const basicUserData = {
+              id: `user_${Date.now()}`, // Tạo ID duy nhất thay vì temp-id
+              email: email,
+              fullname: email.split('@')[0], // Lấy phần trước @ làm tên
+              role: 'user',
+              avatar: '',
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            setUser(basicUserData);
+            localStorage.setItem('user', JSON.stringify(basicUserData));
+            console.warn('Using basic user data due to profile fetch error');
+          }
+        }
+        
+      } else {
+        console.error('Login failed: No token in response');
+        throw new Error('Đăng nhập thất bại - không nhận được token');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
       
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-    } catch (error) {
-      throw new Error('Đăng nhập thất bại');
+      // Xóa token nếu có lỗi
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      
+      throw new Error(error.response?.data?.message || error.message || 'Đăng nhập thất bại');
     } finally {
       setIsLoading(false);
     }
@@ -82,29 +163,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Here you would typically make an API call to register
-      const newUser: User = {
-        id: Date.now().toString(),
+      // Gọi API register thật
+      const response = await authAPI.register({
         email: userData.email,
-        fullName: userData.fullName,
-        phone: userData.phone
-      };
+        password: userData.password,
+        fullname: userData.fullName
+      });
       
-      setUser(newUser);
-      localStorage.setItem('user', JSON.stringify(newUser));
-    } catch (error) {
-      throw new Error('Đăng ký thất bại');
+      // Check if registration was successful
+      // If response has success field, check it. Otherwise, if we get a response without error, consider it success
+      if (response.success === false) {
+        throw new Error(response.message || 'Đăng ký thất bại');
+      }
+      
+      // Registration successful - response.success is true or undefined (meaning success)
+      // No need to set user or store tokens as user should login manually
+      
+    } catch (error: any) {
+      console.error('Register error:', error);
+      // Check if error has response data with message
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('Đăng ký thất bại');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = () => {
+    try {
+      // Gọi API logout trong background, không chờ kết quả
+      // vì việc dọn dẹp local storage là quan trọng nhất
+      authAPI.logout().catch((error) => {
+        console.warn('Logout API call failed, but continuing with local cleanup:', error);
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
+    // Dọn dẹp local storage ngay lập tức để đảm bảo user được logout
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
   };
 
   const value: AuthContextType = {
@@ -113,7 +218,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     isLoading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    setUserProfile: (data: profile) => {
+      setUser(data);
+      localStorage.setItem('user', JSON.stringify(data));
+    },
+    refreshProfile: async () => {
+      try {
+        const resp = await authAPI.getProfile();
+        if (resp?.data) {
+          setUser(resp.data);
+          localStorage.setItem('user', JSON.stringify(resp.data));
+        }
+      } catch (e) {
+        // silent
+      }
+    }
   };
 
   return (

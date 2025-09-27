@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Car, Zap, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Car, Zap, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Add fade-in CSS classes
@@ -36,10 +36,35 @@ if (typeof document !== 'undefined') {
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, register: registerUser } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  
+  // Set initial state based on URL
+  const [isLogin, setIsLogin] = useState(() => {
+    return location.pathname === '/login' || location.pathname === '/auth';
+  });
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Update form state when URL changes
+  useEffect(() => {
+    if (location.pathname === '/login' || location.pathname === '/auth') {
+      setIsLogin(true);
+    } else if (location.pathname === '/register') {
+      setIsLogin(false);
+    }
+  }, [location.pathname]);
+
+  // Check for success message from registration
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the state to prevent showing message on refresh
+      window.history.replaceState(null, '');
+    }
+  }, [location.state]);
   
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -51,7 +76,6 @@ const AuthPage = () => {
   const [registerData, setRegisterData] = useState({
     fullName: '',
     email: '',
-    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -64,6 +88,7 @@ const AuthPage = () => {
     const { name, value } = e.target;
     setLoginData(prev => ({ ...prev, [name]: value }));
     if (error) setError('');
+    if (successMessage) setSuccessMessage('');
   };
 
   const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,8 +111,10 @@ const AuthPage = () => {
     try {
       await login(loginData.email, loginData.password);
       navigate('/');
-    } catch (err) {
-      setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      // Set specific error message from the error
+      setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
     } finally {
       setLoading(false);
     }
@@ -99,7 +126,7 @@ const AuthPage = () => {
     setError('');
 
     // Validation
-    if (!registerData.fullName || !registerData.email || !registerData.phone || 
+    if (!registerData.fullName || !registerData.email || 
         !registerData.password || !registerData.confirmPassword) {
       setError('Vui lòng điền đầy đủ thông tin');
       setLoading(false);
@@ -128,12 +155,16 @@ const AuthPage = () => {
       await registerUser({
         fullName: registerData.fullName,
         email: registerData.email,
-        phone: registerData.phone,
         password: registerData.password
       });
-      navigate('/');
-    } catch (err) {
-      setError('Đăng ký thất bại. Vui lòng thử lại.');
+      // Navigate to login page with success message
+      navigate('/login', { 
+        state: { message: 'Đăng ký thành công! Vui lòng đăng nhập.' }
+      });
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      // Set specific error message from the error
+      setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -200,7 +231,7 @@ const AuthPage = () => {
             <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-full p-1 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
               <button
                 onClick={() => {
-                  setIsLogin(true);
+                  navigate('/login');
                   setError('');
                   setShowPassword(false);
                   setShowConfirmPassword(false);
@@ -215,7 +246,7 @@ const AuthPage = () => {
               </button>
               <button
                 onClick={() => {
-                  setIsLogin(false);
+                  navigate('/register');
                   setError('');
                   setShowPassword(false);
                   setShowConfirmPassword(false);
@@ -250,6 +281,11 @@ const AuthPage = () => {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleLoginSubmit} className="space-y-4">
+                    {successMessage && (
+                      <Alert>
+                        <AlertDescription>{successMessage}</AlertDescription>
+                      </Alert>
+                    )}
                     {error && (
                       <Alert variant="destructive">
                         <AlertDescription>{error}</AlertDescription>
@@ -385,7 +421,7 @@ const AuthPage = () => {
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                       <Label htmlFor="register-phone">Số điện thoại</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -400,7 +436,7 @@ const AuthPage = () => {
                           required
                         />
                       </div>
-                    </div>
+                    </div> */}
                     
                     <div className="space-y-2">
                       <Label htmlFor="register-password">Mật khẩu</Label>

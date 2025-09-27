@@ -1,4 +1,4 @@
-import { Car, Booking, User, FAQ, Testimonial } from '../types';
+import { Car, Booking, UserProfile, FAQ, Testimonial } from '../types';
 
 export const mockCars: Car[] = [
   {
@@ -96,7 +96,7 @@ export const mockBookings: Booking[] = [
   },
 ];
 
-export const mockUser: User = {
+export const mockUser: UserProfile = {
   id: 'user-1',
   name: 'Nguyễn Văn An',
   email: 'nguyenvanan@gmail.com',

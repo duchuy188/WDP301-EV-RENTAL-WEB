@@ -74,7 +74,6 @@ const ResetPassword = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Here you would typically make an API call to reset password
-      console.log('Password reset for token:', token, 'New password:', formData.password);
       
       // For demo purposes, simulate successful password reset
       setSuccess(true);
