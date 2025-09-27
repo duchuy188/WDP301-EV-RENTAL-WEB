@@ -144,7 +144,6 @@ export const authAPI = {
       // Lấy token để gửi kèm nếu server cần
       const token = localStorage.getItem('token');
       const refreshToken = localStorage.getItem('refreshToken');
-      
       // Gửi request với token và refresh token nếu có
       const response = await apiClient.post('/auth/logout', {
         token,
@@ -168,5 +167,12 @@ export const authAPI = {
   resendVerificationEmail: async (email: string) => {
     const response = await apiClient.post('/auth/resend-verification', { email });
     return response.data;
+  },
+
+  // Google login
+  googleLogin: async (idToken: string) => {
+  console.log('Gửi idToken lên backend:', idToken);
+  const response = await apiClient.post('/auth/login/google', { idToken });
+  return response.data;
   }
 };
