@@ -1,4 +1,4 @@
-import apiClient from './config';
+import apiClient from '../api/axiosInstance';
 import { 
   LoginRequest, 
   RegisterRequest, 
@@ -91,14 +91,11 @@ export const authAPI = {
       if (data.fullname !== undefined) formData.append('fullname', data.fullname ?? '');
       if (data.phone !== undefined) formData.append('phone', data.phone ?? '');
       if (data.address !== undefined) formData.append('address', data.address ?? '');
-      // Một số backend có thể mong đợi 'fullName' (camel khác) -> thêm dự phòng
-      if (data.fullname !== undefined) formData.append('fullName', data.fullname ?? '');
+      
       if (data.avatar instanceof File) {
         formData.append('avatar', data.avatar, data.avatar.name);
-        // Dự phòng: một số API dùng field 'file'
-        formData.append('file', data.avatar, data.avatar.name);
-      } else if (typeof data.avatar === 'string') {
-        formData.append('avatar', data.avatar); // có thể là URL hiện tại (giúp backend biết không đổi?)
+      } else if (typeof data.avatar === 'string' && data.avatar) {
+        formData.append('avatar', data.avatar); // URL hiện tại
       }
 
       // DEBUG: log keys (chỉ ở dev build)

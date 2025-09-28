@@ -30,6 +30,11 @@ const Profile: React.FC = () => {
     address: ''
   });
 
+  // Avatar state
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+
   // Chống toast success bị lặp lại liên tục
   const lastToastRef = useRef<{ msg: string; time: number } | null>(null);
   const safeToastSuccess = (msg: string) => {
@@ -155,6 +160,7 @@ const Profile: React.FC = () => {
         fullname: formData.fullname,
         phone: formData.phone,
         address: formData.address,
+        ...(avatarFile && { avatar: avatarFile }), // Only include avatar if file is selected
       };
       
       // For Google users, if backend doesn't exist, save locally
@@ -170,26 +176,67 @@ const Profile: React.FC = () => {
               phone: response.data.phone || '',
               address: response.data.address || ''
             });
+            // Reset avatar state after successful update
+            setAvatarFile(null);
+            setAvatarPreview(null);
             localStorage.setItem('user', JSON.stringify(response.data));
             safeToastSuccess('Cập nhật hồ sơ thành công!');
           }
-        } catch (apiError) {
+        } catch (apiError: any) {
           console.warn('Backend update failed for Google user, saving locally:', apiError);
+          
+          // Check if it's a server error (500) or network issue
+          const errorStatus = apiError?.response?.status;
+          if (errorStatus === 500) {
+            toast.error('Lỗi server khi cập nhật avatar. Đang lưu thay đổi cục bộ...');
+          } else {
+            console.log('API not available, using local storage fallback');
+          }
           
           // Fallback: Update local storage for Google users
           if (user) {
-            const updatedUser = {
-              ...user,
-              fullname: updateData.fullname,
-              phone: updateData.phone,
-              address: updateData.address,
-              updatedAt: new Date().toISOString()
-            };
-            
-            setUser(updatedUser);
-            setUserProfile(updatedUser);
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-            safeToastSuccess('Cập nhật hồ sơ thành công (lưu cục bộ)!');
+            // Handle avatar file conversion to base64 for local storage
+            if (avatarFile) {
+              // Convert file to base64 for local storage
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const base64Avatar = e.target?.result as string;
+                const updatedUser = {
+                  ...user,
+                  fullname: updateData.fullname,
+                  phone: updateData.phone,
+                  address: updateData.address,
+                  avatar: base64Avatar,
+                  updatedAt: new Date().toISOString()
+                };
+                
+                setUser(updatedUser);
+                setUserProfile(updatedUser);
+                // Reset avatar state after successful update
+                setAvatarFile(null);
+                setAvatarPreview(null);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                safeToastSuccess('Cập nhật hồ sơ thành công (lưu cục bộ)!');
+              };
+              reader.readAsDataURL(avatarFile);
+            } else {
+              // No avatar change, just update other fields
+              const updatedUser = {
+                ...user,
+                fullname: updateData.fullname,
+                phone: updateData.phone,
+                address: updateData.address,
+                updatedAt: new Date().toISOString()
+              };
+              
+              setUser(updatedUser);
+              setUserProfile(updatedUser);
+              // Reset avatar state after successful update
+              setAvatarFile(null);
+              setAvatarPreview(null);
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+              safeToastSuccess('Cập nhật hồ sơ thành công (lưu cục bộ)!');
+            }
           }
         }
       } else {
@@ -203,6 +250,9 @@ const Profile: React.FC = () => {
             phone: response.data.phone || '',
             address: response.data.address || ''
           });
+          // Reset avatar state after successful update
+          setAvatarFile(null);
+          setAvatarPreview(null);
           localStorage.setItem('user', JSON.stringify(response.data));
           safeToastSuccess('Cập nhật hồ sơ thành công!');
         }
@@ -220,8 +270,11 @@ const Profile: React.FC = () => {
 
   const hasChanges = () => {
     if (!user) return true;
-    const basicChanged = user.fullname !== formData.fullname || (user.phone || '') !== formData.phone || (user.address || '') !== formData.address;
-    return basicChanged;
+    const basicChanged = user.fullname !== formData.fullname || 
+                         (user.phone || '') !== formData.phone || 
+                         (user.address || '') !== formData.address;
+    const avatarChanged = avatarFile !== null;
+    return basicChanged || avatarChanged;
   };
 
   const handleCancel = () => {
@@ -232,6 +285,10 @@ const Profile: React.FC = () => {
         address: user.address || '',
       });
     }
+    // Reset avatar changes
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setAvatarLoading(false);
     setIsEditing(false);
   };
 
@@ -277,6 +334,36 @@ const Profile: React.FC = () => {
 
   const handleImagePreview = (imageUrl: string) => {
     setPreviewImage(imageUrl);
+  };
+
+  const handleAvatarChange = (file: File) => {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Chỉ hỗ trợ file ảnh định dạng JPG, PNG, WEBP');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSizeInBytes) {
+      toast.error('Kích thước file không được vượt quá 5MB');
+      return;
+    }
+    
+    setAvatarLoading(true);
+    setAvatarFile(file);
+    
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string;
+      setAvatarPreview(imageUrl);
+      setAvatarLoading(false);
+    };
+    reader.readAsDataURL(file);
+    
+    toast.success('Đã chọn ảnh đại diện mới!');
   };
 
   const googleInfo = getGoogleUserInfo();
@@ -392,7 +479,13 @@ const Profile: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <ProfileHeader user={user} />
+                  <ProfileHeader 
+                    user={user} 
+                    isEditing={isEditing}
+                    onAvatarChange={handleAvatarChange}
+                    avatarLoading={avatarLoading}
+                    avatarPreview={avatarPreview}
+                  />
                   
                   <Separator />
                   

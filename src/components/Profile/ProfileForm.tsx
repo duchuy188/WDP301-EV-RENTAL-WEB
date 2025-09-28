@@ -8,11 +8,12 @@ interface ProfileFormData {
   fullname: string;
   phone: string;
   address: string;
+  avatar?: string; // URL của avatar, nếu có
 }
 
 interface ProfileFormProps {
   user: profile;
-  isEditing: boolean;
+  isEditing: string | boolean;
   formData: ProfileFormData;
   onFormDataChange: (data: ProfileFormData) => void;
 }
