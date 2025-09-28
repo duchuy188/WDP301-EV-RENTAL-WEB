@@ -77,7 +77,7 @@ const Profile: React.FC = () => {
 
   // Check if user is logged in with Google
   const isGoogleUser = () => {
-    return user?.provider === 'google' || user?.googleId || (user as any)?.loginProvider === 'google';
+    return user?.provider === 'google' || user?.googleId;
   };
 
   // Get Google-specific data
@@ -85,9 +85,9 @@ const Profile: React.FC = () => {
     if (!isGoogleUser() || !user) return null;
     
     return {
-      googleId: user.googleId || (user as any).googleId,
-      provider: user.provider || (user as any).loginProvider || 'google',
-      avatar: user.avatar || (user as any).imageUrl || (user as any).photoURL,
+      googleId: user.googleId || '',
+      provider: user.provider || 'google',
+      avatar: user.avatar || '',
       verifiedEmail: true // Google emails are always verified
     };
   };
