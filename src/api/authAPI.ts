@@ -1,4 +1,4 @@
-import apiClient from '../api/axiosInstance';
+import apiClient from './config';
 import { 
   LoginRequest, 
   RegisterRequest, 
@@ -131,7 +131,7 @@ export const authAPI = {
 
   // Change password
   changePassword: async (data: { currentPassword: string; newPassword: string }) => {
-    const response = await apiClient.put('/auth/change-password', data);
+    const response = await apiClient.post('/auth/change-password', data);
     return response.data;
   },
 

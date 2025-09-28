@@ -53,6 +53,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is already logged in on app start
@@ -214,29 +215,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
+    setError(null);
     try {
-      const response = await authAPI.register(userData);
-      
+      // Ensure payload uses 'fullname' as expected by backend
+      const payload = { ...userData, fullname: userData.fullName };
+      delete (payload as any).fullName;
+      const response = await authAPI.register(payload);
       if (response.success) {
-        // Đăng ký thành công, có thể tự động đăng nhập hoặc thông báo cho người dùng
-        // Ở đây mình sẽ để yên cho người dùng tự đăng nhập
+        setError(null);
       } else {
-        throw new Error(response.message || 'Đăng ký thất bại');
+        setError(response.message || 'Đăng ký thất bại');
       }
-      
-      // Registration successful - response.success is true or undefined (meaning success)
-      // No need to set user or store tokens as user should login manually
-      
     } catch (error: any) {
       console.error('Register error:', error);
-      // Check if error has response data with message
+      let errorMessage = 'Đăng ký thất bại';
       if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
+        errorMessage = error.response.data.message;
       } else if (error.message) {
-        throw new Error(error.message);
-      } else {
-        throw new Error('Đăng ký thất bại');
+        errorMessage = error.message;
       }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

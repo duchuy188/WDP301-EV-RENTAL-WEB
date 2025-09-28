@@ -1,14 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Lock, CheckCircle } from 'lucide-react';
+import { authAPI } from '@/api/authAPI';
 
 const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
+  const { token } = useParams();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: ''
@@ -20,8 +23,10 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState(false);
   const [tokenValid, setTokenValid] = useState(true);
 
-  const token = searchParams.get('token');
-  const email = searchParams.get('email');
+
+  // Nếu cần lấy email từ query string, có thể dùng URLSearchParams nếu muốn
+  // const [searchParams] = useSearchParams();
+  // const email = searchParams.get('email');
 
   useEffect(() => {
     // Validate token on component mount
@@ -70,16 +75,14 @@ const ResetPassword = () => {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Here you would typically make an API call to reset password
-      
-      // For demo purposes, simulate successful password reset
+      await authAPI.resetPassword({
+        token: token || '',
+        newPassword: formData.password,
+      });
       setSuccess(true);
-      
-    } catch (err) {
-      setError('Có lỗi xảy ra. Vui lòng thử lại.');
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -149,7 +152,7 @@ const ResetPassword = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Đặt lại mật khẩu</CardTitle>
           <CardDescription className="text-center">
-            {email && `Đặt lại mật khẩu cho ${email}`}
+            Đặt lại mật khẩu cho tài khoản của bạn
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
