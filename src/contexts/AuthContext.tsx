@@ -5,16 +5,35 @@ import { authAPI } from '@/api/authAPI';
 interface AuthContextType {
   user: profile | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (googleCredential: any) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
+  setUserProfile: (data: profile) => void; // cập nhật ngay lập tức context & localStorage
+  refreshProfile: () => Promise<void>; // gọi API lấy profile mới nhất
 }
 
 interface RegisterData {
   fullName: string;
   email: string;
   password: string;
+}
+
+interface GoogleCredential {
+  credential?: string;
+  clientId?: string;
+  select_by?: string;
+  profileObj?: {
+    email: string;
+    name: string;
+    imageUrl?: string;
+    googleId?: string;
+  };
+  tokenObj?: {
+    access_token: string;
+    id_token: string;
+  };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Sau đó verify token và cập nhật thông tin mới nhất (không chặn UI)
           try {
             const response = await authAPI.getProfile();
-            if (response.success && response.data) {
+            if (response && response.data) {
               // Cập nhật thông tin mới nếu có
               setUser(response.data);
               localStorage.setItem('user', JSON.stringify(response.data));
@@ -114,7 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await new Promise(resolve => setTimeout(resolve, 100));
             
             const profileResponse = await authAPI.getProfile();
-            if (profileResponse.success && profileResponse.data) {
+            if (profileResponse && profileResponse.data) {
               setUser(profileResponse.data);
               localStorage.setItem('user', JSON.stringify(profileResponse.data));
             } else {
@@ -158,19 +177,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (googleCredential: any): Promise<void> => {
+    setIsLoading(true);
+    try {
+      let idToken = '';
+      if (typeof googleCredential === 'string') {
+        idToken = googleCredential;
+      } else if (googleCredential && (googleCredential as any).credential) {
+        idToken = (googleCredential as any).credential;
+      } else if (googleCredential && (googleCredential as any).tokenObj?.id_token) {
+        idToken = (googleCredential as any).tokenObj.id_token;
+      } else {
+        throw new Error('Không lấy được idToken từ Google credential');
+      }
+
+      const response = await authAPI.googleLogin(idToken);
+      if (response.token && response.user) {
+        localStorage.setItem('token', response.token);
+        if (response.refreshToken) {
+          localStorage.setItem('refreshToken', response.refreshToken);
+        }
+        setUser(response.user);
+        localStorage.setItem('user', JSON.stringify(response.user));
+      } else {
+        throw new Error('Không nhận được token từ server');
+      }
+    } catch (error: any) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      throw new Error(error.message || 'Đăng nhập Google thất bại');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      // Gọi API register thật
-      const response = await authAPI.register({
-        email: userData.email,
-        password: userData.password,
-        fullname: userData.fullName
-      });
+      const response = await authAPI.register(userData);
       
-      // Check if registration was successful
-      // If response has success field, check it. Otherwise, if we get a response without error, consider it success
-      if (response.success === false) {
+      if (response.success) {
+        // Đăng ký thành công, có thể tự động đăng nhập hoặc thông báo cho người dùng
+        // Ở đây mình sẽ để yên cho người dùng tự đăng nhập
+      } else {
         throw new Error(response.message || 'Đăng ký thất bại');
       }
       
@@ -213,10 +263,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     login,
+    loginWithGoogle,
     register,
     logout,
     isLoading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    setUserProfile: (data: profile) => {
+      setUser(data);
+      localStorage.setItem('user', JSON.stringify(data));
+    },
+    refreshProfile: async () => {
+      try {
+        const resp = await authAPI.getProfile();
+        if (resp?.data) {
+          setUser(resp.data);
+          localStorage.setItem('user', JSON.stringify(resp.data));
+        }
+      } catch (e) {
+        // silent
+      }
+    }
   };
 
   return (

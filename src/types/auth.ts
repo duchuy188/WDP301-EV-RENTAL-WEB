@@ -33,6 +33,9 @@ export interface profile {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // Google OAuth fields
+  googleId?: string;
+  provider?: string;
 }
 
 export interface ForgotPasswordRequest {

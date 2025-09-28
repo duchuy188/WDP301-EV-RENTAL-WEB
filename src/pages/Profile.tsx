@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Check, X } from 'lucide-react';
+import { Edit, Check, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { authAPI } from '@/api/authAPI';
 import { profile, UpdateProfileRequest } from '@/types/auth';
@@ -19,20 +20,30 @@ import {
 } from '@/components/Profile';
 
 const Profile: React.FC = () => {
-  const { user: authUser, isLoading: authLoading } = useAuth();
+  const { user: authUser, isLoading: authLoading, setUserProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<profile | null>(null);
   const [formData, setFormData] = useState({
     fullname: '',
-    email: '',
     phone: '',
-    address: '',
+    address: ''
   });
-  
-  // Avatar file state
-  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+
+  // Avatar state
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+
+  // Chống toast success bị lặp lại liên tục
+  const lastToastRef = useRef<{ msg: string; time: number } | null>(null);
+  const safeToastSuccess = (msg: string) => {
+    const now = Date.now();
+    if (!lastToastRef.current || lastToastRef.current.msg !== msg || (now - lastToastRef.current.time) > 5000) {
+      toast.success(msg);
+      lastToastRef.current = { msg, time: now };
+    }
+  };
   
   // Document upload states
   const [documentImages, setDocumentImages] = useState({
@@ -60,37 +71,75 @@ const Profile: React.FC = () => {
       setUser(authUser);
       setFormData({
         fullname: authUser.fullname || '',
-        email: authUser.email || '',
         phone: authUser.phone || '',
         address: authUser.address || '',
       });
-      
-      // Try to fetch fresh profile data
-      fetchProfile();
     }
+    
+    // Always try to fetch fresh profile data from server
+    fetchProfile();
   }, [authUser]);
+
+  // Check if user is logged in with Google
+  const isGoogleUser = () => {
+    return user?.provider === 'google' || user?.googleId;
+  };
+
+  // Get Google-specific data
+  const getGoogleUserInfo = () => {
+    if (!isGoogleUser() || !user) return null;
+    
+    return {
+      googleId: user.googleId || '',
+      provider: user.provider || 'google',
+      avatar: user.avatar || '',
+      verifiedEmail: true // Google emails are always verified
+    };
+  };
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
+      
+      // If user is logged in with Google and we don't have backend API, skip API call
+      if (isGoogleUser() && authUser) {
+        console.log('Google user detected, using local data');
+        setUser(authUser);
+        setFormData({
+          fullname: authUser.fullname || '',
+          phone: authUser.phone || '',
+          address: authUser.address || '',
+        });
+        return;
+      }
+      
       const response = await authAPI.getProfile();
-      if (response.success && response.data) {
+      
+      if (response && response.data) {
         setUser(response.data);
         setFormData({
           fullname: response.data.fullname || '',
-          email: response.data.email || '',
           phone: response.data.phone || '',
           address: response.data.address || '',
         });
         
         // Update localStorage with fresh data
         localStorage.setItem('user', JSON.stringify(response.data));
+      } else {
+        throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      // Don't show error toast if we already have user data from context
+      // For Google users, don't show error if we have fallback data
+      if (isGoogleUser() && authUser) {
+        console.log('Using Google user fallback data');
+        return;
+      }
+      
+      // Only show error toast if we don't have fallback data
       if (!authUser) {
         toast.error('Không thể tải thông tin hồ sơ');
+      } else {
+        toast.error('Không thể làm mới thông tin hồ sơ');
       }
     } finally {
       setLoading(false);
@@ -98,6 +147,11 @@ const Profile: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!hasChanges()) {
+      setIsEditing(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       
@@ -106,90 +160,147 @@ const Profile: React.FC = () => {
         fullname: formData.fullname,
         phone: formData.phone,
         address: formData.address,
+        ...(avatarFile && { avatar: avatarFile }), // Only include avatar if file is selected
       };
       
-      // Nếu có file avatar được chọn, thêm vào data
-      if (selectedAvatarFile) {
-        updateData.avatar = selectedAvatarFile;
+      // For Google users, if backend doesn't exist, save locally
+      if (isGoogleUser()) {
+        try {
+          const response = await authAPI.updateProfile(updateData);
+          if (response.success) {
+            // Backend update successful
+            setUserProfile(response.data);
+            setUser(response.data);
+            setFormData({
+              fullname: response.data.fullname,
+              phone: response.data.phone || '',
+              address: response.data.address || ''
+            });
+            // Reset avatar state after successful update
+            setAvatarFile(null);
+            setAvatarPreview(null);
+            localStorage.setItem('user', JSON.stringify(response.data));
+            safeToastSuccess('Cập nhật hồ sơ thành công!');
+          }
+        } catch (apiError: any) {
+          console.warn('Backend update failed for Google user, saving locally:', apiError);
+          
+          // Check if it's a server error (500) or network issue
+          const errorStatus = apiError?.response?.status;
+          if (errorStatus === 500) {
+            toast.error('Lỗi server khi cập nhật avatar. Đang lưu thay đổi cục bộ...');
+          } else {
+            console.log('API not available, using local storage fallback');
+          }
+          
+          // Fallback: Update local storage for Google users
+          if (user) {
+            // Handle avatar file conversion to base64 for local storage
+            if (avatarFile) {
+              // Convert file to base64 for local storage
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const base64Avatar = e.target?.result as string;
+                const updatedUser = {
+                  ...user,
+                  fullname: updateData.fullname,
+                  phone: updateData.phone,
+                  address: updateData.address,
+                  avatar: base64Avatar,
+                  updatedAt: new Date().toISOString()
+                };
+                
+                setUser(updatedUser);
+                setUserProfile(updatedUser);
+                // Reset avatar state after successful update
+                setAvatarFile(null);
+                setAvatarPreview(null);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                safeToastSuccess('Cập nhật hồ sơ thành công (lưu cục bộ)!');
+              };
+              reader.readAsDataURL(avatarFile);
+            } else {
+              // No avatar change, just update other fields
+              const updatedUser = {
+                ...user,
+                fullname: updateData.fullname,
+                phone: updateData.phone,
+                address: updateData.address,
+                updatedAt: new Date().toISOString()
+              };
+              
+              setUser(updatedUser);
+              setUserProfile(updatedUser);
+              // Reset avatar state after successful update
+              setAvatarFile(null);
+              setAvatarPreview(null);
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+              safeToastSuccess('Cập nhật hồ sơ thành công (lưu cục bộ)!');
+            }
+          }
+        }
+      } else {
+        // Regular user - use backend API
+        const response = await authAPI.updateProfile(updateData);
+        if (response.success) {
+          setUserProfile(response.data);
+          setUser(response.data);
+          setFormData({
+            fullname: response.data.fullname,
+            phone: response.data.phone || '',
+            address: response.data.address || ''
+          });
+          // Reset avatar state after successful update
+          setAvatarFile(null);
+          setAvatarPreview(null);
+          localStorage.setItem('user', JSON.stringify(response.data));
+          safeToastSuccess('Cập nhật hồ sơ thành công!');
+        }
       }
       
-      const response = await authAPI.updateProfile(updateData);
-      if (response.success) {
-        // Cập nhật user state với data mới từ server
-        setUser(response.data);
-        setFormData({
-          fullname: response.data.fullname,
-          email: response.data.email,
-          phone: response.data.phone || '',
-          address: response.data.address || '',
-        });
-        setIsEditing(false);
-        
-        // Reset avatar states
-        setSelectedAvatarFile(null);
-        setAvatarPreview(null);
-        
-        // Update localStorage with the new data
-        localStorage.setItem('user', JSON.stringify(response.data));
-        
-        toast.success('Cập nhật hồ sơ thành công!');
-      }
+      setIsEditing(false);
+      
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Cập nhật hồ sơ thất bại');
+      const msg = (error as Error)?.message || 'Cập nhật hồ sơ thất bại';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
+  };
+
+  const hasChanges = () => {
+    if (!user) return true;
+    const basicChanged = user.fullname !== formData.fullname || 
+                         (user.phone || '') !== formData.phone || 
+                         (user.address || '') !== formData.address;
+    const avatarChanged = avatarFile !== null;
+    return basicChanged || avatarChanged;
   };
 
   const handleCancel = () => {
     if (user) {
       setFormData({
         fullname: user.fullname,
-        email: user.email,
         phone: user.phone || '',
         address: user.address || '',
       });
     }
-    setIsEditing(false);
-    
-    // Reset avatar states
-    setSelectedAvatarFile(null);
+    // Reset avatar changes
+    setAvatarFile(null);
     setAvatarPreview(null);
-  };
-
-  // Avatar upload handlers
-  const handleAvatarFileSelect = (file: File) => {
-    setSelectedAvatarFile(file);
-    
-    // Create preview URL
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setAvatarPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleAvatarUploadClick = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        handleAvatarFileSelect(file);
-      }
-    };
-    input.click();
+    setAvatarLoading(false);
+    setIsEditing(false);
   };
 
   const handleFormDataChange = (data: {
     fullname: string;
-    email: string;
     phone: string;
     address: string;
   }) => {
-    setFormData(data);
+    setFormData(prev => ({
+      ...prev,
+      ...data,
+    }));
   };
 
   const handleDocumentUpload = (type: 'license' | 'id', side: 'front' | 'back') => {
@@ -225,6 +336,38 @@ const Profile: React.FC = () => {
     setPreviewImage(imageUrl);
   };
 
+  const handleAvatarChange = (file: File) => {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Chỉ hỗ trợ file ảnh định dạng JPG, PNG, WEBP');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSizeInBytes) {
+      toast.error('Kích thước file không được vượt quá 5MB');
+      return;
+    }
+    
+    setAvatarLoading(true);
+    setAvatarFile(file);
+    
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string;
+      setAvatarPreview(imageUrl);
+      setAvatarLoading(false);
+    };
+    reader.readAsDataURL(file);
+    
+    toast.success('Đã chọn ảnh đại diện mới!');
+  };
+
+  const googleInfo = getGoogleUserInfo();
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -233,17 +376,57 @@ const Profile: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Tài khoản của tôi
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              Tài khoản của tôi
+            </h1>
+            {isGoogleUser() && (
+              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                <Shield className="w-3 h-3 mr-1" />
+                Google Account
+              </Badge>
+            )}
+          </div>
+          <p className="text-lg text-gray-600 dark:text-gray-300 mt-4">
             Quản lý thông tin cá nhân và cài đặt tài khoản
           </p>
+          
+          {/* Google Account Info */}
+          {isGoogleUser() && googleInfo && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+            >
+              <div className="flex items-center gap-3">
+                {googleInfo.avatar && (
+                  <img
+                    src={googleInfo.avatar}
+                    alt="Google Avatar"
+                    className="w-8 h-8 rounded-full"
+                  />
+                )}
+                <div>
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Đăng nhập bằng Google
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    {googleInfo.verifiedEmail && "Email đã được xác minh"} • ID: {googleInfo.googleId || 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         {(authLoading || loading) ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-300">
+                Đang tải...
+              </p>
+            </div>
           </div>
         ) : user ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -256,7 +439,14 @@ const Profile: React.FC = () => {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle>Thông tin cá nhân</CardTitle>
+                    <div className="flex items-center gap-3">
+                      <CardTitle>Thông tin cá nhân</CardTitle>
+                      {isGoogleUser() && (
+                        <Badge variant="outline" className="text-xs">
+                          Tài khoản Google
+                        </Badge>
+                      )}
+                    </div>
                     {!isEditing ? (
                       <Button
                         variant="outline"
@@ -279,6 +469,7 @@ const Profile: React.FC = () => {
                           size="sm"
                           onClick={handleSave}
                           className="bg-green-600 hover:bg-green-700"
+                          disabled={loading || !hasChanges()}
                         >
                           <Check className="mr-2 h-4 w-4" />
                           Lưu
@@ -290,8 +481,9 @@ const Profile: React.FC = () => {
                 <CardContent className="space-y-6">
                   <ProfileHeader 
                     user={user} 
-                    isEditing={isEditing} 
-                    onAvatarUpload={handleAvatarUploadClick}
+                    isEditing={isEditing}
+                    onAvatarChange={handleAvatarChange}
+                    avatarLoading={avatarLoading}
                     avatarPreview={avatarPreview}
                   />
                   
@@ -303,6 +495,41 @@ const Profile: React.FC = () => {
                     formData={formData}
                     onFormDataChange={handleFormDataChange}
                   />
+                  
+                  {/* Google-specific information */}
+                  {isGoogleUser() && googleInfo && (
+                    <>
+                      <Separator />
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Thông tin tài khoản Google
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">Google ID:</span>
+                            <p className="font-mono text-xs mt-1 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                              {googleInfo.googleId || 'N/A'}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">Nhà cung cấp:</span>
+                            <p className="mt-1 flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-blue-500" />
+                              {googleInfo.provider}
+                            </p>
+                          </div>
+                        </div>
+                        {isGoogleUser() && (
+                          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                            <p className="text-xs text-amber-800 dark:text-amber-200">
+                              💡 <strong>Lưu ý:</strong> Một số thông tin có thể được đồng bộ từ tài khoản Google của bạn. 
+                              Thay đổi sẽ được lưu cục bộ nếu chưa tích hợp với backend.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
