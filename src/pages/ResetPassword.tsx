@@ -51,8 +51,8 @@ const ResetPassword = () => {
       return 'Vui lòng điền đầy đủ thông tin';
     }
     
-    if (formData.password.length < 6) {
-      return 'Mật khẩu phải có ít nhất 6 ký tự';
+    if (formData.password.length < 8) {
+      return 'Mật khẩu phải có ít nhất 8 ký tự';
     }
     
     if (formData.password !== formData.confirmPassword) {

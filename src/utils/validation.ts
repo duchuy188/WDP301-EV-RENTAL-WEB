@@ -27,7 +27,7 @@ export const validationRules = {
   },
   password: {
     required: 'Mật khẩu là bắt buộc',
-    minLength: 'Mật khẩu phải có ít nhất 6 ký tự'
+    minLength: 'Mật khẩu phải có ít nhất 8 ký tự'
   },
   fullName: {
     required: 'Họ tên là bắt buộc',

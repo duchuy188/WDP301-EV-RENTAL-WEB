@@ -80,7 +80,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({ open, onOpe
             <Input
               id="newPassword"
               type="password"
-              placeholder="Tối thiểu 6 ký tự"
+              placeholder="Tối thiểu 8 ký tự"
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
               disabled={loading}

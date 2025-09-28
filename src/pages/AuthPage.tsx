@@ -42,7 +42,7 @@ const AuthPage = () => {
   const { login, register: registerUser } = authContext;
   
   // Check if loginWithGoogle exists, if not use regular login
-  const loginWithGoogle = authContext.loginWithGoogle || authContext.googleLogin || null;
+  const loginWithGoogle = authContext.loginWithGoogle || null;
   
   // Set initial state based on URL
   const [isLogin, setIsLogin] = useState(() => {
@@ -136,8 +136,8 @@ const AuthPage = () => {
       return;
     }
 
-    if (registerData.password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự');
+    if (registerData.password.length < 8) {
+      setError('Mật khẩu phải có ít nhất 8 ký tự');
       setLoading(false);
       return;
     }
