@@ -46,7 +46,7 @@ const ProfileActions: React.FC = () => {
             onSubmit={handleChangePassword}
             loading={loading}
           />
-          <Button variant="outline" className="w-full justify-start">
+          {/* <Button variant="outline" className="w-full justify-start">
             <User className="mr-2 h-4 w-4" />
             Cài đặt riêng tư
           </Button>
@@ -57,7 +57,7 @@ const ProfileActions: React.FC = () => {
             onClick={handleLogout}
           >
             Đăng xuất
-          </Button>
+          </Button> */}
         </div>
       </CardContent>
     </Card>
