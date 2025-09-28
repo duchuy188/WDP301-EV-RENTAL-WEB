@@ -3,10 +3,6 @@ import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 
 // API base URL from environment variables
 export const API_BASE_URL = import.meta.env.VITE_REACT_APP_BASE_URL;
 
-// Create axios instance
-// NOTE: Do NOT set a global 'Content-Type' header here. Leaving it blank lets:
-//  - Axios set 'application/json' automatically for plain objects
-//  - The browser set the correct multipart/form-data boundary when sending FormData
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000

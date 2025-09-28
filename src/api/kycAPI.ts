@@ -1,4 +1,4 @@
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from './config';
 
 // Interface cho response của API KYC
 export interface KYCIdentityResponse {

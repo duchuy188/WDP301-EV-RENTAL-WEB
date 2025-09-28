@@ -1,4 +1,4 @@
-import apiClient from '../api/axiosInstance';
+import apiClient from './config';
 import { 
   LoginRequest, 
   RegisterRequest, 
