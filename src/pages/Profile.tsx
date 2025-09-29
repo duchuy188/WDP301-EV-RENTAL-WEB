@@ -51,14 +51,14 @@ const Profile: React.FC = () => {
       frontImage: null as string | null,
       backImage: null as string | null,
     },
-    id: {
+    identity: {
       frontImage: null as string | null,
       backImage: null as string | null,
     }
   });
   
   const [showDocumentDialog, setShowDocumentDialog] = useState<{
-    type: 'license' | 'id' | null;
+    type: 'license' | 'identity' | null;
     side: 'front' | 'back' | null;
   }>({ type: null, side: null });
   
@@ -303,7 +303,7 @@ const Profile: React.FC = () => {
     }));
   };
 
-  const handleDocumentUpload = (type: 'license' | 'id', side: 'front' | 'back') => {
+  const handleDocumentUpload = (type: 'license' | 'identity', side: 'front' | 'back') => {
     setShowDocumentDialog({ type, side });
     fileInputRef.current?.click();
   };
@@ -534,7 +534,6 @@ const Profile: React.FC = () => {
               </Card>
 
               <DocumentVerification
-                documentImages={documentImages}
                 onDocumentUpload={handleDocumentUpload}
                 onImagePreview={handleImagePreview}
               />

@@ -1,99 +1,42 @@
+import { KYCIdentityResponse, KYCIdentityCardResponse } from '@/types/kyc';
 import axiosInstance from './config';
+import type { KYCLicenseFrontResponse, KYCLicenseBackResponse, KYCStatusResponse } from '@/types/kyc';
 
-// Interface cho response của API KYC
-export interface KYCIdentityResponse {
-  message: string;
-  identityCard: {
-    id: string;
-    name: string;
-    dob: string;
-    address: string;
-    frontImage: string;
-  };
-  kycStatus: string;
-  needBackImage: boolean;
-}
+// Generic helper to POST a File as multipart/form-data under key 'image'
+const postFile = async <T>(endpoint: string, file: File): Promise<T> => {
+  const form = new FormData();
+  form.append('image', file, file.name);
+  try {
+    const resp = await axiosInstance.post<T>(endpoint, form);
+    return resp.data;
+  } catch (err: any) {
+    console.error(`Upload to ${endpoint} failed:`, err?.response?.data || err.message);
+    throw err;
+  }
+};
 
-// Interface cho request upload ảnh CMND/CCCD
-export interface UploadIdentityCardRequest {
-  image: string; // Base64 string của ảnh
-}
-
-// API upload ảnh mặt trước CMND/CCCD
 export const uploadIdentityCardFront = async (imageFile: File): Promise<KYCIdentityResponse> => {
-  try {
-    // Convert file to base64
-    const base64Image = await convertFileToBase64(imageFile);
-    
-    const requestData: UploadIdentityCardRequest = {
-      image: base64Image
-    };
-
-    const response = await axiosInstance.post<KYCIdentityResponse>(
-      '/api/kyc/identity-card/front',
-      requestData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error('Error uploading identity card front:', error);
-    throw error;
-  }
+  return postFile<KYCIdentityResponse>('/kyc/identity-card/front', imageFile);
 };
 
-// Utility function để convert file sang base64
-const convertFileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      const base64String = reader.result as string;
-      // Remove data:image/...;base64, prefix
-      const base64 = base64String.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = (error) => reject(error);
-  });
+export const uploadIdentityCardBack = async (imageFile: File): Promise<KYCIdentityCardResponse> => {
+  return postFile<KYCIdentityCardResponse>('/kyc/identity-card/back', imageFile);
 };
 
-// API upload ảnh mặt sau CMND/CCCD (nếu cần)
-export const uploadIdentityCardBack = async (imageFile: File): Promise<KYCIdentityResponse> => {
-  try {
-    const base64Image = await convertFileToBase64(imageFile);
-    
-    const requestData: UploadIdentityCardRequest = {
-      image: base64Image
-    };
-
-    const response = await axiosInstance.post<KYCIdentityResponse>(
-      '/api/kyc/identity-card/back',
-      requestData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error('Error uploading identity card back:', error);
-    throw error;
-  }
+export const uploadLicenseFront = async (imageFile: File): Promise<KYCLicenseFrontResponse> => {
+  return postFile<KYCLicenseFrontResponse>('/kyc/license/front', imageFile);
 };
 
-// API lấy trạng thái KYC
-export const getKYCStatus = async (): Promise<{status: string; progress: number}> => {
+export const uploadLicenseBack = async (imageFile: File): Promise<KYCLicenseBackResponse> => {
+  return postFile<KYCLicenseBackResponse>('/kyc/license/back', imageFile);
+};
+
+export const getKYCStatus = async () => {
   try {
-    const response = await axiosInstance.get('/api/kyc/status');
+    const response = await axiosInstance.get('/kyc/status');
     return response.data;
-  } catch (error) {
-    console.error('Error getting KYC status:', error);
+  } catch (error: any) {
+    console.error('Error getting KYC status:', error?.response?.data || error.message);
     throw error;
   }
 };
