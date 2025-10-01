@@ -31,12 +31,19 @@ export const uploadLicenseBack = async (imageFile: File): Promise<KYCLicenseBack
   return postFile<KYCLicenseBackResponse>('/kyc/license/back', imageFile);
 };
 
-export const getKYCStatus = async () => {
-  try {
-    const response = await axiosInstance.get('/kyc/status');
-    return response.data;
-  } catch (error: any) {
-    console.error('Error getting KYC status:', error?.response?.data || error.message);
-    throw error;
-  }
+export const getIdentityCard = async (): Promise<KYCIdentityResponse> => {
+const response = await axiosInstance.get<KYCIdentityResponse>('/kyc/identity-card');
+return response.data;
+  
+};
+
+export const getDriverLicense = async (): Promise<KYCLicenseFrontResponse> => {
+  const response = await axiosInstance.get<KYCLicenseFrontResponse>('/kyc/driver-license');
+  return response.data;
+};
+
+
+export const getKYCStatus = async (): Promise<KYCStatusResponse> => {
+  const response = await axiosInstance.get<KYCStatusResponse>('/kyc/status');
+  return response.data;
 };

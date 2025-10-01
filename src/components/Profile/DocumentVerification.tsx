@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getKYCStatus } from '@/api/kycAPI';
+import { getKYCStatus, getIdentityCard, getDriverLicense } from '@/api/kycAPI';
 import type { KYCStatusResponse } from '@/types/kyc';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import DocumentDetailsModal, { DocumentResponse } from './DocumentDetailsModal';
 import DriverLicenseVerification from './DriverLicenseVerification';
 import IdentityCardVerification from './IdentityCardVerification';
 
@@ -16,7 +16,7 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
   const [kyc, setKyc] = useState<KYCStatusResponse | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showResponseModal, setShowResponseModal] = useState(false);
-  const [currentResponse, setCurrentResponse] = useState<any>(null);
+  const [currentResponse, setCurrentResponse] = useState<(DocumentResponse & { title?: string }) | null>(null);
 
   // Gọi lấy trạng thái KYC khi mount lần đầu
   React.useEffect(() => {
@@ -33,14 +33,34 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
   };
 
   // Hàm hiển thị modal với response data
-  const showResponseDetails = (response: any, title: string) => {
-    setCurrentResponse({ ...response, title });
+  const showResponseDetails = (response: DocumentResponse | null, title: string) => {
+    setCurrentResponse(response ? ({ ...(response as DocumentResponse), title }) : null);
     setShowResponseModal(true);
   };
 
   // Hàm preview ảnh
   const handleImagePreview = (imageUrl: string) => {
     setPreviewImage(imageUrl);
+  };
+
+  // Hàm format ngày tháng năm theo định dạng Việt Nam
+  const formatDateTime = (dateString: string | undefined | null) => {
+    if (!dateString) return '—';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '—';
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch (error) {
+      return '—';
+    }
   };
 
   // KYC status label and badge color mapping (Vietnamese)
@@ -60,25 +80,7 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
   };
   const statusLabel = statusLabelMap[statusKey] || 'Chưa cập nhật';
   const statusBadgeClass = `${statusClassMap[statusKey] || statusClassMap.not_submitted} ml-4`;
-  // alias for easier access inside render
-  const resp = currentResponse as any;
-
-  // Helper: lọc các trường OCR có giá trị thực sự
-  function filterOcrFields(obj: any) {
-    if (!obj || typeof obj !== 'object') return {};
-    const result: Record<string, any> = {};
-    Object.entries(obj).forEach(([k, v]) => {
-      if (typeof v === 'string' && v.trim() && v !== 'N/A') {
-        result[k] = v;
-      } else if (Array.isArray(v) && v.length > 0 && v.some(x => x && x !== 'N/A')) {
-        result[k] = v.filter(x => x && x !== 'N/A');
-      } else if (typeof v === 'object' && v !== null) {
-        const nested = filterOcrFields(v);
-        if (Object.keys(nested).length > 0) result[k] = nested;
-      }
-    });
-    return result;
-  }
+  // ...existing code...
 
   return (
     <Card className="mt-6">
@@ -135,12 +137,19 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
                       <div>
                         <h3 className="font-semibold mb-1 text-green-800">Giấy phép lái xe</h3>
                         <p className="text-sm text-gray-700">Số: {(kyc as any)?.license?.id || '—'}</p>
-                        <p className="text-sm text-gray-700">Hạng: {((kyc as any)?.license?.classList || []).join(', ') || '—'}</p>
+                        
                       </div>
                       <div>
                         <button
                           type="button"
-                          onClick={() => showResponseDetails((kyc as any)?.license || (kyc as any), 'Giấy phép lái xe')}
+                          onClick={async () => {
+                            try {
+                              const licenseData = await getDriverLicense();
+                              showResponseDetails(licenseData, 'Giấy phép lái xe');
+                            } catch (error) {
+                              console.error('Error fetching driver license:', error);
+                            }
+                          }}
                           className="px-3 py-1 text-sm bg-white border rounded shadow-sm hover:bg-gray-50"
                         >
                           Xem chi tiết OCR
@@ -154,12 +163,19 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
                       <div>
                         <h3 className="font-semibold mb-1 text-blue-800">Căn cước công dân</h3>
                         <p className="text-sm text-gray-700">Số: {(kyc as any)?.identity?.id || '—'}</p>
-                        <p className="text-sm text-gray-700">Uploaded: {(kyc as any)?.identity?.frontUploaded ? 'Mặt trước' : '—'} / {(kyc as any)?.identity?.backUploaded ? 'Mặt sau' : '—'}</p>
+                       
                       </div>
                       <div>
                         <button
                           type="button"
-                          onClick={() => showResponseDetails((kyc as any)?.identity || (kyc as any), 'Căn cước công dân')}
+                          onClick={async () => {
+                            try {
+                              const identityData = await getIdentityCard();
+                              showResponseDetails(identityData, 'Căn cước công dân');
+                            } catch (error) {
+                              console.error('Error fetching identity card:', error);
+                            }
+                          }}
                           className="px-3 py-1 text-sm bg-white border rounded shadow-sm hover:bg-gray-50"
                         >
                           Xem chi tiết OCR
@@ -169,8 +185,8 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
                   </div>
 
                   <div className="bg-gray-50 border rounded p-3">
-                    <p className="text-sm">Rejection reason: {(kyc as any)?.rejectionReason || '—'}</p>
-                    <p className="text-sm">Last updated: {(kyc as any)?.lastUpdated || (kyc as any)?.lastUpdatedAt || '—'}</p>
+                    {/* <p className="text-sm">Rejection reason: {(kyc as any)?.rejectionReason || '—'}</p> */}
+                    <p className="text-sm">Cập nhật lần cuối: {formatDateTime((kyc as any)?.lastUpdated || (kyc as any)?.lastUpdatedAt || (kyc as any)?.updatedAt)}</p>
                   </div>
                 </>
               ) : (
@@ -211,108 +227,11 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
           )}
         </div>
       </CardContent>
-      {/* Modal hiển thị chi tiết OCR khi nhấn 'Xem chi tiết OCR' */}
-      <Dialog open={showResponseModal} onOpenChange={setShowResponseModal}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{currentResponse?.title || 'Chi tiết OCR'}</DialogTitle>
-          </DialogHeader>
-          {currentResponse && (
-            <div className="space-y-4">
-
-              
-              {/* Images (front / back) */}
-              {(resp?.frontImage || resp?.backImage || resp?.image || resp?.backImage) && (
-                <div className="flex gap-4">
-                  {(resp?.frontImage || resp?.image) && (
-                    <div className="flex-1">
-                      <div className="text-sm font-medium mb-1">Mặt trước</div>
-                      <img src={resp?.frontImage || resp?.image} alt="front" className="max-w-full h-auto rounded border" />
-                    </div>
-                  )}
-                  {resp?.backImage && (
-                    <div className="flex-1">
-                      <div className="text-sm font-medium mb-1">Mặt sau</div>
-                      <img src={resp?.backImage} alt="back" className="max-w-full h-auto rounded border" />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Key fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Thông tin chính</h4>
-                  <p className="text-sm">ID: {resp?.identityOcr?.front?.id || resp?.id || resp?.identity?.id || resp?.license?.id || resp?.licenseNumber || '—'}</p>
-                  <p className="text-sm">Họ tên: {resp?.identityOcr?.front?.name || resp?.licenseOcr?.front?.name || resp?.name || resp?.identity?.name || resp?.license?.name || resp?.licenseName || '—'}</p>
-                  <p className="text-sm">Ngày sinh: {resp?.identityOcr?.front?.dob || resp?.licenseOcr?.front?.dob || resp?.dob || resp?.identity?.dob || resp?.license?.dob || resp?.licenseDob || '—'}</p>
-                  <p className="text-sm">Hạng / Loại: {((resp?.classList || resp?.license?.classList) || []).join(', ') || resp?.licenseClass || resp?.licenseOcr?.front?.class || '—'}</p>
-                  <p className="text-sm">Hạn sử dụng: {resp?.expiryText || resp?.license?.expiryText || resp?.licenseExpiry || resp?.licenseOcr?.front?.doe || '—'}</p>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Trạng thái</h4>
-                  <p className="text-sm">Front uploaded: {String(resp?.frontUploaded ?? resp?.frontUploaded ?? resp?.license?.frontUploaded ?? resp?.identity?.frontUploaded ?? '—')}</p>
-                  <p className="text-sm">Back uploaded: {String(resp?.backUploaded ?? resp?.backUploaded ?? resp?.license?.backUploaded ?? resp?.identity?.backUploaded ?? '—')}</p>
-                  <p className="text-sm">Uploaded: {String(resp?.uploaded ?? resp?.license?.uploaded ?? '—')}</p>
-                  <p className="text-sm">Rejection reason: {resp?.rejectionReason || '—'}</p>
-                </div>
-              </div>
-
-              {/* OCR fields (filtered) */}
-              {(resp?.frontOcr || resp?.backOcr || resp?.identityOcr || resp?.licenseOcr) && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Thông tin OCR</h4>
-                  {/* Identity OCR */}
-                  {resp?.identityOcr && (
-                    <>
-                      <div className="font-semibold text-xs mb-1">CCCD/CMND</div>
-                      {resp?.identityOcr.front && (
-                        <div className="mb-2">
-                          <div className="font-medium text-xs">Mặt trước:</div>
-                          <pre className="text-xs bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">
-                            {JSON.stringify(filterOcrFields(resp.identityOcr.front), null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                      {resp?.identityOcr.back && (
-                        <div>
-                          <div className="font-medium text-xs">Mặt sau:</div>
-                          <pre className="text-xs bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">
-                            {JSON.stringify(filterOcrFields(resp.identityOcr.back), null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {/* License OCR */}
-                  {resp?.licenseOcr && (
-                    <>
-                      <div className="font-semibold text-xs mb-1 mt-2">Giấy phép lái xe</div>
-                      {resp?.licenseOcr.front && (
-                        <div className="mb-2">
-                          <div className="font-medium text-xs">Mặt trước:</div>
-                          <pre className="text-xs bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">
-                            {JSON.stringify(filterOcrFields(resp.licenseOcr.front), null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                      {resp?.licenseOcr.back && (
-                        <div>
-                          <div className="font-medium text-xs">Mặt sau:</div>
-                          <pre className="text-xs bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">
-                            {JSON.stringify(filterOcrFields(resp.licenseOcr.back), null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <DocumentDetailsModal
+        open={showResponseModal}
+        onOpenChange={setShowResponseModal}
+        response={currentResponse}
+      />
     </Card>
   );
 }
