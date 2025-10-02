@@ -41,10 +41,17 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid - clear local auth data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Only redirect if we're not already on the login page to avoid an unnecessary reload/flash
+      try {
+        if (typeof window !== 'undefined' && window.location && window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      } catch (e) {
+        // In very rare environments window/location might be unavailable; ignore
+      }
     }
     return Promise.reject(error);
   }

@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
-import { Shield, User } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
 import ChangePasswordDialog from './ChangePasswordDialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { authAPI } from '@/api/authAPI';
 
 const ProfileActions: React.FC = () => {
 
   const [openChangePassword, setOpenChangePassword] = useState(false);
+  const [openViewDocuments, setOpenViewDocuments] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogout = () => {
-    toast.success('Đã đăng xuất!');
-    // Có thể thêm logic logout thực tế ở đây
-  };
 
   const handleChangePassword = async (data: { currentPassword: string; newPassword: string }) => {
     setLoading(true);
