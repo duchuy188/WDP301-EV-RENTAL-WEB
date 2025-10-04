@@ -90,7 +90,7 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
             <CardTitle>Xác thực giấy tờ</CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-300">
               {statusKey === 'approved'
-                ? 'Thông tin giấy tờ đã được xác thực. Bạn có thể xem chi tiết bên dưới.'
+                ? 'Bạn có thể xem chi tiết bên dưới.'
                 : 'Vui lòng tải lên ảnh mặt trước và mặt sau của giấy tờ để xác thực'}
             </p>
           </div>
