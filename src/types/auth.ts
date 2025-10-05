@@ -53,3 +53,4 @@ export interface UpdateProfileRequest {
   address: string;
   avatar?: string | File; // Có thể là string (URL) hoặc File object
 }
+
