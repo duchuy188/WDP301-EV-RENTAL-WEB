@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -8,6 +7,7 @@ import Layout from './components/Layout/Layout';
 // Pages
 import Home from './pages/Home';
 import FindCar from './pages/FindCar';
+import VehicleDetail from './pages/VehicleDetail';
 import Booking from './pages/Booking';
 import CheckIn from './pages/CheckIn';
 import ReturnCar from './pages/ReturnCar';
@@ -36,6 +36,7 @@ function App() {
               <Route path="/" element={<Layout />}>
                 <Route index element={<Home />} />
                 <Route path="find-car" element={<FindCar />} />
+                <Route path="vehicle/:id" element={<VehicleDetail />} />
                 <Route path="booking" element={<Booking />} />
                 <Route path="checkin" element={<CheckIn />} />
                 <Route path="return" element={<ReturnCar />} />

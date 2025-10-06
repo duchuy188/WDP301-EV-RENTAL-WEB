@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Calendar, 
@@ -7,7 +7,6 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
-  Filter,
   Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,12 +15,32 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { mockBookings, mockUser } from '@/data/mockData';
+import { authAPI } from '@/api/personaAPI';
+import { UserStatsData } from '@/types/perssonal';
 
 const History: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
+  const [userStats, setUserStats] = useState<UserStatsData | null>(null);
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 5;
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      try {
+        setLoading(true);
+        const response = await authAPI.getPersonal();
+        setUserStats(response.data);
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserStats();
+  }, []);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -101,8 +120,11 @@ const History: React.FC = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
-  // Analytics data
-  const monthlyBookings = [
+  // Analytics data from API or fallback to mock data
+  const monthlyBookings = userStats?.monthly_stats.map(stat => ({
+    month: `T${stat.month}`,
+    count: stat.rentals
+  })) || [
     { month: 'T1', count: 5 },
     { month: 'T2', count: 8 },
     { month: 'T3', count: 12 },
@@ -111,9 +133,11 @@ const History: React.FC = () => {
     { month: 'T6', count: 18 },
   ];
 
-  const totalTrips = mockBookings.length;
-  const totalSpent = mockBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
-  const averageTrip = totalSpent / totalTrips;
+  const totalTrips = userStats?.overview.total_rentals || 0;
+  const totalSpent = userStats?.overview.total_spent || 0;
+  const averageTrip = userStats?.overview.avg_spent_per_rental || 0;
+  // Sử dụng last_rental_date từ API cho "Thành viên từ" hoặc fallback
+  const memberSince = userStats?.overview.last_rental_date || mockUser.memberSince;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -131,8 +155,14 @@ const History: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+          </div>
+        ) : (
+          <>
+            {/* Analytics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -167,7 +197,7 @@ const History: React.FC = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Thành viên từ</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {formatDate(mockUser.memberSince)}
+                      {formatDate(memberSince)}
                     </p>
                   </div>
                 </div>
@@ -178,7 +208,29 @@ const History: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.25 }}
+          >
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                    <BarChart3 className="h-6 w-6 text-yellow-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng quãng đường</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {userStats?.overview.total_distance || 0} km
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
           >
             <Card>
               <CardContent className="p-6">
@@ -233,7 +285,7 @@ const History: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="h-64 flex items-end justify-between space-x-2">
-                {monthlyBookings.map((item, index) => (
+                {monthlyBookings.map((item) => (
                   <div key={item.month} className="flex flex-col items-center flex-1">
                     <div
                       className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-sm w-full transition-all duration-300 hover:from-green-700 hover:to-green-500"
@@ -250,6 +302,35 @@ const History: React.FC = () => {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Insights Section */}
+        {userStats?.insights && userStats.insights.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="mb-8"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Thông tin chi tiết</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-2">
+                  {userStats.insights.map((insight, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{insight}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-4">
+                  Cập nhật lần cuối: {userStats.last_updated ? formatDateTime(userStats.last_updated) : 'N/A'}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Filters */}
         <motion.div
@@ -325,7 +406,7 @@ const History: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedBookings.map((booking, index) => (
+                  {paginatedBookings.map((booking) => (
                     <TableRow key={booking.id}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
@@ -403,6 +484,8 @@ const History: React.FC = () => {
             </div>
           )}
         </motion.div>
+          </>
+        )}
       </div>
     </div>
   );

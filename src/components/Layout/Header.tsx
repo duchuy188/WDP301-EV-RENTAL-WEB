@@ -45,7 +45,6 @@ const Header: React.FC = () => {
   const navItems = [
     { path: '/', label: 'Trang chủ' },
     { path: '/find-car', label: 'Tìm xe' },
-    { path: '/booking', label: 'Đặt xe' },
     { path: '/history', label: 'Lịch sử' },
     { path: '/support', label: 'Hỗ trợ' },
   ];
