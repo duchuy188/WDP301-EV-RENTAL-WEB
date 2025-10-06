@@ -1,0 +1,16 @@
+/* Placeholder for vehicle image when no image is available */
+.placeholder-vehicle {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f7fa 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.placeholder-vehicle::before {
+  content: "🚗";
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
