@@ -63,6 +63,35 @@ const VehicleDetail: React.FC = () => {
     return Math.round((capacity / maxCapacity) * 100);
   };
 
+  const handleBookNow = () => {
+    // Navigate to booking page with vehicle data
+    navigate('/booking', { 
+      state: { 
+        selectedVehicle: vehicle,
+        selectedColor: vehicle?.available_colors[selectedColorIndex]
+      } 
+    });
+  };
+
+  const handleFavoriteToggle = () => {
+    setIsFavorite(!isFavorite);
+    // TODO: Add API call to save/remove favorite
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: vehicle ? `${vehicle.brand} ${vehicle.model}` : 'Xe điện',
+        text: 'Xem xe điện tuyệt vời này!',
+        url: window.location.href
+      });
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      // TODO: Show toast notification
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 flex items-center justify-center">
@@ -114,11 +143,15 @@ const VehicleDetail: React.FC = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsFavorite(!isFavorite)}
+                onClick={handleFavoriteToggle}
               >
                 <Heart className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleShare}
+              >
                 <Share2 className="h-5 w-5" />
               </Button>
             </div>
@@ -292,7 +325,10 @@ const VehicleDetail: React.FC = () => {
 
             {/* Booking Button */}
             <div className="space-y-4">
-              <Button className="w-full bg-green-600 hover:bg-green-700 py-6 text-lg font-semibold">
+              <Button 
+                onClick={handleBookNow}
+                className="w-full bg-green-600 hover:bg-green-700 py-6 text-lg font-semibold"
+              >
                 Đặt xe ngay
               </Button>
               <p className="text-center text-sm text-gray-600 dark:text-gray-300">

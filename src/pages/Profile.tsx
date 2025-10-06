@@ -13,7 +13,6 @@ import {
   ProfileHeader, 
   ProfileForm, 
   DocumentVerification, 
-  PaymentMethods, 
   ProfileStats, 
   ProfileActions, 
   ImagePreviewDialog 
@@ -429,12 +428,11 @@ const Profile: React.FC = () => {
             </div>
           </div>
         ) : user ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Profile Card */}
+          <div className="space-y-8">
+            {/* Main Profile Card */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="lg:col-span-2"
             >
               <Card>
                 <CardHeader>
@@ -532,22 +530,46 @@ const Profile: React.FC = () => {
                   )}
                 </CardContent>
               </Card>
+            </motion.div>
 
+            {/* Actions and Stats in grid layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Profile Actions */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Hành động tài khoản</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ProfileActions />
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Profile Stats */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <ProfileStats />
+              </motion.div>
+            </div>
+
+            {/* Document Verification */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
               <DocumentVerification
                 onDocumentUpload={handleDocumentUpload}
                 onImagePreview={handleImagePreview}
               />
-            </motion.div>
-
-            {/* Sidebar */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              <PaymentMethods />
-              <ProfileStats />
-              <ProfileActions />
             </motion.div>
           </div>
         ) : (

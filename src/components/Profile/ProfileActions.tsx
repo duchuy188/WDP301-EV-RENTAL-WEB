@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 import ChangePasswordDialog from './ChangePasswordDialog';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { authAPI } from '@/api/authAPI';
 
 const ProfileActions: React.FC = () => {
 
   const [openChangePassword, setOpenChangePassword] = useState(false);
-  const [openViewDocuments, setOpenViewDocuments] = useState(false);
   const [loading, setLoading] = useState(false);
 
 
@@ -30,34 +27,30 @@ const ProfileActions: React.FC = () => {
   };
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <Button variant="outline" className="w-full justify-start" onClick={() => setOpenChangePassword(true)}>
-            <Shield className="mr-2 h-4 w-4" />
-            Đổi mật khẩu
-          </Button>
-          <ChangePasswordDialog
-            open={openChangePassword}
-            onOpenChange={setOpenChangePassword}
-            onSubmit={handleChangePassword}
-            loading={loading}
-          />
-          {/* <Button variant="outline" className="w-full justify-start">
-            <User className="mr-2 h-4 w-4" />
-            Cài đặt riêng tư
-          </Button>
-          <Separator />
-          <Button 
-            variant="destructive" 
-            className="w-full justify-start"
-            onClick={handleLogout}
-          >
-            Đăng xuất
-          </Button> */}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      <Button variant="outline" className="w-full justify-start" onClick={() => setOpenChangePassword(true)}>
+        <Shield className="mr-2 h-4 w-4" />
+        Đổi mật khẩu
+      </Button>
+      <ChangePasswordDialog
+        open={openChangePassword}
+        onOpenChange={setOpenChangePassword}
+        onSubmit={handleChangePassword}
+        loading={loading}
+      />
+      {/* <Button variant="outline" className="w-full justify-start">
+        <User className="mr-2 h-4 w-4" />
+        Cài đặt riêng tư
+      </Button>
+      <Separator />
+      <Button 
+        variant="destructive" 
+        className="w-full justify-start"
+        onClick={handleLogout}
+      >
+        Đăng xuất
+      </Button> */}
+    </div>
   );
 };
 
