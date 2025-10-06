@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { 
   Search, 
   Filter, 
-  MapPin, 
   Battery, 
   Car, 
   Grid3X3,
@@ -14,12 +13,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import VehicleImage from '@/components/VehicleImage';
 import { vehiclesAPI } from '@/api/vehiclesAPI';
 import { VehicleListItem, VehiclesResponse } from '@/types/vehicles';
@@ -75,14 +72,6 @@ const FindCar: React.FC = () => {
       style: 'currency',
       currency: 'VND',
     }).format(price);
-  };
-
-  const getBatteryPercentage = (capacity: number, maxCapacity: number = 5.0) => {
-    return Math.round((capacity / maxCapacity) * 100);
-  };
-
-  const getStationAddress = (vehicle: VehicleListItem) => {
-    return vehicle.stations && vehicle.stations.length > 0 ? vehicle.stations[0].address : 'Không có thông tin địa chỉ';
   };
 
   if (loading) {
@@ -240,9 +229,6 @@ const FindCar: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCars.length > 0 ? (
               filteredCars.map((vehicle, index) => {
-                const batteryPercentage = getBatteryPercentage(vehicle.battery_capacity);
-                const stationAddress = getStationAddress(vehicle);
-                
                 return (
                   <motion.div
                     key={vehicle.sample_vehicle_id}
@@ -250,77 +236,81 @@ const FindCar: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                     whileHover={{ scale: 1.02 }}
+                    className="cursor-pointer"
+                    onClick={() => navigate(`/vehicle/${vehicle.sample_vehicle_id}`)}
                   >
-                    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300">
-                      <div className="relative">
-                        <VehicleImage
-                          src={vehicle.sample_image}
-                          alt={`${vehicle.brand} ${vehicle.model}`}
-                          className="w-full h-48"
-                        />
-                        <div className="absolute top-4 left-4">
-                          <Badge variant={vehicle.type === 'car' ? 'default' : 'secondary'}>
-                            {vehicle.type === 'car' ? 'Ô tô' : vehicle.type === 'scooter' ? 'Xe tay ga' : vehicle.type}
-                          </Badge>
-                        </div>
-                        <div className="absolute top-4 right-4">
-                          <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-sm font-medium">
-                            <div className="flex items-center text-green-600">
-                              <Battery className="h-3 w-3 mr-1" />
-                              {batteryPercentage}%
-                            </div>
+                    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-white">
+                      {/* Header with name and price */}
+                      <div className="px-6 py-4 border-b border-gray-100">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-bold text-gray-900 uppercase">
+                            {vehicle.brand} {vehicle.model}
+                          </h3>
+                          <div className="text-right">
+                            <span className="text-xl font-bold text-red-500">
+                              {formatPrice(vehicle.price_per_day).replace('₫', 'Đ/NGÀY')}
+                            </span>
                           </div>
                         </div>
                       </div>
+
+                      {/* Vehicle Image */}
+                      <div className="p-6 flex justify-center items-center min-h-[280px] bg-white">
+                        <div className="w-full h-full max-w-sm">
+                          <VehicleImage
+                            src={vehicle.sample_image}
+                            alt={`${vehicle.brand} ${vehicle.model}`}
+                            className="w-full h-full object-contain rounded-lg"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Specifications Grid */}
                       <CardContent className="p-6">
-                        <h3 className="text-lg font-semibold mb-2">{vehicle.brand} {vehicle.model}</h3>
-                        <div className="flex items-center text-gray-600 dark:text-gray-300 mb-3">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          <span className="text-sm">{stationAddress}</span>
-                        </div>
-                        
-                        <div className="mb-4">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-gray-600 dark:text-gray-300">Dung lượng pin</span>
-                            <span className="text-sm font-medium">{vehicle.battery_capacity} kWh</span>
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Speed */}
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">⚡</span>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-600 uppercase font-medium">Tốc độ tối đa</div>
+                              <div className="text-sm font-semibold">{vehicle.max_speed || 45} Km/h</div>
+                            </div>
                           </div>
-                          <Progress value={batteryPercentage} className="h-2" />
-                        </div>
 
-                        <div className="mb-4">
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300">Năm sản xuất:</span>
-                              <span className="font-medium ml-1">{vehicle.year}</span>
+                          {/* Range */}
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">🔋</span>
                             </div>
                             <div>
-                              <span className="text-gray-600 dark:text-gray-300">Màu:</span>
-                              <span className="font-medium ml-1">{vehicle.color}</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300">Tầm xa:</span>
-                              <span className="font-medium ml-1">{vehicle.max_range} km</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300">Còn lại:</span>
-                              <span className="font-medium ml-1">{vehicle.available_quantity} xe</span>
+                              <div className="text-xs text-gray-600 uppercase font-medium">Km mỗi lần sạc</div>
+                              <div className="text-sm font-semibold">{vehicle.max_range} Km</div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-2xl font-bold text-green-600">
-                              {formatPrice(vehicle.price_per_day)}
-                            </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">/ ngày</p>
+                          {/* Power */}
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">#</span>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-600 uppercase font-medium">Công suất</div>
+                              <div className="text-sm font-semibold">{vehicle.power || 1200}W</div>
+                            </div>
                           </div>
-                          <Button 
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() => navigate(`/vehicle/${vehicle.sample_vehicle_id}`)}
-                          >
-                            Xem chi tiết
-                          </Button>
+
+                          {/* Status */}
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">📅</span>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-600 uppercase font-medium">Tình trạng</div>
+                              <div className="text-sm font-semibold text-green-600">Có thể thuê</div>
+                            </div>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

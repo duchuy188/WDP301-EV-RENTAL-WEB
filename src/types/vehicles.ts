@@ -27,6 +27,8 @@ export interface Vehicle {
   color: string;
   battery_capacity: number;
   max_range: number;
+  max_speed?: number; // km/h
+  power?: number; // Watts
   price_per_day: number;
   deposit_percentage: number;
   images: string[];
@@ -45,6 +47,8 @@ export interface VehicleListItem {
   color: string;
   battery_capacity: number;
   max_range: number;
+  max_speed?: number; // km/h
+  power?: number; // Watts
   price_per_day: number;
   deposit_percentage: number;
   available_quantity: number;

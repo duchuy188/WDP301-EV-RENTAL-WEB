@@ -259,13 +259,13 @@ const VehicleDetail: React.FC = () => {
                       <div className="text-sm text-gray-600 dark:text-gray-300 uppercase tracking-wide">
                         Tốc độ tối đa
                       </div>
-                      <div className="font-semibold">48 km/h</div>
+                      <div className="font-semibold">{vehicle.max_speed || 48} km/h</div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600 dark:text-gray-300 uppercase tracking-wide">
                         Công suất
                       </div>
-                      <div className="font-semibold">1200W</div>
+                      <div className="font-semibold">{vehicle.power || 1200}W</div>
                     </div>
                   </div>
                   <div className="space-y-3">
