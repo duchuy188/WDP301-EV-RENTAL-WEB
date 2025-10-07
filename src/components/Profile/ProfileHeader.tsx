@@ -48,15 +48,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   };
 
   return (
-    <div className="flex items-center space-x-4">
-      <div className="relative">
-        <Avatar className="h-16 w-16">
+    <div className="flex items-start space-x-6">
+      <div className="relative flex-shrink-0">
+        <Avatar className="h-20 w-20">
           <AvatarImage 
             src={avatarPreview || user.avatar || ''} 
             alt={user.fullname}
             className="object-cover"
           />
-          <AvatarFallback className="text-lg font-semibold">
+          <AvatarFallback className="text-xl font-semibold">
             {getInitials(user.fullname)}
           </AvatarFallback>
         </Avatar>
@@ -93,14 +93,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         )}
       </div>
       
-      <div>
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+      <div className="flex-1 min-w-0">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
           {user.fullname}
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-base text-gray-600 dark:text-gray-300 mt-1">
           {user.email}
         </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
           {avatarPreview ? 'Avatar mới đã chọn (chưa lưu)' : 
            (user.avatar ? 'Avatar đã cập nhật' : 'Chưa có avatar')}
           {isEditing && onAvatarChange && ' • Nhấp vào camera để thay đổi'}

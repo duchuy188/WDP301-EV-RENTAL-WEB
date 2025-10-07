@@ -1,5 +1,6 @@
 // Gửi yêu cầu đặt xe
 export interface BookingRequest {
+  brand: string;
   model: string;
   color: string;
   station_id: string;
