@@ -13,4 +13,5 @@ export const bookingAPI = {
     const response = await apiClient.get('/bookings/user', { params });
     return response.data;
   },
+
 };

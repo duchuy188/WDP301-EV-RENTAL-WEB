@@ -6,11 +6,11 @@ export interface UserStatsResponse {
 
 export interface UserStatsData {
   overview: StatsOverview;
-  peak_hours: PeakHour[];
-  peak_days: PeakDay[];
-  vehicle_preferences: VehiclePreference[];
-  station_preferences: StationPreference[];
-  monthly_stats: MonthlyStats[];
+  peak_hours: PeakHour[]; // Array rỗng trong response
+  peak_days: PeakDay[]; // Array rỗng trong response  
+  vehicle_preferences: VehiclePreference[]; // Array rỗng trong response
+  station_preferences: StationPreference[]; // Array rỗng trong response
+  monthly_stats: MonthlyStats[]; // Array rỗng trong response
   insights: string[];
   last_updated: string;
 }

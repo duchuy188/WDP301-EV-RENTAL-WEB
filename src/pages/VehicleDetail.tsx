@@ -175,7 +175,7 @@ const VehicleDetail: React.FC = () => {
               />
               <div className="absolute top-4 left-4">
                 <Badge variant={vehicle.type === 'car' ? 'default' : 'secondary'}>
-                  {vehicle.type === 'car' ? 'Ô tô điện' : vehicle.type === 'scooter' ? 'Xe tay ga' : vehicle.type}
+                  { vehicle.type === 'scooter' ? 'Xe tay ga' : vehicle.type}
                 </Badge>
               </div>
             </div>

@@ -41,6 +41,8 @@ const Header: React.FC = () => {
   const navItems = [
     { path: '/', label: 'Trang chủ' },
     { path: '/find-car', label: 'Tìm xe' },
+    { path: '/history', label: 'Thống kê' },
+    { path: '/chatbot', label: 'Chatbot' },
     { path: '/support', label: 'Hỗ trợ' },
   ];
 
@@ -133,6 +135,7 @@ const Header: React.FC = () => {
                       <span>Hồ sơ</span>
                     </Link>
                   </DropdownMenuItem>
+                  
                   <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Cài đặt</span>

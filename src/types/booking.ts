@@ -12,13 +12,31 @@ export interface BookingRequest {
   notes?: string;
 }
 
+// Vehicle info embedded trong booking
+export interface BookingVehicle {
+  _id: string;
+  license_plate: string;
+  name: string;
+  brand: string;
+  model: string;
+  images: string[];
+}
+
+// Station info embedded trong booking
+export interface BookingStation {
+  _id: string;
+  name: string;
+  address: string;
+  phone: string;
+}
+
 // Thông tin chi tiết booking trả về từ API
 export interface Booking {
   _id: string;
   code: string;
   user_id: string;
-  vehicle_id: string;
-  station_id: string;
+  vehicle_id: BookingVehicle;
+  station_id: BookingStation;
   start_date: string;
   end_date: string;
   pickup_time: string;
@@ -45,8 +63,9 @@ export interface Booking {
   qr_used_at?: string;
   created_by: string;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
 // Kết quả trả về khi đặt xe thành công
@@ -64,6 +83,7 @@ export interface BookingPagination {
 }
 
 export interface BookingListResponse {
+  message: string;
   bookings: Booking[];
   pagination: BookingPagination;
 }

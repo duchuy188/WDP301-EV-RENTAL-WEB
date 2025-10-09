@@ -162,22 +162,22 @@ const Home: React.FC = () => {
                     animate={{ rotateY: isFlipped ? 180 : 0 }}
                     transition={{ duration: 0.8, ease: 'easeInOut' }}
                   >
-                    {/* Front Side - VF e34 */}
+                    {/* Front Side - Xe máy điện */}
                     <div
                       className="absolute inset-0 w-full h-full backface-hidden"
                       style={{ backfaceVisibility: 'hidden' }}
                     >
                       <img
-                        src="/src/data/oto.jpg"
-                        alt="VinFast VF e34 - Xe điện hiện đại"
+                        src="https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://cdn.tgdd.vn/hoi-dap/1387273/nen-mua-xe-may-dien-nao-top-8-chiec-xe-may-dien-dang-mua.3.jpg"
+                        alt="Xe máy điện hiện đại"
                         className="rounded-2xl shadow-2xl w-full h-full object-cover"
                       />
                       <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg">
-                        <p className="text-sm font-semibold">VinFast VF e34</p>
+                        <p className="text-sm font-semibold">Xe máy điện</p>
                       </div>
                     </div>
                     
-                    {/* Back Side - VF 8 */}
+                    {/* Back Side - Xe điện học sinh */}
                     <div
                       className="absolute inset-0 w-full h-full backface-hidden"
                       style={{ 
@@ -186,21 +186,18 @@ const Home: React.FC = () => {
                       }}
                     >
                       <img
-                        src="https://images.unsplash.com/photo-1614200187524-dc4b892acf16?auto=format&fit=crop&w=800&q=80"
-                        alt="VinFast VF 8 - Xe điện cao cấp"
+                        src="https://storage.googleapis.com/vinfast-data-01/xe-may-dien-danh-cho-hoc-sinh-nu_1641367712.jpg"
+                        alt="Xe điện dành cho học sinh"
                         className="rounded-2xl shadow-2xl w-full h-full object-cover"
                       />
                       <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg">
-                        <p className="text-sm font-semibold">VinFast VF 8</p>
+                        <p className="text-sm font-semibold">Xe điện học sinh</p>
                       </div>
                     </div>
                   </motion.div>
                 </div>
                 
                 {/* Click hint */}
-                <div className="absolute top-4 right-4 bg-white/90 text-gray-700 px-3 py-2 rounded-lg text-sm">
-                  👆 Click để xem thêm
-                </div>
               </div>
               <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-2xl opacity-20"></div>
             </motion.div>

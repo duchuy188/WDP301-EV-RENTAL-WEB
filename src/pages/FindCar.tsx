@@ -150,7 +150,6 @@ const FindCar: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả</SelectItem>
-                  <SelectItem value="car">Ô tô điện</SelectItem>
                   <SelectItem value="scooter">Xe tay ga</SelectItem>
                 </SelectContent>
               </Select>

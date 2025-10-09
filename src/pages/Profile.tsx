@@ -16,6 +16,7 @@ import {
   ProfileStats, 
   ProfileActions, 
   ImagePreviewDialog,
+  BookingHistory,
   RentalHistory 
 } from '@/components/Profile';
 
@@ -445,12 +446,23 @@ const Profile: React.FC = () => {
                   </TabsTrigger>
 
                   <TabsTrigger
+                    value="booking-history"
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium border border-transparent bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200"
+                  >
+                    <Car className="h-4 w-4" />
+                    Lịch sử đặt xe
+                  </TabsTrigger>
+
+                  <TabsTrigger
                     value="rental-history"
                     className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium border border-transparent bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200"
                   >
                     <Car className="h-4 w-4" />
-                    Lịch sử giao dịch
+                    Lịch sử thuê xe
                   </TabsTrigger>
+                  
+                  
+                  
                 </TabsList>
               </div>
               
@@ -596,6 +608,17 @@ const Profile: React.FC = () => {
                 </motion.div>
               </TabsContent>
 
+              <TabsContent value="booking-history" className="mt-0">
+                {/* Booking History */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <BookingHistory />
+                </motion.div>
+              </TabsContent>
+
               <TabsContent value="rental-history" className="mt-0">
                 {/* Rental History */}
                 <motion.div
@@ -606,6 +629,7 @@ const Profile: React.FC = () => {
                   <RentalHistory />
                 </motion.div>
               </TabsContent>
+
             </Tabs>
             </div>
           </div>
