@@ -275,7 +275,7 @@ const FindCar: React.FC = () => {
                             </div>
                             <div>
                               <div className="text-xs text-gray-600 uppercase font-medium">Tốc độ tối đa</div>
-                              <div className="text-sm font-semibold">{vehicle.max_speed || 45} Km/h</div>
+                              <div className="text-sm font-semibold">{vehicle.max_speed || 48} Km/h</div>
                             </div>
                           </div>
 

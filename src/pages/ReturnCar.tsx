@@ -7,7 +7,8 @@ import {
   Star,
   Upload,
   X,
-  CreditCard
+  CreditCard,
+  Car
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { mockBookings } from '@/data/mockData';
 
 const ReturnCar: React.FC = () => {
@@ -238,7 +239,7 @@ const ReturnCar: React.FC = () => {
                     <Checkbox
                       id="no-issues"
                       checked={noIssues}
-                      onCheckedChange={setNoIssues}
+                      onCheckedChange={(checked) => setNoIssues(checked === true)}
                     />
                     <label 
                       htmlFor="no-issues" 

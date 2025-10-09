@@ -22,7 +22,7 @@ import { vehiclesAPI } from '@/api/vehiclesAPI';
 import { bookingAPI } from '@/api/bookingAPI';
 import { BookingRequest, BookingResponse } from '@/types/booking';
 import { VehicleListItem, Vehicle } from '@/types/vehicles';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/utils/toast';
 
 const Booking: React.FC = () => {
   const location = useLocation();
@@ -42,7 +42,6 @@ const Booking: React.FC = () => {
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [bookingResponse, setBookingResponse] = useState<BookingResponse | null>(null);
-  const { toast } = useToast();
 
   const steps = [
     { number: 1, title: 'Chọn xe', description: 'Chọn xe phù hợp' },
@@ -108,11 +107,7 @@ const Booking: React.FC = () => {
         }
       } catch (error) {
         console.error('Error loading vehicles:', error);
-        toast({
-          title: "Lỗi",
-          description: "Không thể tải danh sách xe",
-          variant: "destructive",
-        });
+        toast.error("Không thể tải danh sách xe");
       } finally {
         setIsLoadingVehicles(false);
       }
@@ -140,11 +135,7 @@ const Booking: React.FC = () => {
       }
     } catch (error) {
       console.error('Error loading vehicle detail:', error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể tải chi tiết xe",
-        variant: "destructive",
-      });
+      toast.error("Không thể tải chi tiết xe");
     }
   };
 
@@ -205,11 +196,16 @@ const Booking: React.FC = () => {
   const handleConfirmBooking = async () => {
     // Validation đầy đủ
     if (!bookingDate || !startTime || !endTime || !selectedVehicle || !selectedColor || !selectedStation) {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin (ngày, giờ, xe, màu, trạm)",
-        variant: "destructive",
-      });
+      toast.error("Vui lòng điền đầy đủ thông tin (ngày, giờ, xe, màu, trạm)");
+      return;
+    }
+
+    // Kiểm tra thời gian bắt đầu phải sau thời gian hiện tại
+    const currentDateTime = new Date();
+    const selectedDateTime = new Date(`${bookingDate}T${startTime}`);
+    
+    if (selectedDateTime <= currentDateTime) {
+      toast.error("Thời gian bắt đầu phải sau thời điểm hiện tại");
       return;
     }
 
@@ -234,10 +230,7 @@ const Booking: React.FC = () => {
       
       setBookingResponse(response);
       setShowSuccess(true);
-      toast({
-        title: "🎉 Tạo booking thành công!",
-        description: `Mã booking: ${response.booking.code || 'N/A'}`,
-      });
+      toast.success(`🎉 Tạo booking thành công! Mã booking: ${response.booking.code || 'N/A'}`);
 
       // Reset form after successful booking
       setTimeout(() => {
@@ -253,11 +246,7 @@ const Booking: React.FC = () => {
 
     } catch (error: any) {
       console.error('Booking error:', error);
-      toast({
-        title: "Lỗi đặt xe",
-        description: error.response?.data?.message || "Có lỗi xảy ra khi đặt xe",
-        variant: "destructive",
-      });
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi đặt xe");
     } finally {
       setIsLoading(false);
     }
@@ -489,6 +478,8 @@ const Booking: React.FC = () => {
                             type="time"
                             value={startTime}
                             onChange={(e) => setStartTime(e.target.value)}
+                            min={bookingDate === new Date().toISOString().split('T')[0] ? 
+                              new Date().toTimeString().slice(0, 5) : undefined}
                             className="pl-10"
                           />
                         </div>

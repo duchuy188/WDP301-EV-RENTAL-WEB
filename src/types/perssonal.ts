@@ -22,7 +22,7 @@ export interface StatsOverview {
   total_days: number;
   avg_spent_per_rental: number;
   avg_distance_per_rental: number;
-  last_rental_date: string;
+  last_rental_date: string | null;
 }
 
 export interface PeakHour {

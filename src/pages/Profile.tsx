@@ -1,21 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Check, X, Shield } from 'lucide-react';
+import { Edit, Check, X, Shield, User, FileCheck, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from '@/utils/toast';
 import { authAPI } from '@/api/authAPI';
 import { profile, UpdateProfileRequest } from '@/types/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ProfileHeader, 
-  ProfileForm, 
   DocumentVerification, 
   ProfileStats, 
   ProfileActions, 
-  ImagePreviewDialog 
+  ImagePreviewDialog,
+  RentalHistory 
 } from '@/components/Profile';
 
 const Profile: React.FC = () => {
@@ -45,7 +46,7 @@ const Profile: React.FC = () => {
   };
   
   // Document upload states
-  const [documentImages, setDocumentImages] = useState({
+  const [, setDocumentImages] = useState({
     license: {
       frontImage: null as string | null,
       backImage: null as string | null,
@@ -376,9 +377,6 @@ const Profile: React.FC = () => {
           className="mb-8"
         >
           <div className="flex items-center gap-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Tài khoản của tôi
-            </h1>
             {isGoogleUser() && (
               <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                 <Shield className="w-3 h-3 mr-1" />
@@ -386,9 +384,6 @@ const Profile: React.FC = () => {
               </Badge>
             )}
           </div>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mt-4">
-            Quản lý thông tin cá nhân và cài đặt tài khoản
-          </p>
           
           {/* Google Account Info */}
           {isGoogleUser() && googleInfo && (
@@ -429,148 +424,190 @@ const Profile: React.FC = () => {
           </div>
         ) : user ? (
           <div className="space-y-8">
-            {/* Main Profile Card */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <CardTitle>Thông tin cá nhân</CardTitle>
-                      {isGoogleUser() && (
-                        <Badge variant="outline" className="text-xs">
-                          Tài khoản Google
-                        </Badge>
-                      )}
-                    </div>
-                    {!isEditing ? (
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Chỉnh sửa
-                      </Button>
-                    ) : (
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCancel}
-                        >
-                          <X className="mr-2 h-4 w-4" />
-                          Hủy
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleSave}
-                          className="bg-green-600 hover:bg-green-700"
-                          disabled={loading || !hasChanges()}
-                        >
-                          <Check className="mr-2 h-4 w-4" />
-                          Lưu
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <ProfileHeader 
-                    user={user} 
-                    isEditing={isEditing}
-                    onAvatarChange={handleAvatarChange}
-                    avatarLoading={avatarLoading}
-                    avatarPreview={avatarPreview}
-                  />
-                  
-                  <Separator />
-                  
-                  <ProfileForm
-                    user={user}
-                    isEditing={isEditing}
-                    formData={formData}
-                    onFormDataChange={handleFormDataChange}
-                  />
-                  
-                  {/* Google-specific information */}
-                  {isGoogleUser() && googleInfo && (
-                    <>
-                      <Separator />
-                      <div className="space-y-3">
-                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Thông tin tài khoản Google
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-500 dark:text-gray-400">Google ID:</span>
-                            <p className="font-mono text-xs mt-1 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-                              {googleInfo.googleId || 'N/A'}
-                            </p>
+            <div className="w-full max-w-5xl mx-auto">
+              <Tabs defaultValue="profile" className="w-full">
+                <div className="flex justify-end mb-4">
+                  <TabsList className="inline-flex items-center gap-3 bg-transparent">
+                  <TabsTrigger
+                    value="profile"
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium border border-transparent bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200"
+                  >
+                    <User className="h-4 w-4" />
+                    Thông tin cá nhân
+                  </TabsTrigger>
+
+                  <TabsTrigger
+                    value="verification"
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium border border-transparent bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200"
+                  >
+                    <FileCheck className="h-4 w-4" />
+                    Xác thực Kyc
+                  </TabsTrigger>
+
+                  <TabsTrigger
+                    value="rental-history"
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium border border-transparent bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200"
+                  >
+                    <Car className="h-4 w-4" />
+                    Lịch sử giao dịch
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              
+              <TabsContent value="profile" className="mt-0">
+                <div className="space-y-6">
+                  {/* Main Profile Card */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    <Card>
+                      <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <CardTitle className="text-lg">Thông tin cá nhân</CardTitle>
+                            {isGoogleUser() && (
+                              <Badge variant="outline" className="text-xs">
+                                Tài khoản Google
+                              </Badge>
+                            )}
                           </div>
-                          <div>
-                            <span className="text-gray-500 dark:text-gray-400">Nhà cung cấp:</span>
-                            <p className="mt-1 flex items-center gap-2">
-                              <Shield className="w-4 h-4 text-blue-500" />
-                              {googleInfo.provider}
-                            </p>
-                          </div>
+                          {!isEditing ? (
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsEditing(true)}
+                              className="h-9"
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Chỉnh sửa
+                            </Button>
+                          ) : (
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCancel}
+                                className="h-9"
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Hủy
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={handleSave}
+                                className="bg-green-600 hover:bg-green-700 h-9"
+                                disabled={loading || !hasChanges()}
+                              >
+                                <Check className="mr-2 h-4 w-4" />
+                                Lưu
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                        {isGoogleUser() && (
-                          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                            <p className="text-xs text-amber-800 dark:text-amber-200">
-                              💡 <strong>Lưu ý:</strong> Một số thông tin có thể được đồng bộ từ tài khoản Google của bạn. 
-                              Thay đổi sẽ được lưu cục bộ nếu chưa tích hợp với backend.
-                            </p>
-                          </div>
+                      </CardHeader>
+                      <CardContent className="space-y-6 pt-0">
+                        <ProfileHeader 
+                          user={user} 
+                          isEditing={isEditing}
+                          onAvatarChange={handleAvatarChange}
+                          avatarLoading={avatarLoading}
+                          avatarPreview={avatarPreview}
+                          formData={formData}
+                          onFormDataChange={handleFormDataChange}
+                        />
+                        
+                        {/* Google-specific information */}
+                        {isGoogleUser() && googleInfo && (
+                          <>
+                            <Separator />
+                            <div className="space-y-4">
+                              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                Thông tin tài khoản Google
+                              </h3>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Google ID</span>
+                                  <p className="font-mono text-xs p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border">
+                                    {googleInfo.googleId || 'N/A'}
+                                  </p>
+                                </div>
+                                <div className="space-y-2">
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nhà cung cấp</span>
+                                  <div className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border">
+                                    <Shield className="w-4 h-4 text-blue-500" />
+                                    <span className="text-sm font-medium">{googleInfo.provider}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                                <p className="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+                                  💡 <strong>Lưu ý:</strong> Một số thông tin có thể được đồng bộ từ tài khoản Google của bạn. 
+                                  Thay đổi sẽ được lưu cục bộ nếu chưa tích hợp với backend.
+                                </p>
+                              </div>
+                            </div>
+                          </>
                         )}
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
 
-            {/* Actions and Stats in grid layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Profile Actions */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Hành động tài khoản</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ProfileActions />
-                  </CardContent>
-                </Card>
-              </motion.div>
+                  {/* Actions and Stats in grid layout */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Profile Actions */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Hành động tài khoản</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ProfileActions />
+                        </CardContent>
+                      </Card>
+                    </motion.div>
 
-              {/* Profile Stats */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <ProfileStats />
-              </motion.div>
+                    {/* Profile Stats */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <ProfileStats />
+                    </motion.div>
+                  </div>
+                  </div>
+              </TabsContent>
+
+              <TabsContent value="verification" className="mt-0">
+                {/* Document Verification */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <DocumentVerification
+                    onDocumentUpload={handleDocumentUpload}
+                    onImagePreview={handleImagePreview}
+                  />
+                </motion.div>
+              </TabsContent>
+
+              <TabsContent value="rental-history" className="mt-0">
+                {/* Rental History */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <RentalHistory />
+                </motion.div>
+              </TabsContent>
+            </Tabs>
             </div>
-
-            {/* Document Verification */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <DocumentVerification
-                onDocumentUpload={handleDocumentUpload}
-                onImagePreview={handleImagePreview}
-              />
-            </motion.div>
           </div>
         ) : (
           <div className="text-center py-20">
