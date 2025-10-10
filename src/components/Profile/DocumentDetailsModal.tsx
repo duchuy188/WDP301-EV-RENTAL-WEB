@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { formatDateVN } from '@/lib/utils';
 import type {
   KYCStatusResponse,
   KYCIdentityResponse,
@@ -43,36 +44,45 @@ function isKYCStatusResponse(obj: any): obj is KYCStatusResponse {
 }
 
 
-// Hàm format ngày tháng năm theo định dạng Việt Nam
+// Use formatDateVN from utils for consistent date formatting
 function formatDate(dateString: string | undefined | null) {
   if (!dateString) return '—';
+  // Handle special cases for non-expiry strings
+  const lowerCase = dateString.toLowerCase().trim();
+  if (lowerCase.includes('không thời hạn') || 
+      lowerCase.includes('vô thời hạn') || 
+      lowerCase.includes('permanent') || 
+      lowerCase.includes('no expiry') ||
+      lowerCase.includes('không hạn') ||
+      lowerCase === 'không có' ||
+      lowerCase === 'n/a' ||
+      lowerCase === '') {
+    return 'Không thời hạn';
+  }
+  
+  // If it's clearly not a date format, return as-is
+  if (!dateString.match(/\d/) || dateString.length < 6) {
+    return dateString;
+  }
   
   try {
-    // Handle different date formats
-    let date: Date;
+    const result = formatDateVN(dateString);
     
-    // Check if it's in DD/MM/YYYY format
-    if (dateString.includes('/')) {
-      const parts = dateString.split('/');
-      if (parts.length === 3) {
-        // Assume DD/MM/YYYY format
-        date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-      } else {
-        date = new Date(dateString);
+    // If formatDateVN returns 'Invalid Date', try to return original string if it seems meaningful
+    if (result === 'Invalid Date') {
+      // If the original string contains meaningful text, return it
+      if (dateString.length > 2 && !dateString.match(/^\d+$/)) {
+        return dateString;
       }
-    } else {
-      date = new Date(dateString);
+      return '—';
     }
-    
-    if (isNaN(date.getTime())) return dateString; // Return original if can't parse
-    
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    
-    return `${day}/${month}/${year}`;
+    return result;
   } catch (error) {
-    return dateString; // Return original string if parsing fails
+    // Return original string if it might contain meaningful info
+    if (dateString.length > 2) {
+      return dateString;
+    }
+    return '—';
   }
 }
 
@@ -279,45 +289,68 @@ export default function DocumentDetailsModal({ open, onOpenChange, response }: P
                     {/* Fallback for KYC status or other response types */}
                     {isKYCStatusResponse(actualData) && (
                       <div className="space-y-4">
-                        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                          <h4 className="font-semibold mb-3 text-green-800">Giấy phép lái xe</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm font-medium text-gray-700">Số:</span>
-                              <span className="text-sm text-gray-900">{actualData.licenseNumber || '—'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm font-medium text-gray-700">Tên:</span>
-                              <span className="text-sm text-gray-900">{actualData.licenseName || '—'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm font-medium text-gray-700">Hạng:</span>
-                              <span className="text-sm text-gray-900">{(actualData.licenseClassList || []).join(', ') || actualData.licenseClass || '—'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm font-medium text-gray-700">Hạn sử dụng:</span>
-                              <span className="text-sm text-gray-900">{formatDate(actualData.licenseExpiry)}</span>
+                        {/* Driver License from OCR data */}
+                        {(actualData as any).licenseOcr && (
+                          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h4 className="font-semibold mb-3 text-green-800">Giấy phép lái xe</h4>
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium text-gray-700">Số:</span>
+                                <span className="text-sm text-gray-900">{(actualData as any).licenseOcr?.front?.id || (actualData as any).licenseOcr?.back?.id || '—'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium text-gray-700">Tên:</span>
+                                <span className="text-sm text-gray-900">{(actualData as any).licenseOcr?.front?.name || (actualData as any).licenseOcr?.back?.name || '—'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium text-gray-700">Hạng:</span>
+                                <span className="text-sm text-gray-900">{(actualData as any).licenseOcr?.front?.class || (actualData as any).licenseOcr?.back?.class || '—'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium text-gray-700">Hạn sử dụng:</span>
+                                <span className="text-sm text-gray-900">{formatDate((actualData as any).licenseOcr?.front?.expiryText || (actualData as any).licenseOcr?.back?.expiryText)}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )}
 
-                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                          <h4 className="font-semibold mb-3 text-blue-800">Căn cước công dân</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm font-medium text-gray-700">Số:</span>
-                              <span className="text-sm text-gray-900">{actualData.identityName || '—'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm font-medium text-gray-700">Họ tên:</span>
-                              <span className="text-sm text-gray-900">{actualData.identityName || '—'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm font-medium text-gray-700">Ngày sinh:</span>
-                              <span className="text-sm text-gray-900">{formatDate(actualData.identityDob)}</span>
+                        {/* Identity Card from OCR data */}
+                        {(actualData as any).identityOcr && (
+                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h4 className="font-semibold mb-3 text-blue-800">Căn cước công dân</h4>
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium text-gray-700">Số:</span>
+                                <span className="text-sm text-gray-900">{(actualData as any).identityOcr?.front?.id || (actualData as any).identityOcr?.back?.id || '—'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium text-gray-700">Họ tên:</span>
+                                <span className="text-sm text-gray-900">{(actualData as any).identityOcr?.front?.name || (actualData as any).identityOcr?.back?.name || '—'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium text-gray-700">Ngày sinh:</span>
+                                <span className="text-sm text-gray-900">{formatDate((actualData as any).identityOcr?.front?.dob || (actualData as any).identityOcr?.back?.dob)}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )}
+
+                        {/* Fallback for basic identity data */}
+                        {actualData.identity && !(actualData as any).identityOcr && (
+                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h4 className="font-semibold mb-3 text-blue-800">Căn cước công dân</h4>
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium text-gray-700">Số:</span>
+                                <span className="text-sm text-gray-900">{actualData.identity?.id || '—'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium text-gray-700">Trạng thái:</span>
+                                <span className="text-sm text-gray-900">{actualData.identity?.frontUploaded ? 'Đã tải lên' : 'Chưa tải lên'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 

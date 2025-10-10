@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Check, 
@@ -18,14 +18,19 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { formatDateVN } from '@/lib/utils';
 import { vehiclesAPI } from '@/api/vehiclesAPI';
 import { bookingAPI } from '@/api/bookingAPI';
+import { getKYCStatus } from '@/api/kycAPI';
 import { BookingRequest, BookingResponse } from '@/types/booking';
 import { VehicleListItem, Vehicle } from '@/types/vehicles';
+import { KYCStatusResponseUnion } from '@/types/kyc';
+import { canRentVehicles, getKYCStatusLabel } from '@/utils/kycUtils';
 import { toast } from '@/utils/toast';
 
 const Booking: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleListItem | null>(null);
@@ -42,6 +47,11 @@ const Booking: React.FC = () => {
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [bookingResponse, setBookingResponse] = useState<BookingResponse | null>(null);
+  
+  // KYC Status
+  const [kycStatus, setKycStatus] = useState<KYCStatusResponseUnion | null>(null);
+  const [isLoadingKYC, setIsLoadingKYC] = useState(true);
+  const [kycError, setKycError] = useState<string | null>(null);
 
   const steps = [
     { number: 1, title: 'Chọn xe', description: 'Chọn xe phù hợp' },
@@ -115,6 +125,26 @@ const Booking: React.FC = () => {
 
     loadVehicles();
   }, [toast, location.state]);
+
+  // Load KYC status to check if user can book
+  useEffect(() => {
+    const loadKYCStatus = async () => {
+      try {
+        setIsLoadingKYC(true);
+        setKycError(null);
+        const kycResponse = await getKYCStatus();
+        setKycStatus(kycResponse);
+      } catch (error: any) {
+        console.error('Error loading KYC status:', error);
+        setKycError('Không thể tải trạng thái xác thực');
+        toast.error("Không thể kiểm tra trạng thái xác thực");
+      } finally {
+        setIsLoadingKYC(false);
+      }
+    };
+
+    loadKYCStatus();
+  }, []);
 
   // Load vehicle detail when a vehicle is selected
   const loadVehicleDetail = async (vehicleId: string) => {
@@ -193,7 +223,37 @@ const Booking: React.FC = () => {
     }).format(price);
   };
 
+  // Use utility function for consistent date formatting
+  const formatDateSafe = (dateString: string) => {
+    try {
+      if (!dateString) return 'Chưa có ngày';
+      
+      // Log để debug
+      console.log('Formatting date:', dateString, 'type:', typeof dateString);
+      
+      const result = formatDateVN(dateString);
+      console.log('Formatted result:', result);
+      return result;
+      
+    } catch (error) {
+      console.error('Error formatting date:', error, 'for date:', dateString);
+      return `Lỗi parse ngày (${dateString})`;
+    }
+  };
+
   const handleConfirmBooking = async () => {
+    // Kiểm tra KYC status trước khi đặt xe
+    if (!canRentVehicles(kycStatus)) {
+      const statusLabel = getKYCStatusLabel(kycStatus);
+      toast.error(`Không thể đặt xe. Trạng thái KYC: ${statusLabel}. Vui lòng hoàn tất xác thực trước khi đặt xe.`);
+      
+      // Chuyển hướng đến trang profile để hoàn tất KYC
+      setTimeout(() => {
+        navigate('/profile?tab=verification');
+      }, 2000);
+      return;
+    }
+
     // Validation đầy đủ
     if (!bookingDate || !startTime || !endTime || !selectedVehicle || !selectedColor || !selectedStation) {
       toast.error("Vui lòng điền đầy đủ thông tin (ngày, giờ, xe, màu, trạm)");
@@ -226,26 +286,15 @@ const Booking: React.FC = () => {
         notes: notes || "", // Ghi chú từ form
       };
 
+
       const response = await bookingAPI.postBooking(bookingData);
+      
       
       setBookingResponse(response);
       setShowSuccess(true);
       toast.success(`🎉 Tạo booking thành công! Mã booking: ${response.booking.code || 'N/A'}`);
 
-      // Reset form after successful booking
-      setTimeout(() => {
-        setShowSuccess(false);
-        setCurrentStep(1);
-        setBookingDate('');
-        setStartTime('');
-        setEndTime('');
-        setEndDate('');
-        setSpecialRequests('');
-        setNotes('');
-      }, 3000);
-
     } catch (error: any) {
-      console.error('Booking error:', error);
       toast.error(error.response?.data?.message || "Có lỗi xảy ra khi đặt xe");
     } finally {
       setIsLoading(false);
@@ -267,6 +316,74 @@ const Booking: React.FC = () => {
             Hoàn tất đặt xe trong 3 bước đơn giản
           </p>
         </motion.div>
+
+        {/* KYC Status Warning */}
+        {!isLoadingKYC && kycStatus && !canRentVehicles(kycStatus) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-yellow-800">
+                    Cần hoàn tất xác thực để đặt xe
+                  </h3>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <p>
+                      Trạng thái KYC hiện tại: <span className="font-semibold">{getKYCStatusLabel(kycStatus)}</span>
+                    </p>
+                    <p className="mt-1">
+                      Bạn cần hoàn tất quá trình xác thực danh tính (KYC) trước khi có thể đặt xe.
+                    </p>
+                  </div>
+                  <div className="mt-4">
+                    <div className="-mx-2 -my-1.5 flex">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate('/profile?tab=verification')}
+                        className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200"
+                      >
+                        Xác thực ngay
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* KYC Approved Success Message */}
+        {!isLoadingKYC && kycStatus && canRentVehicles(kycStatus) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-green-800">
+                     Xác thực hoàn tất! Bạn có thể đặt xe ngay bây giờ.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -652,13 +769,18 @@ const Booking: React.FC = () => {
                 ) : (
                   <Button
                     onClick={handleConfirmBooking}
-                    disabled={isLoading}
-                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                    disabled={isLoading || !canRentVehicles(kycStatus)}
+                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!canRentVehicles(kycStatus) ? 'Cần hoàn tất xác thực KYC để đặt xe' : ''}
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Đang xử lý...
+                      </>
+                    ) : !canRentVehicles(kycStatus) ? (
+                      <>
+                        🔒 Cần xác thực KYC
                       </>
                     ) : (
                       <>
@@ -798,11 +920,35 @@ const Booking: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span>Ngày bắt đầu:</span>
-                      <span>{new Date(bookingResponse.booking.start_date).toLocaleDateString('vi-VN')}</span>
+                      <span>
+                        {(() => {
+                          const apiDate = formatDateSafe(bookingResponse.booking.start_date);
+                          if (apiDate.includes('không hợp lệ') && bookingDate) {
+                            return new Date(bookingDate).toLocaleDateString('vi-VN', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            });
+                          }
+                          return apiDate;
+                        })()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Ngày kết thúc:</span>
-                      <span>{new Date(bookingResponse.booking.end_date).toLocaleDateString('vi-VN')}</span>
+                      <span>
+                        {(() => {
+                          const apiDate = formatDateSafe(bookingResponse.booking.end_date);
+                          if (apiDate.includes('không hợp lệ') && (endDate || bookingDate)) {
+                            return new Date(endDate || bookingDate).toLocaleDateString('vi-VN', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            });
+                          }
+                          return apiDate;
+                        })()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Giờ nhận:</span>
@@ -829,15 +975,37 @@ const Booking: React.FC = () => {
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Chúng tôi đã gửi thông tin chi tiết đến email của bạn
               </p>
-              <Button 
-                onClick={() => {
-                  setShowSuccess(false);
-                  setBookingResponse(null);
-                }}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Tiếp tục
-              </Button>
+              <div className="flex gap-3 justify-center">
+                <Button 
+                  onClick={() => {
+                    setShowSuccess(false);
+                    setBookingResponse(null);
+                    // Reset form
+                    setCurrentStep(1);
+                    setBookingDate('');
+                    setStartTime('');
+                    setEndTime('');
+                    setEndDate('');
+                    setSpecialRequests('');
+                    setNotes('');
+                    setSelectedVehicle(null);
+                    setSelectedColor('');
+                    setSelectedStation('');
+                  }}
+                  variant="outline"
+                  className="border-green-600 text-green-600 hover:bg-green-50"
+                >
+                  Đặt xe khác
+                </Button>
+                <Button 
+                  onClick={() => {
+                    navigate('/profile', { state: { activeTab: 'booking-history' } });
+                  }}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Xem lịch sử đặt xe
+                </Button>
+              </div>
             </motion.div>
           </motion.div>
         )}

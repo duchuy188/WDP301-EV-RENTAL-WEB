@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Edit, Check, X, Shield, User, FileCheck, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { 
   ProfileHeader, 
   DocumentVerification, 
-  ProfileStats, 
   ProfileActions, 
   ImagePreviewDialog,
   BookingHistory,
@@ -21,10 +21,12 @@ import {
 } from '@/components/Profile';
 
 const Profile: React.FC = () => {
+  const location = useLocation();
   const { user: authUser, isLoading: authLoading, setUserProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<profile | null>(null);
+  const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
     fullname: '',
     phone: '',
@@ -80,6 +82,16 @@ const Profile: React.FC = () => {
     // Always try to fetch fresh profile data from server
     fetchProfile();
   }, [authUser]);
+
+  // Handle tab navigation from location state
+  useEffect(() => {
+    const state = location.state as { activeTab?: string } | null;
+    if (state?.activeTab) {
+      setActiveTab(state.activeTab);
+      // Clear the state to prevent it from being used again
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Check if user is logged in with Google
   const isGoogleUser = () => {
@@ -426,45 +438,42 @@ const Profile: React.FC = () => {
         ) : user ? (
           <div className="space-y-8">
             <div className="w-full max-w-5xl mx-auto">
-              <Tabs defaultValue="profile" className="w-full">
-                <div className="flex justify-end mb-4">
-                  <TabsList className="inline-flex items-center gap-3 bg-transparent">
-                  <TabsTrigger
-                    value="profile"
-                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium border border-transparent bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200"
-                  >
-                    <User className="h-4 w-4" />
-                    Thông tin cá nhân
-                  </TabsTrigger>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="flex justify-start mb-6">
+                  <TabsList className="inline-flex items-center gap-2 bg-gray-50 dark:bg-slate-800 p-1 rounded-lg shadow-sm">
+                    <TabsTrigger
+                      value="profile"
+                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                    >
+                      <User className="h-4 w-4" />
+                      Thông tin cá nhân
+                    </TabsTrigger>
 
-                  <TabsTrigger
-                    value="verification"
-                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium border border-transparent bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200"
-                  >
-                    <FileCheck className="h-4 w-4" />
-                    Xác thực Kyc
-                  </TabsTrigger>
+                    <TabsTrigger
+                      value="verification"
+                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                    >
+                      <FileCheck className="h-4 w-4" />
+                      Xác thực Kyc
+                    </TabsTrigger>
 
-                  <TabsTrigger
-                    value="booking-history"
-                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium border border-transparent bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200"
-                  >
-                    <Car className="h-4 w-4" />
-                    Lịch sử đặt xe
-                  </TabsTrigger>
+                    <TabsTrigger
+                      value="booking-history"
+                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                    >
+                      <Car className="h-4 w-4" />
+                      Lịch sử đặt xe
+                    </TabsTrigger>
 
-                  <TabsTrigger
-                    value="rental-history"
-                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium border border-transparent bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200"
-                  >
-                    <Car className="h-4 w-4" />
-                    Lịch sử thuê xe
-                  </TabsTrigger>
-                  
-                  
-                  
-                </TabsList>
-              </div>
+                    <TabsTrigger
+                      value="rental-history"
+                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                    >
+                      <Car className="h-4 w-4" />
+                      Lịch sử thuê xe
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
               
               <TabsContent value="profile" className="mt-0">
                 <div className="space-y-6">
@@ -528,6 +537,15 @@ const Profile: React.FC = () => {
                           onFormDataChange={handleFormDataChange}
                         />
                         
+                        {/* Profile Actions - Đổi mật khẩu */}
+                        <Separator />
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            Hành động tài khoản
+                          </h3>
+                          <ProfileActions />
+                        </div>
+                        
                         {/* Google-specific information */}
                         {isGoogleUser() && googleInfo && (
                           <>
@@ -563,34 +581,6 @@ const Profile: React.FC = () => {
                       </CardContent>
                     </Card>
                   </motion.div>
-
-                  {/* Actions and Stats in grid layout */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Profile Actions */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                    >
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Hành động tài khoản</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <ProfileActions />
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-
-                    {/* Profile Stats */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      <ProfileStats />
-                    </motion.div>
-                  </div>
                   </div>
               </TabsContent>
 

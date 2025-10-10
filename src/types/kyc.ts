@@ -74,8 +74,8 @@ export interface IdentityAddressEntities {
   street: string;
 }
 
-// KYC Status API response type
-export interface KYCStatusResponse {
+// Legacy KYC Status API response type (for backward compatibility)
+export interface KYCStatusResponseLegacy {
   _id: string;
   userId: string;
   status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
@@ -137,6 +137,34 @@ export interface KYCStatusResponse {
   approvedAt: string;
   approvedBy: string;
 }
+
+// New KYC Status API response type (updated structure)
+export interface KYCStatusResponse {
+  kycStatus: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+  rejectionReason?: string;
+  identity?: {
+    id: string;
+    frontImage: string;
+    backImage: string;
+    frontUploaded: boolean;
+    backUploaded: boolean;
+  };
+  license?: {
+    id: string;
+    frontImage: string;
+    backImage: string;
+    expiry: string;
+    expiryText: string;
+    classList: string[];
+    frontUploaded: boolean;
+    backUploaded: boolean;
+    uploaded: boolean;
+  };
+  lastUpdated?: string;
+}
+
+// Union type to support both new and legacy KYC response structures
+export type KYCStatusResponseUnion = KYCStatusResponse | KYCStatusResponseLegacy;
 
 
 

@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { 
   Search, 
   Filter, 
-  Battery, 
   Car, 
   Grid3X3,
   Map,
@@ -15,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import VehicleImage from '@/components/VehicleImage';
 import { vehiclesAPI } from '@/api/vehiclesAPI';
@@ -29,7 +27,6 @@ const FindCar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [carType, setCarType] = useState<string>('all');
   const [priceRange, setPriceRange] = useState([0, 500000]);
-  const [batteryFilter, setBatteryFilter] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
   // Fetch vehicles from API
@@ -61,11 +58,10 @@ const FindCar: React.FC = () => {
                            );
       const matchesType = carType === 'all' || vehicle.type === carType;
       const matchesPrice = vehicle.price_per_day >= priceRange[0] && vehicle.price_per_day <= priceRange[1];
-      const matchesBattery = !batteryFilter || vehicle.battery_capacity >= 3.0;
       
-      return matchesSearch && matchesType && matchesPrice && matchesBattery;
+      return matchesSearch && matchesType && matchesPrice;
     });
-  }, [vehicles, searchTerm, carType, priceRange, batteryFilter]);
+  }, [vehicles, searchTerm, carType, priceRange]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -125,7 +121,7 @@ const FindCar: React.FC = () => {
           transition={{ delay: 0.2 }}
           className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             {/* Search */}
             <div className="space-y-2">
               <Label htmlFor="search">Tìm kiếm</Label>
@@ -170,19 +166,6 @@ const FindCar: React.FC = () => {
                   <span>{formatPrice(priceRange[0])}</span>
                   <span>{formatPrice(priceRange[1])}</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Battery Filter */}
-            <div className="space-y-2">
-              <Label htmlFor="battery">Pin 50%</Label>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="battery"
-                  checked={batteryFilter}
-                  onCheckedChange={setBatteryFilter}
-                />
-                <Battery className="h-4 w-4 text-green-600" />
               </div>
             </div>
 
@@ -335,7 +318,6 @@ const FindCar: React.FC = () => {
                     setSearchTerm('');
                     setCarType('all');
                     setPriceRange([0, 500000]);
-                    setBatteryFilter(false);
                   }}
                 >
                   Reset bộ lọc

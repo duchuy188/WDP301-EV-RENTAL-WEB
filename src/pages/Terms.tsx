@@ -1,6 +1,6 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDateVN } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
 
@@ -81,7 +81,7 @@ const Terms = () => {
 
             <div className="border-t pt-6 mt-8">
               <p className="text-sm text-gray-500 text-center">
-                Điều khoản này có hiệu lực từ ngày {new Date().toLocaleDateString('vi-VN')}
+                Điều khoản này có hiệu lực từ ngày {formatDateVN(new Date())}
               </p>
             </div>
           </CardContent>
