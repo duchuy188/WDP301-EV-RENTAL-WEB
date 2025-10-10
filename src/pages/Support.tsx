@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { mockFAQs } from '@/data/mockData';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 
 const Support: React.FC = () => {
   const [openFAQs, setOpenFAQs] = useState<Set<string>>(new Set());

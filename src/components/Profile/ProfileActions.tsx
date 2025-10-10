@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 
 import ChangePasswordDialog from './ChangePasswordDialog';
 import { authAPI } from '@/api/authAPI';

@@ -14,32 +14,43 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockBookings, mockUser } from '@/data/mockData';
+import { mockUser } from '@/data/mockData';
 import { authAPI } from '@/api/personaAPI';
+import { bookingAPI } from '@/api/bookingAPI';
 import { UserStatsData } from '@/types/perssonal';
+import { Booking } from '@/types/booking';
 
 const History: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
   const [userStats, setUserStats] = useState<UserStatsData | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 5;
 
   useEffect(() => {
-    const fetchUserStats = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await authAPI.getPersonal();
-        setUserStats(response.data);
+        // Gọi API lấy thống kê người dùng và bookings song song
+        const [statsResponse, bookingsResponse] = await Promise.all([
+          authAPI.getPersonal(),
+          bookingAPI.getBookings({ page: 1, limit: 100 })
+        ]);
+        
+        setUserStats(statsResponse.data);
+        setBookings(bookingsResponse.bookings || []);
       } catch (error) {
-        console.error('Error fetching user stats:', error);
+        console.error('Error fetching data:', error);
+        // Nếu có lỗi, sử dụng dữ liệu rỗng
+        setBookings([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserStats();
+    fetchData();
   }, []);
 
   const formatPrice = (price: number) => {
@@ -70,13 +81,19 @@ const History: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
+      case 'returned':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'active':
+      case 'in_progress':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'confirmed':
+      case 'approved':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 'cancelled':
+      case 'rejected':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'pending':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
@@ -92,24 +109,34 @@ const History: React.FC = () => {
         return 'Đã xác nhận';
       case 'cancelled':
         return 'Đã hủy';
+      case 'pending':
+        return 'Chờ xử lý';
+      case 'approved':
+        return 'Đã duyệt';
+      case 'rejected':
+        return 'Đã từ chối';
+      case 'in_progress':
+        return 'Đang tiến hành';
+      case 'returned':
+        return 'Đã trả xe';
       default:
         return status;
     }
   };
 
   // Filter and sort bookings
-  const filteredBookings = mockBookings
-    .filter(booking => statusFilter === 'all' || booking.status === statusFilter)
-    .sort((a, b) => {
+  const filteredBookings = bookings
+    .filter((booking: Booking) => statusFilter === 'all' || booking.status === statusFilter)
+    .sort((a: Booking, b: Booking) => {
       switch (sortBy) {
         case 'date-desc':
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case 'date-asc':
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         case 'price-desc':
-          return b.totalPrice - a.totalPrice;
+          return b.total_price - a.total_price;
         case 'price-asc':
-          return a.totalPrice - b.totalPrice;
+          return a.total_price - b.total_price;
         default:
           return 0;
       }
@@ -121,16 +148,18 @@ const History: React.FC = () => {
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
   // Analytics data from API or fallback to mock data
-  const monthlyBookings = userStats?.monthly_stats.map(stat => ({
-    month: `T${stat.month}`,
-    count: stat.rentals
-  })) || [
-    { month: 'T1', count: 5 },
-    { month: 'T2', count: 8 },
-    { month: 'T3', count: 12 },
-    { month: 'T4', count: 15 },
-    { month: 'T5', count: 22 },
-    { month: 'T6', count: 18 },
+  const monthlyBookings = userStats?.monthly_stats && userStats.monthly_stats.length > 0 
+    ? userStats.monthly_stats.map((stat: any) => ({
+        month: `T${stat.month}`,
+        count: stat.rentals
+      }))
+    : [
+        { month: 'T1', count: 0 },
+        { month: 'T2', count: 0 },
+        { month: 'T3', count: 0 },
+        { month: 'T4', count: 0 },
+        { month: 'T5', count: 0 },
+        { month: 'T6', count: 0 },
   ];
 
   const totalTrips = userStats?.overview.total_rentals || 0;
@@ -285,19 +314,22 @@ const History: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="h-64 flex items-end justify-between space-x-2">
-                {monthlyBookings.map((item) => (
-                  <div key={item.month} className="flex flex-col items-center flex-1">
-                    <div
-                      className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-sm w-full transition-all duration-300 hover:from-green-700 hover:to-green-500"
-                      style={{
-                        height: `${(item.count / Math.max(...monthlyBookings.map(m => m.count))) * 200}px`,
-                        minHeight: '20px',
-                      }}
-                    ></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400 mt-2">{item.month}</span>
-                    <span className="text-xs text-gray-500">{item.count}</span>
-                  </div>
-                ))}
+                {monthlyBookings.map((item: any) => {
+                  const maxCount = Math.max(...monthlyBookings.map((m: any) => m.count), 1); // Tránh chia cho 0
+                  return (
+                    <div key={item.month} className="flex flex-col items-center flex-1">
+                      <div
+                        className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-sm w-full transition-all duration-300 hover:from-green-700 hover:to-green-500"
+                        style={{
+                          height: `${(item.count / maxCount) * 200}px`,
+                          minHeight: '20px',
+                        }}
+                      ></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400 mt-2">{item.month}</span>
+                      <span className="text-xs text-gray-500">{item.count}</span>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -317,15 +349,20 @@ const History: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-2">
-                  {userStats.insights.map((insight, index) => (
+                  {userStats?.insights?.map((insight: string, index: number) => (
                     <div key={index} className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-green-600 rounded-full"></div>
                       <p className="text-sm text-gray-600 dark:text-gray-300">{insight}</p>
                     </div>
-                  ))}
+                  )) || (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Không có dữ liệu thống kê</p>
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-gray-500 mt-4">
-                  Cập nhật lần cuối: {userStats.last_updated ? formatDateTime(userStats.last_updated) : 'N/A'}
+                  Cập nhật lần cuối: {userStats?.last_updated ? formatDateTime(userStats.last_updated) : 'N/A'}
                 </p>
               </CardContent>
             </Card>
@@ -355,6 +392,11 @@ const History: React.FC = () => {
                     <SelectItem value="active">Đang thuê</SelectItem>
                     <SelectItem value="confirmed">Đã xác nhận</SelectItem>
                     <SelectItem value="cancelled">Đã hủy</SelectItem>
+                    <SelectItem value="pending">Chờ xử lý</SelectItem>
+                    <SelectItem value="approved">Đã duyệt</SelectItem>
+                    <SelectItem value="rejected">Đã từ chối</SelectItem>
+                    <SelectItem value="in_progress">Đang tiến hành</SelectItem>
+                    <SelectItem value="returned">Đã trả xe</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -406,30 +448,32 @@ const History: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedBookings.map((booking) => (
-                    <TableRow key={booking.id}>
+                  {paginatedBookings.map((booking: Booking) => (
+                    <TableRow key={booking._id}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
-                          <img
-                            src={booking.car.image}
-                            alt={booking.car.name}
-                            className="w-10 h-10 object-cover rounded"
-                          />
+                          <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                            <Car className="h-5 w-5 text-gray-500" />
+                          </div>
                           <div>
-                            <p className="font-medium">{booking.car.name}</p>
-                            <p className="text-sm text-gray-500">{booking.car.location}</p>
+                            <p className="font-medium">
+                              {booking.vehicle_id ? `Xe ID: ${booking.vehicle_id._id.slice(-6)}` : 'Xe không xác định'}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {booking.station_id ? `Trạm ID: ${booking.station_id._id.slice(-6)}` : 'Không xác định'}
+                            </p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>{formatDate(booking.createdAt)}</TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <p>{formatDateTime(booking.startDate)}</p>
-                          <p className="text-gray-500">{formatDateTime(booking.endDate)}</p>
+                          <p>{formatDate(booking.start_date)} {booking.pickup_time}</p>
+                          <p className="text-gray-500">{formatDate(booking.end_date)} {booking.return_time}</p>
                         </div>
                       </TableCell>
                       <TableCell className="font-semibold">
-                        {formatPrice(booking.totalPrice)}
+                        {formatPrice(booking.total_price)}
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(booking.status)}>

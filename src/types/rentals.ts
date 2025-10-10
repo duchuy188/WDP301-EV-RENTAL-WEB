@@ -1,0 +1,55 @@
+// ...existing code...
+export interface RentalsApiResponse {
+  success: true;
+  data: RentalsData;
+}
+
+export interface RentalsData {
+  rentals: Rental[];
+  pagination: Pagination;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+export interface Rental {
+  _id: string;
+  code: string;
+  booking_id: string;
+  user_id: string;
+  vehicle_id: string;
+  station_id: string;
+  actual_start_time: string; // ISO date string
+  actual_end_time: string;   // ISO date string
+  pickup_staff_id?: string | null;
+  return_staff_id?: string | null;
+  vehicle_condition_before: VehicleCondition;
+  vehicle_condition_after: VehicleCondition;
+  images_before: string[];
+  images_after: string[];
+  status: RentalStatus;
+  late_fee: number;
+  damage_fee: number;
+  other_fees: number;
+  total_fees: number;
+  staff_notes?: string | null;
+  customer_notes?: string | null;
+  created_by: string;
+  is_active: boolean;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+}
+
+export interface VehicleCondition {
+  mileage: number;
+  battery_level: number;
+  exterior_condition: string;
+  interior_condition: string;
+  notes?: string | null;
+}
+
+export type RentalStatus = 'active' | 'completed' | 'cancelled' | string;

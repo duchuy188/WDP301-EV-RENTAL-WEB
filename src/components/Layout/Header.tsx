@@ -23,7 +23,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/utils/toast';
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -31,21 +31,18 @@ const Header: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const handleLogout = () => {
     logout();
-    toast({
-      title: "Đăng xuất thành công",
-      description: "Bạn đã đăng xuất khỏi hệ thống",
-    });
+    toast.success("Đăng xuất thành công", "Bạn đã đăng xuất khỏi hệ thống");
     navigate('/');
   };
 
   const navItems = [
     { path: '/', label: 'Trang chủ' },
     { path: '/find-car', label: 'Tìm xe' },
-    { path: '/history', label: 'Lịch sử' },
+    { path: '/history', label: 'Thống kê' },
+    { path: '/chatbot', label: 'Chatbot' },
     { path: '/support', label: 'Hỗ trợ' },
   ];
 
@@ -138,6 +135,7 @@ const Header: React.FC = () => {
                       <span>Hồ sơ</span>
                     </Link>
                   </DropdownMenuItem>
+                  
                   <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Cài đặt</span>

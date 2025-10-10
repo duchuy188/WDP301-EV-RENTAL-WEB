@@ -73,6 +73,7 @@ export const mockBookings: Booking[] = [
     totalPrice: 1200000,
     status: 'completed',
     createdAt: '2025-01-10T10:00:00Z',
+    pickupLocation: 'Quận 1, TP.HCM',
   },
   {
     id: 'booking-2',
@@ -83,6 +84,7 @@ export const mockBookings: Booking[] = [
     totalPrice: 200000,
     status: 'active',
     createdAt: '2025-01-18T15:30:00Z',
+    pickupLocation: 'Quận 7, TP.HCM',
   },
   {
     id: 'booking-3',
@@ -93,6 +95,29 @@ export const mockBookings: Booking[] = [
     totalPrice: 2400000,
     status: 'confirmed',
     createdAt: '2025-01-22T09:15:00Z',
+    pickupLocation: 'Quận 3, TP.HCM',
+  },
+  {
+    id: 'booking-4',
+    carId: '4',
+    car: mockCars[3],
+    startDate: '2024-12-20T10:00:00Z',
+    endDate: '2024-12-20T16:00:00Z',
+    totalPrice: 1080000,
+    status: 'completed',
+    createdAt: '2024-12-18T14:20:00Z',
+    pickupLocation: 'Quận 2, TP.HCM',
+  },
+  {
+    id: 'booking-5',
+    carId: '5',
+    car: mockCars[4],
+    startDate: '2024-12-10T12:00:00Z',
+    endDate: '2024-12-10T18:00:00Z',
+    totalPrice: 270000,
+    status: 'cancelled',
+    createdAt: '2024-12-08T09:45:00Z',
+    pickupLocation: 'Quận 5, TP.HCM',
   },
 ];
 

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail, CheckCircle, Loader2, Car } from 'lucide-react';
 import { authAPI } from '@/api/authAPI';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');

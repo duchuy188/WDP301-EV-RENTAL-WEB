@@ -6,3 +6,5 @@ export { default as IdentityCardVerification } from './IdentityCardVerification'
 export { default as ProfileStats } from './ProfileStats';
 export { default as ProfileActions } from './ProfileActions';
 export { default as ImagePreviewDialog } from './ImagePreviewDialog';
+export { default as BookingHistory } from './BookingHistory';
+export { default as RentalHistory } from './RentalHistory';

@@ -23,6 +23,7 @@ export interface Booking {
   totalPrice: number;
   status: 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled';
   createdAt: string;
+  pickupLocation: string;
 }
 
 export interface DocumentImages {
