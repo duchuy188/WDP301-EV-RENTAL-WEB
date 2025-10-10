@@ -3,12 +3,13 @@ import { Shield, Upload, Eye, Image as ImageIcon, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { uploadLicenseFront, uploadLicenseBack } from '@/api/kycAPI';
-import type { KYCStatusResponse, KYCLicenseFrontResponse, KYCLicenseBackResponse } from '@/types/kyc';
+import type { KYCStatusResponseUnion, KYCLicenseFrontResponse, KYCLicenseBackResponse } from '@/types/kyc';
+import { getLicenseData } from '@/utils/kycUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '../ui/input';
 
 interface DriverLicenseVerificationProps {
-  kyc: KYCStatusResponse | null;
+  kyc: KYCStatusResponseUnion | null;
   onKycUpdate: () => Promise<void>;
   onImagePreview: (imageUrl: string) => void;
   showResponseDetails: (response: any, title: string) => void;
@@ -28,6 +29,9 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
   // Auth user (to compare names)
   const { user: authUser } = useAuth();
   const accountName = authUser?.fullname || '';
+
+  // Get license data using utils
+  const licenseData = getLicenseData(kyc);
 
   // Normalize names: remove diacritics, collapse spaces, lowercase
   const normalizeName = (s?: string) => {
@@ -69,8 +73,8 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
     }
   };
 
-  const frontImage = licenseFrontResponse?.license?.image || kyc?.licenseImage;
-  const backImage = licenseBackResponse?.license?.backImage || kyc?.licenseBackImage;
+  const frontImage = licenseFrontResponse?.license?.image || licenseData?.frontImage;
+  const backImage = licenseBackResponse?.license?.backImage || licenseData?.backImage;
 
   return (
     <div className="border rounded-lg p-4">
@@ -253,10 +257,10 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
       {/* Hiển thị thông tin tóm tắt GPLX nếu có */}
       {(licenseFrontResponse || licenseBackResponse) && (
         <div className="mt-4 bg-gray-50 p-2 rounded border text-xs">
-          <div><b>Số GPLX:</b> {licenseFrontResponse?.license?.id || kyc?.licenseNumber}</div>
-          <div><b>Họ tên:</b> {licenseFrontResponse?.license?.name || kyc?.licenseName}</div>
-          <div><b>Hạng:</b> {licenseFrontResponse?.license?.class || kyc?.licenseClass}</div>
-          <div><b>Hết hạn:</b> {licenseFrontResponse?.license?.expiryText || kyc?.licenseExpiryText}</div>
+          <div><b>Số GPLX:</b> {licenseFrontResponse?.license?.id || licenseData?.id}</div>
+          <div><b>Họ tên:</b> {licenseFrontResponse?.license?.name || (licenseData as any)?.name}</div>
+          <div><b>Hạng:</b> {licenseFrontResponse?.license?.class || (licenseData as any)?.class}</div>
+          <div><b>Hết hạn:</b> {licenseFrontResponse?.license?.expiryText || licenseData?.expiryText}</div>
           {licenseBackResponse?.license?.classList && (
             <div><b>Các hạng:</b> {licenseBackResponse.license.classList.join(', ')}</div>
           )}

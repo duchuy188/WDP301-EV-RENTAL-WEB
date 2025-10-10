@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/utils/toast';
 import { mockBookings } from '@/data/mockData';
+import { formatDateTimeVN } from '@/lib/utils';
 
 const ReturnCar: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
@@ -38,15 +39,8 @@ const ReturnCar: React.FC = () => {
     }).format(price);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  // Use utility function for consistent date formatting
+  // formatDate function removed - using formatDateTimeVN from utils
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -131,7 +125,7 @@ const ReturnCar: React.FC = () => {
                                 {booking.car.location}
                               </p>
                               <p className="text-sm text-gray-500">
-                                Bắt đầu: {formatDate(booking.startDate)}
+                                Bắt đầu: {formatDateTimeVN(booking.startDate)}
                               </p>
                             </div>
                           </div>
@@ -335,8 +329,8 @@ const ReturnCar: React.FC = () => {
                           <div>
                             <h4 className="font-semibold mb-2">Thời gian sử dụng</h4>
                             <div className="text-sm space-y-1">
-                              <p>🕐 Bắt đầu: {formatDate(booking.startDate)}</p>
-                              <p>🏁 Dự kiến kết thúc: {formatDate(booking.endDate)}</p>
+                              <p>🕐 Bắt đầu: {formatDateTimeVN(booking.startDate)}</p>
+                              <p>🏁 Dự kiến kết thúc: {formatDateTimeVN(booking.endDate)}</p>
                             </div>
                           </div>
                           

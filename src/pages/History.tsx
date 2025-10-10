@@ -18,6 +18,7 @@ import { mockUser } from '@/data/mockData';
 import { authAPI } from '@/api/personaAPI';
 import { bookingAPI } from '@/api/bookingAPI';
 import { UserStatsData } from '@/types/perssonal';
+import { formatDateVN, formatDateTimeVN } from '@/lib/utils';
 import { Booking } from '@/types/booking';
 
 const History: React.FC = () => {
@@ -60,23 +61,8 @@ const History: React.FC = () => {
     }).format(price);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  // Use utility functions for consistent date formatting
+  // formatDate and formatDateTime functions removed - using formatDateVN and formatDateTimeVN from utils
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -226,7 +212,7 @@ const History: React.FC = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Thành viên từ</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {formatDate(memberSince)}
+                      {formatDateVN(memberSince)}
                     </p>
                   </div>
                 </div>
@@ -362,7 +348,7 @@ const History: React.FC = () => {
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-4">
-                  Cập nhật lần cuối: {userStats?.last_updated ? formatDateTime(userStats.last_updated) : 'N/A'}
+                  Cập nhật lần cuối: {userStats?.last_updated ? formatDateTimeVN(userStats.last_updated) : 'N/A'}
                 </p>
               </CardContent>
             </Card>
@@ -465,11 +451,11 @@ const History: React.FC = () => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{formatDate(booking.createdAt)}</TableCell>
+                      <TableCell>{formatDateVN(booking.createdAt)}</TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <p>{formatDate(booking.start_date)} {booking.pickup_time}</p>
-                          <p className="text-gray-500">{formatDate(booking.end_date)} {booking.return_time}</p>
+                          <p>{formatDateVN(booking.start_date)} {booking.pickup_time}</p>
+                          <p className="text-gray-500">{formatDateVN(booking.end_date)} {booking.return_time}</p>
                         </div>
                       </TableCell>
                       <TableCell className="font-semibold">

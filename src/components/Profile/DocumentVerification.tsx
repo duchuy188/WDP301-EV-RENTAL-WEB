@@ -1,8 +1,21 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { formatDateTimeVN } from '@/lib/utils';
 import { getKYCStatus, getIdentityCard, getDriverLicense } from '@/api/kycAPI';
-import type { KYCStatusResponse } from '@/types/kyc';
+import type { KYCStatusResponseUnion } from '@/types/kyc';
+import {
+  isNewKYCResponse,
+  isLegacyKYCResponse,
+  isKYCApproved,
+  isKYCPending,
+  isKYCRejected,
+  needsDocumentSubmission,
+  getKYCStatusLabel,
+  getKYCStatusBadgeClass,
+  getLicenseData,
+  getIdentityData
+} from '@/utils/kycUtils';
 import DocumentDetailsModal, { DocumentResponse } from './DocumentDetailsModal';
 import DriverLicenseVerification from './DriverLicenseVerification';
 import IdentityCardVerification from './IdentityCardVerification';
@@ -13,8 +26,7 @@ interface DocumentVerificationProps {
 }
 
 const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
-  const [kyc, setKyc] = useState<KYCStatusResponse | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [kyc, setKyc] = useState<KYCStatusResponseUnion | null>(null);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [currentResponse, setCurrentResponse] = useState<(DocumentResponse & { title?: string }) | null>(null);
 
@@ -39,47 +51,24 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
   };
 
   // Hàm preview ảnh
-  const handleImagePreview = (imageUrl: string) => {
-    setPreviewImage(imageUrl);
+  const handleImagePreview = (_imageUrl: string) => {
+    // Image preview functionality can be implemented here if needed
   };
 
-  // Hàm format ngày tháng năm theo định dạng Việt Nam
+  // Use formatDateTimeVN from utils for consistent date formatting
   const formatDateTime = (dateString: string | undefined | null) => {
     if (!dateString) return '—';
     
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '—';
-      
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
+      return formatDateTimeVN(dateString);
     } catch (error) {
       return '—';
     }
   };
 
-  // KYC status label and badge color mapping (Vietnamese)
-  const statusKey = (kyc as any)?.status || (kyc as any)?.kycStatus || 'not_submitted';
-
-  const statusLabelMap: Record<string, string> = {
-    not_submitted: 'Chưa cập nhật',
-    pending: 'Đang chờ',
-    approved: 'Đã duyệt',
-    rejected: 'Bị từ chối'
-  };
-  const statusClassMap: Record<string, string> = {
-    not_submitted: 'bg-gray-100 text-gray-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    approved: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800'
-  };
-  const statusLabel = statusLabelMap[statusKey] || 'Chưa cập nhật';
-  const statusBadgeClass = `${statusClassMap[statusKey] || statusClassMap.not_submitted} ml-4`;
+  // Get status label and badge class using utils
+  const statusLabel = getKYCStatusLabel(kyc);
+  const statusBadgeClass = `${getKYCStatusBadgeClass(kyc)} ml-4`;
   // ...existing code...
 
   return (
@@ -89,7 +78,7 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
           <div>
             <CardTitle>Xác thực giấy tờ</CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              {statusKey === 'approved'
+              {isKYCApproved(kyc)
                 ? 'Bạn có thể xem chi tiết bên dưới.'
                 : 'Vui lòng tải lên ảnh mặt trước và mặt sau của giấy tờ để xác thực'}
             </p>
@@ -102,7 +91,7 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {statusKey !== 'approved' && (
+          {!isKYCApproved(kyc) && (
             <>
               {/* Giấy phép lái xe */}
               <DriverLicenseVerification
@@ -120,109 +109,132 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
                 showResponseDetails={showResponseDetails}
               />
               
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <p className="text-yellow-800 dark:text-yellow-400 text-sm">
-                  Vui lòng hoàn tất upload ảnh giấy tờ để có thể thuê xe. Sau khi upload, bạn có thể nhấn "Xem chi tiết OCR" để xem thông tin mà hệ thống đã trích xuất.
-                </p>
-              </div>
+              {/* Information notice based on status */}
+              {needsDocumentSubmission(kyc) && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                  <p className="text-yellow-800 dark:text-yellow-400 text-sm">
+                    Vui lòng hoàn tất upload ảnh giấy tờ để có thể thuê xe. Sau khi upload, bạn có thể nhấn "Xem chi tiết OCR" để xem thông tin mà hệ thống đã trích xuất.
+                  </p>
+                </div>
+              )}
+
+              {isKYCPending(kyc) && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-blue-800 dark:text-blue-400 text-sm">
+                    Giấy tờ của bạn đang được xem xét. Vui lòng chờ quá trình duyệt hoàn tất để có thể thuê xe.
+                  </p>
+                </div>
+              )}
+
+              {isKYCRejected(kyc) && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <p className="text-red-800 dark:text-red-400 text-sm">
+                    Giấy tờ của bạn đã bị từ chối. Vui lòng tải lại giấy tờ với chất lượng tốt hơn và thông tin rõ ràng.
+                  </p>
+                </div>
+              )}
             </>
           )}
-          {statusKey === 'approved' && (
+          {isKYCApproved(kyc) && kyc && (
             <>
-              {/* Nếu backend trả về object dạng { kycStatus, identity, license } */}
-              {((kyc as any)?.license || (kyc as any)?.identity) ? (
+              {/* Check if it's new KYC response structure */}
+              {isNewKYCResponse(kyc) && (kyc.license || kyc.identity) ? (
                 <>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold mb-1 text-green-800">Giấy phép lái xe</h3>
-                        <p className="text-sm text-gray-700">Số: {(kyc as any)?.license?.id || '—'}</p>
-                        
-                      </div>
-                      <div>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              const licenseData = await getDriverLicense();
-                              showResponseDetails(licenseData, 'Giấy phép lái xe');
-                            } catch (error) {
-                              console.error('Error fetching driver license:', error);
-                            }
-                          }}
-                          className="px-3 py-1 text-sm bg-white border rounded shadow-sm hover:bg-gray-50"
-                        >
-                          Xem chi tiết OCR
-                        </button>
+                  {kyc.license && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold mb-1 text-green-800">Giấy phép lái xe</h3>
+                          <p className="text-sm text-gray-700">Số: {kyc.license.id || '—'}</p>
+                          
+                        </div>
+                        <div>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const licenseData = await getDriverLicense();
+                                showResponseDetails(licenseData, 'Giấy phép lái xe');
+                              } catch (error) {
+                                console.error('Error fetching driver license:', error);
+                              }
+                            }}
+                            className="px-3 py-1 text-sm bg-white border rounded shadow-sm hover:bg-gray-50"
+                          >
+                            Xem chi tiết OCR
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold mb-1 text-blue-800">Căn cước công dân</h3>
-                        <p className="text-sm text-gray-700">Số: {(kyc as any)?.identity?.id || '—'}</p>
-                       
-                      </div>
-                      <div>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              const identityData = await getIdentityCard();
-                              showResponseDetails(identityData, 'Căn cước công dân');
-                            } catch (error) {
-                              console.error('Error fetching identity card:', error);
-                            }
-                          }}
-                          className="px-3 py-1 text-sm bg-white border rounded shadow-sm hover:bg-gray-50"
-                        >
-                          Xem chi tiết OCR
-                        </button>
+                  {kyc.identity && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold mb-1 text-blue-800">Căn cước công dân</h3>
+                          <p className="text-sm text-gray-700">Số: {kyc.identity.id || '—'}</p>
+                         
+                        </div>
+                        <div>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const identityData = await getIdentityCard();
+                                showResponseDetails(identityData, 'Căn cước công dân');
+                              } catch (error) {
+                                console.error('Error fetching identity card:', error);
+                              }
+                            }}
+                            className="px-3 py-1 text-sm bg-white border rounded shadow-sm hover:bg-gray-50"
+                          >
+                            Xem chi tiết OCR
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="bg-gray-50 border rounded p-3">
-                    {/* <p className="text-sm">Rejection reason: {(kyc as any)?.rejectionReason || '—'}</p> */}
-                    <p className="text-sm">Cập nhật lần cuối: {formatDateTime((kyc as any)?.lastUpdated || (kyc as any)?.lastUpdatedAt || (kyc as any)?.updatedAt)}</p>
+                    <p className="text-sm">Cập nhật lần cuối: {formatDateTime(kyc.lastUpdated)}</p>
                   </div>
                 </>
-              ) : (
-                // Fallback to legacy/flatter structure
+              ) : isLegacyKYCResponse(kyc) ? (
+                // Fallback to legacy/flatter structure using utils
                 <>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-2">
-                    <h3 className="font-semibold mb-2 text-green-800">Giấy phép lái xe</h3>
-                    <pre className="text-xs overflow-x-auto whitespace-pre-wrap bg-white p-2 rounded border">
-                      {JSON.stringify({
-                        id: (kyc as any)?.licenseNumber,
-                        frontImage: (kyc as any)?.licenseImage,
-                        backImage: (kyc as any)?.licenseBackImage,
-                        expiry: (kyc as any)?.licenseExpiry,
-                        expiryText: (kyc as any)?.licenseExpiryText,
-                        classList: (kyc as any)?.licenseClassList,
-                        frontUploaded: (kyc as any)?.licenseFrontUploaded,
-                        backUploaded: (kyc as any)?.licenseBackUploaded,
-                        uploaded: (kyc as any)?.licenseUploaded
-                      }, null, 2)}
-                    </pre>
-                  </div>
+                  {(() => {
+                    const licenseData = getLicenseData(kyc);
+                    const identityData = getIdentityData(kyc);
+                    
+                    return (
+                      <>
+                        {licenseData && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-2">
+                            <h3 className="font-semibold mb-2 text-green-800">Giấy phép lái xe</h3>
+                            <pre className="text-xs overflow-x-auto whitespace-pre-wrap bg-white p-2 rounded border">
+                              {JSON.stringify(licenseData, null, 2)}
+                            </pre>
+                          </div>
+                        )}
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-2">
-                    <h3 className="font-semibold mb-2 text-blue-800">Căn cước công dân</h3>
-                    <pre className="text-xs overflow-x-auto whitespace-pre-wrap bg-white p-2 rounded border">
-                      {JSON.stringify({
-                        id: (kyc as any)?.identityCard,
-                        frontImage: (kyc as any)?.identityCardFrontImage,
-                        backImage: (kyc as any)?.identityCardBackImage,
-                        frontUploaded: (kyc as any)?.identityCardFrontUploaded,
-                        backUploaded: (kyc as any)?.identityCardBackUploaded
-                      }, null, 2)}
-                    </pre>
-                  </div>
+                        {identityData && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-2">
+                            <h3 className="font-semibold mb-2 text-blue-800">Căn cước công dân</h3>
+                            <pre className="text-xs overflow-x-auto whitespace-pre-wrap bg-white p-2 rounded border">
+                              {JSON.stringify(identityData, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                        
+                        <div className="bg-gray-50 border rounded p-3">
+                          <p className="text-sm">Cập nhật lần cuối: {formatDateTime(kyc.lastUpdatedAt || kyc.updatedAt)}</p>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </>
-              )}
+              ) : null}
             </>
           )}
         </div>

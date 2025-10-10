@@ -3,12 +3,13 @@ import { Shield, Upload, Eye, Image as ImageIcon, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { uploadIdentityCardFront, uploadIdentityCardBack } from '@/api/kycAPI';
-import type { KYCStatusResponse, KYCIdentityResponse, KYCIdentityCardResponse } from '@/types/kyc';
+import type { KYCStatusResponseUnion, KYCIdentityResponse, KYCIdentityCardResponse } from '@/types/kyc';
+import { getIdentityData } from '@/utils/kycUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '../ui/input';
 
 interface IdentityCardVerificationProps {
-  kyc: KYCStatusResponse | null;
+  kyc: KYCStatusResponseUnion | null;
   onKycUpdate: () => Promise<void>;
   onImagePreview: (imageUrl: string) => void;
   showResponseDetails: (response: any, title: string) => void;
@@ -28,6 +29,9 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
   // Auth user (to compare names)
   const { user: authUser } = useAuth();
   const accountName = authUser?.fullname || '';
+
+  // Get identity data using utils
+  const identityData = getIdentityData(kyc);
 
   // Normalize names: remove diacritics, collapse spaces, lowercase
   const normalizeName = (s?: string) => {
@@ -68,8 +72,8 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
     }
   };
 
-  const frontImage = identityFrontResponse?.identityCard?.frontImage || kyc?.identityCardFrontImage;
-  const backImage = identityBackResponse?.identityCard?.backImage || kyc?.identityCardBackImage;
+  const frontImage = identityFrontResponse?.identityCard?.frontImage || identityData?.frontImage;
+  const backImage = identityBackResponse?.identityCard?.backImage || identityData?.backImage;
 
   return (
     <div className="border rounded-lg p-4">
@@ -252,10 +256,10 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
       {/* Hiển thị thông tin tóm tắt CCCD nếu có */}
       {(identityFrontResponse || identityBackResponse) && (
         <div className="mt-4 bg-gray-50 p-2 rounded border text-xs">
-          <div><b>Số CCCD:</b> {identityFrontResponse?.identityCard?.id || kyc?.identityCard}</div>
-          <div><b>Họ tên:</b> {identityFrontResponse?.identityCard?.name || kyc?.identityName}</div>
-          <div><b>Ngày sinh:</b> {identityFrontResponse?.identityCard?.dob || kyc?.identityDob}</div>
-          <div><b>Địa chỉ:</b> {identityFrontResponse?.identityCard?.address || kyc?.identityAddress}</div>
+          <div><b>Số CCCD:</b> {identityFrontResponse?.identityCard?.id || identityData?.id}</div>
+          <div><b>Họ tên:</b> {identityFrontResponse?.identityCard?.name || (identityData as any)?.name}</div>
+          <div><b>Ngày sinh:</b> {identityFrontResponse?.identityCard?.dob || (identityData as any)?.dob}</div>
+          <div><b>Địa chỉ:</b> {identityFrontResponse?.identityCard?.address || (identityData as any)?.address}</div>
           {identityBackResponse?.identityCard?.issueDate && (
             <div><b>Ngày cấp:</b> {identityBackResponse.identityCard.issueDate}</div>
           )}
