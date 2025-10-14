@@ -112,16 +112,16 @@ const FloatingChat: React.FC = () => {
     if (currentContext.topic === 'rental' || analysis.intent === 'booking') {
       if (lowerMessage.includes('xe máy') || lowerMessage.includes('scooter')) {
         return {
-          message: 'Xe máy điện là lựa chọn tuyệt vời! Chúng tôi có:\n\n🛵 **VinFast Klara S** - 60km/sạc - 60.000đ/ngày\n🛵 **Honda U-BE** - 50km/sạc - 55.000đ/ngày\n🛵 **Pega Cap A** - 40km/sạc - 45.000đ/ngày\n\nBạn muốn thuê từ ngày nào và trong bao lâu?',
+          message: 'Xe máy điện là lựa chọn tuyệt vời! Chúng tôi có:\n\n🛵 **VinFast Klara S** - 60km/sạc - 60.000đ/ngày\n🛵 **Honda U-BE** - 50km/sạc - 55.000đ/ngày\n🛵 **Pega Cap A** - 40km/sạc - 45.000đ/ngày\n\nBạn muốn đặt xe từ ngày nào và trong bao lâu?',
           newContext: { ...newContext, topic: 'scooter_selection' }
         };
       } else if (lowerMessage.includes('ô tô') || lowerMessage.includes('car')) {
         return {
-          message: 'Ô tô điện rất tiện lợi! Chúng tôi có:\n\n🚗 **VinFast VF5** - 4 chỗ - 900.000đ/ngày\n🚙 **VinFast VF8** - 7 chỗ - 1.200.000đ/ngày\n🚗 **Tesla Model 3** - Cao cấp - 1.500.000đ/ngày\n\nBạn cần xe cho mấy người và thuê bao lâu?',
+          message: 'Ô tô điện rất tiện lợi! Chúng tôi có:\n\n🚗 **VinFast VF5** - 4 chỗ - 900.000đ/ngày\n🚙 **VinFast VF8** - 7 chỗ - 1.200.000đ/ngày\n🚗 **Tesla Model 3** - Cao cấp - 1.500.000đ/ngày\n\nBạn cần xe cho mấy người và đặt xe bao lâu?',
           newContext: { ...newContext, topic: 'car_selection' }
         };
       } else if (currentContext.topic === 'scooter_selection' || currentContext.topic === 'car_selection') {
-        // User might be providing rental duration or dates
+        // User might be providing booking duration or dates
         if (lowerMessage.includes('ngày') || lowerMessage.includes('tuần') || lowerMessage.includes('tháng')) {
           return {
             message: 'Tuyệt vời! Để hoàn tất đặt xe, tôi cần thêm một số thông tin:\n• Họ tên và số điện thoại\n• Giấy phép lái xe (bản photo)\n• Địa điểm nhận xe\n• Thời gian cụ thể\n\nBạn có thể cung cấp thông tin này không?',

@@ -162,11 +162,9 @@ const History: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Lịch sử thuê xe
-          </h1>
+
           <p className="text-lg text-gray-600 dark:text-gray-300">
-            Xem lại tất cả các chuyến đi của bạn
+            Xem lại tất cả các đặt xe của bạn
           </p>
         </motion.div>
 
@@ -190,7 +188,7 @@ const History: React.FC = () => {
                     <Car className="h-6 w-6 text-green-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng chuyến</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng đặt xe</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalTrips}</p>
                   </div>
                 </div>
@@ -276,7 +274,7 @@ const History: React.FC = () => {
                     <Clock className="h-6 w-6 text-orange-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Trung bình/chuyến</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Trung bình/đặt xe</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
                       {formatPrice(averageTrip)}
                     </p>
@@ -427,7 +425,7 @@ const History: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Xe</TableHead>
-                    <TableHead>Ngày thuê</TableHead>
+                    <TableHead>Ngày đặt</TableHead>
                     <TableHead>Thời gian</TableHead>
                     <TableHead>Giá</TableHead>
                     <TableHead>Trạng thái</TableHead>
@@ -503,10 +501,10 @@ const History: React.FC = () => {
             <div className="text-center py-16">
               <Car className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Bạn chưa có chuyến nào
+                Bạn chưa có đặt xe nào
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Hãy bắt đầu chuyến đi đầu tiên của bạn
+                Hãy bắt đầu đặt xe đầu tiên của bạn
               </p>
               <Button className="bg-green-600 hover:bg-green-700">
                 Đặt xe ngay

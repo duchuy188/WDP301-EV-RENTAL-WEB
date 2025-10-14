@@ -55,7 +55,7 @@ const Booking: React.FC = () => {
 
   const steps = [
     { number: 1, title: 'Chọn xe', description: 'Chọn xe phù hợp' },
-    { number: 2, title: 'Chọn thời gian', description: 'Thời gian thuê' },
+    { number: 2, title: 'Chọn thời gian', description: 'Thời gian đặt xe' },
     { number: 3, title: 'Xác nhận', description: 'Chi phí & thanh toán' },
   ];
 
