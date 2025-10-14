@@ -6,14 +6,15 @@ import {
   Car, 
   ChevronLeft,
   ChevronRight,
-  MapPin,
-  CreditCard
+  CreditCard,
+  Eye,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import ViewBooking from './ViewBooking';
+import ViewBooking from '../Booking/ViewBooking';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { bookingAPI } from '@/api/bookingAPI';
@@ -333,8 +334,8 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="flex items-center gap-2">
-                <Car className="h-5 w-5" />
-                Lịch sử đặt xe
+                <Car className="h-5 w-5 text-blue-600" />
+                <span className="text-lg font-bold text-gray-900 dark:text-white">Lịch sử đặt xe</span>
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -366,86 +367,62 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
             {paginatedBookings.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
+                  <Table className="border border-gray-200 rounded-lg">
+                    <TableHeader className="bg-gray-100 dark:bg-gray-800">
                       <TableRow>
-                        <TableHead>Xe</TableHead>
-                        <TableHead>Thời gian</TableHead>
-                        <TableHead>Địa điểm</TableHead>
-                        <TableHead>Trạng thái</TableHead>
-                        <TableHead className="text-right">Giá</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Tên xe</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Thời gian</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Tên trạm</TableHead>
+                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Giá</TableHead>
+                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Hành động</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedBookings.map((booking: Booking) => {
                         return (
-                          <TableRow key={booking._id}>
-                            <TableCell>
-                              <div className="flex items-center space-x-3">
-                                <img
-                                  src={booking.vehicle_id.images?.[0] || '/placeholder-vehicle.jpg'}
-                                  alt={`${booking.vehicle_id.brand} ${booking.vehicle_id.model}`}
-                                  className="h-12 w-12 rounded-lg object-cover"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyNkM5IDI2IDkgMTYgMjQgMTZTMzkgMjYgMjQgMjZaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xNCAzMUgxOVYzNkgxNFYzMVoiIGZpbGw9IiM5Q0EzQUYiLz4KPHA+YXRoIGQ9Ik0yOSAzMUgzNFYzNkgyOVYzMVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
-                                  }}
-                                />
-                                <div>
-                                  <p className="font-medium text-gray-900 dark:text-white">
-                                    {booking.vehicle_id.name} ({booking.vehicle_id.brand})
-                                  </p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    {booking.vehicle_id.license_plate}
-                                  </p>
-                                </div>
-                              </div>
+                          <TableRow key={booking._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <TableCell className="text-gray-900 dark:text-white font-medium">
+                              {booking.vehicle_id.name}
                             </TableCell>
                             <TableCell>
                               <div className="space-y-1">
-                                <div className="flex items-center text-sm">
+                                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                                   <Calendar className="h-4 w-4 mr-1 text-gray-400" />
                                   {formatDate(booking.start_date)} - {formatDate(booking.end_date)}
                                 </div>
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {booking.pickup_time} - {booking.return_time}
-                                </div>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center text-sm">
-                                <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                                {booking.station_id.name}
-                              </div>
+                              <Badge className={`${getStatusColor(booking.status)} px-2 py-1 rounded-full text-sm`}> 
+                                {getStatusText(booking.status)}
+                              </Badge>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-between w-full">
-                                <Badge className={getStatusColor(booking.status)}>
-                                  {getStatusText(booking.status)}
-                                </Badge>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => { setSelectedBooking(booking); setDetailOpen(true); }}
-                                    className="text-sm text-blue-600 hover:underline"
-                                    aria-label={`Xem chi tiết ${booking.code}`}
-                                  >
-                                    Xem chi tiết
-                                  </button>
-                                  {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-                                    <button
-                                      onClick={() => handleCancel(booking._id)}
-                                      className="text-sm text-red-600 hover:underline ml-2"
-                                      aria-label={`Huỷ đặt xe ${booking.code}`}
-                                    >
-                                      Huỷ
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
+                            <TableCell className="text-gray-600 dark:text-gray-400">
+                              {booking.station_id.name}
                             </TableCell>
-                            <TableCell className="text-right font-medium">
+                            <TableCell className="text-right font-medium text-gray-900 dark:text-white">
                               {formatPrice(booking.total_price)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => { setSelectedBooking(booking); setDetailOpen(true); }}
+                                  className="text-blue-600 hover:text-blue-800"
+                                  aria-label={`Xem chi tiết ${booking.code}`}
+                                >
+                                  <Eye className="h-5 w-5" />
+                                </button>
+                                {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+                                  <button
+                                    onClick={() => handleCancel(booking._id)}
+                                    className="text-red-600 hover:text-red-800"
+                                    aria-label={`Huỷ đặt xe ${booking.code}`}
+                                  >
+                                    <Trash2 className="h-5 w-5" />
+                                  </button>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
@@ -518,8 +495,8 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           <DialogHeader>
             <DialogTitle>Chi tiết đặt xe</DialogTitle>
           </DialogHeader>
-          {selectedBooking && <ViewBooking bookings={[selectedBooking]} />}
-        </DialogContent>
+          {selectedBooking && <ViewBooking booking={selectedBooking} />}
+        </DialogContent>  
       </Dialog>
     </div>
   );
