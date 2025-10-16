@@ -36,7 +36,7 @@ function App() {
               <Route path="/" element={<Layout />}>
                 <Route index element={<Home />} />
                 <Route path="find-car" element={<FindCar />} />
-                <Route path="vehicle/:id" element={<VehicleDetail />} />
+                <Route path="/vehicle/:id" element={<VehicleDetail />} />
                 <Route path="booking" element={<Booking />} />
                 <Route path="checkin" element={<CheckIn />} />
                 <Route path="return" element={<ReturnCar />} />

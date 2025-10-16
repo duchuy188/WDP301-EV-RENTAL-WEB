@@ -27,7 +27,7 @@ const Terms = () => {
             <section>
               <h2 className="text-xl font-semibold mb-3">1. Chấp nhận điều khoản</h2>
               <p className="text-gray-700 dark:text-gray-300">
-                Bằng việc sử dụng dịch vụ cho thuê xe điện của chúng tôi, bạn đồng ý tuân thủ 
+                Bằng việc sử dụng dịch vụ đặt xe điện của chúng tôi, bạn đồng ý tuân thủ 
                 các điều khoản và điều kiện được nêu trong tài liệu này.
               </p>
             </section>
@@ -42,12 +42,12 @@ const Terms = () => {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">3. Quy định về thuê xe</h2>
+              <h2 className="text-xl font-semibold mb-3">3. Quy định về đặt xe</h2>
               <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
                 <li>Xe phải được trả đúng thời gian quy định</li>
                 <li>Không được sử dụng xe cho mục đích bất hợp pháp</li>
-                <li>Chịu trách nhiệm về mọi hỏng hóc trong thời gian thuê</li>
-                <li>Không được chuyển nhượng quyền thuê cho bên thứ ba</li>
+                <li>Chịu trách nhiệm về mọi hỏng hóc trong thời gian sử dụng</li>
+                <li>Không được chuyển nhượng quyền sử dụng cho bên thứ ba</li>
               </ul>
             </section>
 

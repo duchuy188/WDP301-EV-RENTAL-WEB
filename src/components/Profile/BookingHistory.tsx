@@ -6,12 +6,15 @@ import {
   Car, 
   ChevronLeft,
   ChevronRight,
-  MapPin,
-  CreditCard
+  CreditCard,
+  Eye,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ViewBooking from '../Booking/ViewBooking';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { bookingAPI } from '@/api/bookingAPI';
@@ -26,12 +29,17 @@ interface BookingHistoryProps {
 
 const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  // 'all' means no filter (show all)
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
   const [userStats, setUserStats] = useState<UserStatsData | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 5;
+
+  // For detail modal
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   // Reset current page when filters change
   useEffect(() => {
@@ -65,8 +73,8 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           setBookings([]);
         }
       } catch (error) {
-        console.error('Error fetching rental history:', error);
-        toast.error('Không thể tải lịch sử thuê xe');
+        console.error('Error fetching booking history:', error);
+        toast.error('Không thể tải lịch sử đặt xe');
         setBookings([]);
       } finally {
         setLoading(false);
@@ -83,20 +91,71 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
     }).format(price);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
+  // Parse dates returned by backend which may be in "DD/MM/YYYY HH:mm:ss" format
+  const parseBookingDate = (dateString?: string | null) => {
+    if (!dateString) return new Date(0);
+
+    // Handle 'DD/MM/YYYY' or 'DD/MM/YYYY HH:mm:ss'
+    const ddmmyyyyMatch = /^\d{1,2}\/\d{1,2}\/\d{4}/.test(dateString);
+    if (ddmmyyyyMatch) {
+      const [datePart, timePart] = dateString.split(' ');
+      const [dayStr, monthStr, yearStr] = datePart.split('/');
+      const day = Number(dayStr);
+      const month = Number(monthStr) - 1; // JS months are 0-based
+      const year = Number(yearStr);
+      let hour = 0;
+      let minute = 0;
+      let second = 0;
+      if (timePart) {
+        const parts = timePart.split(':').map((v) => Number(v));
+        hour = parts[0] ?? 0;
+        minute = parts[1] ?? 0;
+        second = parts[2] ?? 0;
+      }
+      return new Date(year, month, day, hour, minute, second);
+    }
+
+    // Fallbacks: unix timestamp or ISO string
+    const asNumber = Number(dateString);
+    if (!isNaN(asNumber)) return new Date(asNumber);
+
+    const iso = new Date(dateString);
+    if (!isNaN(iso.getTime())) return iso;
+
+    return new Date(0);
+  };
+
+  const formatDate = (dateString?: string | null) => {
+    const d = parseBookingDate(dateString);
+    return d.toLocaleDateString('vi-VN', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
     });
   };
 
+  const handleCancel = async (bookingId: string) => {
+    const confirm = window.confirm('Bạn có chắc chắn muốn huỷ đặt xe này?');
+    if (!confirm) return;
+
+    try {
+      setLoading(true);
+      await bookingAPI.cancelBooking(bookingId);
+      // Optimistically update UI by removing or marking cancelled
+      setBookings((prev) => prev.map(b => b._id === bookingId ? { ...b, status: 'cancelled', cancelled_at: new Date().toISOString() } : b));
+      toast.success('Huỷ đặt xe thành công');
+    } catch (error: any) {
+      console.error('Failed to cancel booking', error);
+      toast.error(error?.response?.data?.message || 'Huỷ đặt xe không thành công');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'active':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'pending':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       case 'confirmed':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 'cancelled':
@@ -108,10 +167,8 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'Hoàn thành';
-      case 'active':
-        return 'Đang thuê';
+      case 'pending':
+        return 'Đang chờ';
       case 'confirmed':
         return 'Đã xác nhận';
       case 'cancelled':
@@ -127,9 +184,9 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
     .sort((a: Booking, b: Booking) => {
       switch (sortBy) {
         case 'date-desc':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return parseBookingDate(b.createdAt).getTime() - parseBookingDate(a.createdAt).getTime();
         case 'date-asc':
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return parseBookingDate(a.createdAt).getTime() - parseBookingDate(b.createdAt).getTime();
         case 'price-desc':
           return b.total_price - a.total_price;
         case 'price-asc':
@@ -149,8 +206,8 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const totalSpent = userStats?.overview.total_spent ?? 0;
   const activeTrips = bookings.filter((booking: Booking) => booking.status === 'active').length;
   
-  // Check if user has any rental history
-  const hasRentalHistory = totalTrips > 0 || bookings.length > 0;
+  // Check if user has any booking history
+  const hasBookingHistory = totalTrips > 0 || bookings.length > 0;
   const insights = userStats?.insights || [];
 
   if (loading) {
@@ -160,7 +217,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Car className="h-5 w-5" />
-              Lịch sử thuê xe
+              Lịch sử đặt xe
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -175,8 +232,8 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Display insights when no rental history */}
-      {!hasRentalHistory && insights.length > 0 && (
+      {/* Display insights when no booking history */}
+      {!hasBookingHistory && insights.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -187,7 +244,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
               <div className="text-center">
                 <Car className="h-12 w-12 text-blue-500 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Chào mừng đến với dịch vụ thuê xe!
+                  Chào mừng đến với dịch vụ đặt xe!
                 </h3>
                 <div className="space-y-2">
                   {insights.map((insight, index) => (
@@ -267,7 +324,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         </motion.div>
       </div>
 
-      {/* Rental History Table */}
+      {/* Booking History Table */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -277,18 +334,17 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="flex items-center gap-2">
-                <Car className="h-5 w-5" />
-                Lịch sử thuê xe
+                <Car className="h-5 w-5 text-blue-600" />
+                <span className="text-lg font-bold text-gray-900 dark:text-white">Lịch sử đặt xe</span>
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-[140px]">
-                    <SelectValue placeholder="Trạng thái" />
+                    <SelectValue placeholder="--" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="completed">Hoàn thành</SelectItem>
-                    <SelectItem value="active">Đang thuê</SelectItem>
+                    <SelectItem value="all">--</SelectItem>
+                    <SelectItem value="pending">Đang chờ</SelectItem>
                     <SelectItem value="confirmed">Đã xác nhận</SelectItem>
                     <SelectItem value="cancelled">Đã hủy</SelectItem>
                   </SelectContent>
@@ -311,66 +367,62 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
             {paginatedBookings.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
+                  <Table className="border border-gray-200 rounded-lg">
+                    <TableHeader className="bg-gray-100 dark:bg-gray-800">
                       <TableRow>
-                        <TableHead>Xe</TableHead>
-                        <TableHead>Thời gian</TableHead>
-                        <TableHead>Địa điểm</TableHead>
-                        <TableHead>Trạng thái</TableHead>
-                        <TableHead className="text-right">Giá</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Tên xe</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Thời gian</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Tên trạm</TableHead>
+                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Giá</TableHead>
+                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Hành động</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedBookings.map((booking: Booking) => {
                         return (
-                          <TableRow key={booking._id}>
-                            <TableCell>
-                              <div className="flex items-center space-x-3">
-                                <img
-                                  src={booking.vehicle_id.images?.[0] || '/placeholder-vehicle.jpg'}
-                                  alt={`${booking.vehicle_id.brand} ${booking.vehicle_id.model}`}
-                                  className="h-12 w-12 rounded-lg object-cover"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyNkM5IDI2IDkgMTYgMjQgMTZTMzkgMjYgMjQgMjZaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xNCAzMUgxOVYzNkgxNFYzMVoiIGZpbGw9IiM5Q0EzQUYiLz4KPHA+YXRoIGQ9Ik0yOSAzMUgzNFYzNkgyOVYzMVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
-                                  }}
-                                />
-                                <div>
-                                  <p className="font-medium text-gray-900 dark:text-white">
-                                    {booking.vehicle_id.name} ({booking.vehicle_id.brand})
-                                  </p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    {booking.vehicle_id.license_plate}
-                                  </p>
-                                </div>
-                              </div>
+                          <TableRow key={booking._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <TableCell className="text-gray-900 dark:text-white font-medium">
+                              {booking.vehicle_id.name}
                             </TableCell>
                             <TableCell>
                               <div className="space-y-1">
-                                <div className="flex items-center text-sm">
+                                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                                   <Calendar className="h-4 w-4 mr-1 text-gray-400" />
                                   {formatDate(booking.start_date)} - {formatDate(booking.end_date)}
                                 </div>
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {booking.pickup_time} - {booking.return_time}
-                                </div>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center text-sm">
-                                <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                                {booking.station_id.name}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(booking.status)}>
+                              <Badge className={`${getStatusColor(booking.status)} px-2 py-1 rounded-full text-sm`}> 
                                 {getStatusText(booking.status)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-medium">
+                            <TableCell className="text-gray-600 dark:text-gray-400">
+                              {booking.station_id.name}
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-gray-900 dark:text-white">
                               {formatPrice(booking.total_price)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => { setSelectedBooking(booking); setDetailOpen(true); }}
+                                  className="text-blue-600 hover:text-blue-800"
+                                  aria-label={`Xem chi tiết ${booking.code}`}
+                                >
+                                  <Eye className="h-5 w-5" />
+                                </button>
+                                {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+                                  <button
+                                    onClick={() => handleCancel(booking._id)}
+                                    className="text-red-600 hover:text-red-800"
+                                    aria-label={`Huỷ đặt xe ${booking.code}`}
+                                  >
+                                    <Trash2 className="h-5 w-5" />
+                                  </button>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
@@ -414,7 +466,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
             ) : (
               <div className="text-center py-8">
                 <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                {!hasRentalHistory && insights.length > 0 ? (
+                {!hasBookingHistory && insights.length > 0 ? (
                   <div className="space-y-2">
                     {insights.map((insight, index) => (
                       <p key={index} className="text-gray-600 dark:text-gray-300">
@@ -425,10 +477,10 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                 ) : (
                   <>
                     <p className="text-gray-600 dark:text-gray-300 mb-2">
-                      {statusFilter === 'all' ? 'Chưa có lịch sử thuê xe' : `Không có chuyến đi nào với trạng thái "${getStatusText(statusFilter)}"`}
+                      {statusFilter === '' ? 'Chưa có lịch sử đặt xe' : `Không có đặt xe nào với trạng thái "${getStatusText(statusFilter)}"`}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {bookings.length === 0 ? 'Hãy bắt đầu thuê xe đầu tiên của bạn!' : 'Thử thay đổi bộ lọc để xem các chuyến đi khác.'}
+                      {bookings.length === 0 ? 'Hãy bắt đầu đặt xe đầu tiên của bạn!' : 'Thử thay đổi bộ lọc để xem các đặt xe khác.'}
                     </p>
                   </>
                 )}
@@ -437,6 +489,15 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           </CardContent>
         </Card>
       </motion.div>
+      {/* Modal for booking detail */}
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Chi tiết đặt xe</DialogTitle>
+          </DialogHeader>
+          {selectedBooking && <ViewBooking booking={selectedBooking} />}
+        </DialogContent>  
+      </Dialog>
     </div>
   );
 };

@@ -14,4 +14,11 @@ export const bookingAPI = {
     return response.data;
   },
 
+  // Cancel (delete) a booking by id
+  cancelBooking: async (id: string) => {
+    const response = await apiClient.delete(`/bookings/${id}`);
+    return response.data;
+  },
+
+
 };

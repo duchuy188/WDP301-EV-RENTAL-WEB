@@ -5,9 +5,11 @@ import { app } from "@/lib/firebase";
 
 interface GoogleLoginButtonProps {
   onSuccess?: (idToken: string) => void;
+  onError?: (error: any) => void;
+  disabled?: boolean;
 }
 
-const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess }) => {
+const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onError, disabled = false }) => {
   const handleGoogleLogin = async () => {
     try {
       const auth = getAuth(app);
@@ -20,8 +22,9 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess }) => {
         if (onSuccess) onSuccess(idToken);
       }
     } catch (error) {
-      // Có thể thêm xử lý lỗi nếu cần
+      // Call onError callback if provided
       console.error("Google login error", error);
+      if (onError) onError(error);
     }
   };
 
@@ -29,7 +32,8 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess }) => {
     <button
       type="button"
       onClick={handleGoogleLogin}
-      className="w-full flex items-center justify-center gap-2 h-12 mt-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 shadow transition-all duration-200"
+      disabled={disabled}
+      className="w-full flex items-center justify-center gap-2 h-12 mt-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 shadow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
         <g>

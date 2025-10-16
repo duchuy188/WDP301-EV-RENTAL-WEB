@@ -1,6 +1,7 @@
-// ...existing code...
+// Types for rentals API
 export interface RentalsApiResponse {
-  success: true;
+  success: boolean;
+  message?: string;
   data: RentalsData;
 }
 
@@ -20,13 +21,13 @@ export interface Rental {
   _id: string;
   code: string;
   booking_id: string;
-  user_id: string;
-  vehicle_id: string;
-  station_id: string;
+  user_id: UserSummary | string;
+  vehicle_id: VehicleSummary | string;
+  station_id: StationSummary | string;
   actual_start_time: string; // ISO date string
   actual_end_time: string;   // ISO date string
-  pickup_staff_id?: string | null;
-  return_staff_id?: string | null;
+  pickup_staff_id?: StaffSummary | string | null;
+  return_staff_id?: StaffSummary | string | null;
   vehicle_condition_before: VehicleCondition;
   vehicle_condition_after: VehicleCondition;
   images_before: string[];
@@ -50,6 +51,31 @@ export interface VehicleCondition {
   exterior_condition: string;
   interior_condition: string;
   notes?: string | null;
+}
+
+export interface UserSummary {
+  _id: string;
+  fullname?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface VehicleSummary {
+  _id: string;
+  license_plate?: string;
+  name?: string;
+  model?: string;
+}
+
+export interface StationSummary {
+  _id: string;
+  name?: string;
+  address?: string;
+}
+
+export interface StaffSummary {
+  _id: string;
+  fullname?: string;
 }
 
 export type RentalStatus = 'active' | 'completed' | 'cancelled' | string;

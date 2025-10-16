@@ -263,9 +263,9 @@ const CheckIn: React.FC = () => {
 
                 {currentStep === 2 && (
                   <div>
-                    <h2 className="text-2xl font-bold mb-6">Xem hợp đồng thuê xe</h2>
+                    <h2 className="text-2xl font-bold mb-6">Xem hợp đồng đặt xe</h2>
                     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 mb-6">
-                      <h3 className="font-semibold text-lg mb-4">HỢP ĐỒNG THUÊ XE ĐIỆN</h3>
+                      <h3 className="font-semibold text-lg mb-4">HỢP ĐỒNG ĐẶT XE ĐIỆN</h3>
                       <div className="space-y-4 text-sm">
                         <div>
                           <h4 className="font-semibold">Điều 1: Thông tin xe</h4>
@@ -273,13 +273,13 @@ const CheckIn: React.FC = () => {
                           <p>- Vị trí: {mockBookings.find(b => b.id === selectedBooking)?.car.location}</p>
                         </div>
                         <div>
-                          <h4 className="font-semibold">Điều 2: Thời gian thuê</h4>
+                          <h4 className="font-semibold">Điều 2: Thời gian đặt xe</h4>
                           <p>- Từ: {formatDate(mockBookings.find(b => b.id === selectedBooking)?.startDate || '')}</p>
                           <p>- Đến: {formatDate(mockBookings.find(b => b.id === selectedBooking)?.endDate || '')}</p>
                         </div>
                         <div>
                           <h4 className="font-semibold">Điều 3: Trách nhiệm</h4>
-                          <p>- Người thuê có trách nhiệm bảo quản xe</p>
+                          <p>- Người đặt xe có trách nhiệm bảo quản xe</p>
                           <p>- Trả xe đúng thời gian và địa điểm</p>
                           <p>- Bồi thường nếu có hư hỏng</p>
                         </div>
