@@ -23,7 +23,7 @@ import { vehiclesAPI } from '@/api/vehiclesAPI';
 import { bookingAPI } from '@/api/bookingAPI';
 import { getKYCStatus } from '@/api/kycAPI';
 import { BookingRequest, BookingResponse } from '@/types/booking';
-import { VehicleListItem, Vehicle } from '@/types/vehicles';
+import { VehicleListItem, Vehicle, Station } from '@/types/vehicles';
 import { KYCStatusResponseUnion } from '@/types/kyc';
 import { canRentVehicles, getKYCStatusLabel } from '@/utils/kycUtils';
 import { toast } from '@/utils/toast';
@@ -51,7 +51,6 @@ const Booking: React.FC = () => {
   // KYC Status
   const [kycStatus, setKycStatus] = useState<KYCStatusResponseUnion | null>(null);
   const [isLoadingKYC, setIsLoadingKYC] = useState(true);
-  const [kycError, setKycError] = useState<string | null>(null);
 
   const steps = [
     { number: 1, title: 'Chọn xe', description: 'Chọn xe phù hợp' },
@@ -65,10 +64,11 @@ const Booking: React.FC = () => {
       try {
         setIsLoadingVehicles(true);
         const response = await vehiclesAPI.getVehicles();
-        setVehicles(response.vehicles);
-        
+        const vehiclesArr = Array.isArray(response?.vehicles) ? response.vehicles : [];
+        setVehicles(vehiclesArr);
+
         // Check if vehicle data was passed from VehicleDetail page
-        const stateData = location.state as { selectedVehicle?: Vehicle; selectedColor?: any } | null;
+  const stateData = location.state as { selectedVehicle?: Vehicle; selectedColor?: any; selectedStation?: string } | null;
         if (stateData?.selectedVehicle) {
           // Convert Vehicle type to VehicleListItem type for consistency
           const vehicleFromDetail = stateData.selectedVehicle;
@@ -85,10 +85,17 @@ const Booking: React.FC = () => {
             price_per_day: vehicleFromDetail.price_per_day,
             deposit_percentage: vehicleFromDetail.deposit_percentage,
             available_quantity: 1, // Default since it's a specific vehicle
-            sample_image: vehicleFromDetail.images[0] || '',
+            sample_image: (vehicleFromDetail.images && vehicleFromDetail.images[0]) || '',
             sample_vehicle_id: vehicleFromDetail._id,
             all_vehicle_ids: [vehicleFromDetail._id],
-            stations: [vehicleFromDetail.station]
+            // Preserve the full stations array if available; otherwise fallback to single station
+            stations: (vehicleFromDetail.stations && vehicleFromDetail.stations.length > 0)
+              ? vehicleFromDetail.stations
+              : (vehicleFromDetail.station ? [vehicleFromDetail.station] : [])
+            ,
+            // required list fields - provide safe defaults
+            total_available_quantity: 1,
+            color_images: vehicleFromDetail.color_images || []
           };
           
           setSelectedVehicle(vehicleListItem);
@@ -96,24 +103,30 @@ const Booking: React.FC = () => {
           
           // Set selected color if provided, otherwise use first available color
           if (stateData.selectedColor) {
-            setSelectedColor(stateData.selectedColor.color);
-          } else if (vehicleFromDetail.available_colors && vehicleFromDetail.available_colors.length > 0) {
-            setSelectedColor(vehicleFromDetail.available_colors[0].color);
+            // stateData.selectedColor might be an object or a simple string
+            const sc = stateData.selectedColor as any;
+            setSelectedColor(typeof sc === 'string' ? sc : (sc?.color || vehicleFromDetail.color || ''));
+          } else if (Array.isArray(vehicleFromDetail.available_colors) && vehicleFromDetail.available_colors.length > 0) {
+            setSelectedColor(vehicleFromDetail.available_colors[0]?.color || vehicleFromDetail.color || '');
           } else {
-            setSelectedColor(vehicleFromDetail.color);
+            setSelectedColor(vehicleFromDetail.color || '');
           }
           
-          // Set default station
-          if (vehicleFromDetail.station) {
-            setSelectedStation(vehicleFromDetail.station._id);
+          // Set default station: use station from navigation state if provided, otherwise prefer the first from stations array, else fallback to vehicle.station
+          if (stateData.selectedStation) {
+            setSelectedStation(stateData.selectedStation);
+          } else if (Array.isArray(vehicleFromDetail.stations) && vehicleFromDetail.stations.length > 0) {
+            setSelectedStation(vehicleFromDetail.stations[0]?._id || '');
+          } else if (vehicleFromDetail.station) {
+            setSelectedStation((vehicleFromDetail.station as any)._id || '');
           }
           
           // Skip to step 2 since vehicle is already selected
           setCurrentStep(2);
-        } else if (response.vehicles.length > 0) {
-          setSelectedVehicle(response.vehicles[0]);
+        } else if (vehiclesArr.length > 0) {
+          setSelectedVehicle(vehiclesArr[0]);
           // Load detail for the first vehicle
-          await loadVehicleDetail(response.vehicles[0].sample_vehicle_id);
+          await loadVehicleDetail(vehiclesArr[0].sample_vehicle_id);
         }
       } catch (error) {
         console.error('Error loading vehicles:', error);
@@ -129,14 +142,12 @@ const Booking: React.FC = () => {
   // Load KYC status to check if user can book
   useEffect(() => {
     const loadKYCStatus = async () => {
-      try {
+        try {
         setIsLoadingKYC(true);
-        setKycError(null);
         const kycResponse = await getKYCStatus();
         setKycStatus(kycResponse);
       } catch (error: any) {
         console.error('Error loading KYC status:', error);
-        setKycError('Không thể tải trạng thái xác thực');
         toast.error("Không thể kiểm tra trạng thái xác thực");
       } finally {
         setIsLoadingKYC(false);
@@ -153,15 +164,21 @@ const Booking: React.FC = () => {
       setSelectedVehicleDetail(vehicleDetail);
       
       // Set default color to the first available color
-      if (vehicleDetail.available_colors && vehicleDetail.available_colors.length > 0) {
-        setSelectedColor(vehicleDetail.available_colors[0].color);
+      if (Array.isArray(vehicleDetail.available_colors) && vehicleDetail.available_colors.length > 0) {
+        setSelectedColor(vehicleDetail.available_colors[0]?.color || vehicleDetail.color || '');
       } else {
-        setSelectedColor(vehicleDetail.color);
+        setSelectedColor(vehicleDetail.color || '');
       }
       
       // Set default station
-      if (vehicleDetail.station) {
-        setSelectedStation(vehicleDetail.station._id);
+      // If the detail returns a stations array, prefer that and also attach it to `selectedVehicle` so UI list updates
+      if (Array.isArray(vehicleDetail.stations) && vehicleDetail.stations.length > 0) {
+        const detailStations: Station[] = vehicleDetail.stations as Station[];
+        setSelectedStation(detailStations[0]?._id || '');
+        // Also update selectedVehicle to include stations if it's set
+        setSelectedVehicle(prev => prev ? ({ ...prev, stations: detailStations }) : prev);
+      } else if (vehicleDetail.station) {
+        setSelectedStation((vehicleDetail.station as any)?._id || '');
       }
     } catch (error) {
       console.error('Error loading vehicle detail:', error);
@@ -241,6 +258,47 @@ const Booking: React.FC = () => {
     }
   };
 
+  // Display helpers for sidebar summary: prefer selectedVehicleDetail (full detail) then selectedVehicle
+  const displayVehicle = selectedVehicleDetail || selectedVehicle;
+
+  const displayImage = (() => {
+    if (!displayVehicle) return '/placeholder-vehicle.jpg';
+
+    // If we have a selectedVehicleDetail and a selectedColor, prefer color images
+    try {
+      if (selectedVehicleDetail && selectedColor) {
+        const colorOpt = selectedVehicleDetail.available_colors?.find(c => c.color === selectedColor);
+        if (colorOpt) {
+          if (Array.isArray(colorOpt.images) && colorOpt.images.length > 0) return colorOpt.images[0];
+          if (Array.isArray(colorOpt.sample_images) && colorOpt.sample_images.length > 0) return colorOpt.sample_images[0];
+          if (colorOpt.image) return colorOpt.image;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    if (selectedVehicleDetail && Array.isArray(selectedVehicleDetail.images) && selectedVehicleDetail.images.length > 0) return selectedVehicleDetail.images[0];
+    return (selectedVehicle && selectedVehicle.sample_image) || '/placeholder-vehicle.jpg';
+  })();
+
+  const displayStationName = (() => {
+    if (!displayVehicle) return 'Nhiều trạm';
+    const stationsList: any[] = Array.isArray((selectedVehicleDetail as any)?.stations)
+      ? (selectedVehicleDetail as any).stations
+      : (selectedVehicle?.stations || []);
+
+    if (selectedStation) {
+      const found = stationsList.find(s => s._id === selectedStation);
+      if (found) return found.name;
+    }
+
+    return stationsList && stationsList.length > 0 ? stationsList[0].name : 'Nhiều trạm';
+  })();
+
+  const displayBattery = displayVehicle ? (displayVehicle.battery_capacity || '') : '';
+  const displayRange = displayVehicle ? (displayVehicle.max_range || '') : '';
+
   const handleConfirmBooking = async () => {
     // Kiểm tra KYC status trước khi đặt xe
     if (!canRentVehicles(kycStatus)) {
@@ -254,8 +312,23 @@ const Booking: React.FC = () => {
       return;
     }
 
+    // Determine the specific vehicle id to book
+    // Preference order: selected color's sample_vehicle_id -> selectedVehicleDetail._id -> selectedVehicle.sample_vehicle_id
+    let vehicleIdToBook: string | undefined = undefined;
+    try {
+      if (selectedVehicleDetail?.available_colors && selectedColor) {
+        const colorOpt = selectedVehicleDetail.available_colors.find(c => c.color === selectedColor);
+        if (colorOpt && colorOpt.sample_vehicle_id) vehicleIdToBook = colorOpt.sample_vehicle_id;
+      }
+    } catch (e) {
+      // ignore
+    }
+    if (!vehicleIdToBook) {
+      vehicleIdToBook = selectedVehicleDetail?._id || selectedVehicle?.sample_vehicle_id;
+    }
+
     // Validation đầy đủ
-    if (!bookingDate || !startTime || !endTime || !selectedVehicle || !selectedColor || !selectedStation) {
+    if (!bookingDate || !startTime || !endTime || !selectedVehicle || !selectedColor || !selectedStation || !vehicleIdToBook) {
       toast.error("Vui lòng điền đầy đủ thông tin (ngày, giờ, xe, màu, trạm)");
       return;
     }
@@ -276,6 +349,7 @@ const Booking: React.FC = () => {
       const bookingData: BookingRequest = {
         brand: selectedVehicle.brand, // VD: "VinFast"
         model: selectedVehicle.model, // VD: "Evo 200"
+        vehicle_id: vehicleIdToBook,
         color: selectedColor, // Màu được chọn từ dropdown
         station_id: selectedStation, // Trạm được chọn từ dropdown
         start_date: bookingDate, // Ngày bắt đầu từ form
@@ -556,8 +630,8 @@ const Booking: React.FC = () => {
                                 </SelectItem>
                               ))
                             ) : selectedVehicle ? (
-                              <SelectItem value={selectedVehicle.color}>
-                                {selectedVehicle.color}
+                              <SelectItem value={selectedVehicle?.color || ''}>
+                                {selectedVehicle?.color || ''}
                               </SelectItem>
                             ) : null}
                           </SelectContent>
@@ -806,24 +880,24 @@ const Booking: React.FC = () => {
                   <CardTitle>Tóm tắt đặt xe</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {selectedVehicle && (
+                  {displayVehicle && (
                     <>
                       <div className="text-center">
                         <img
-                          src={selectedVehicle.sample_image || '/placeholder-vehicle.jpg'}
-                          alt={`${selectedVehicle.brand} ${selectedVehicle.model}`}
+                          src={displayImage}
+                          alt={`${displayVehicle.brand} ${displayVehicle.model}`}
                           className="w-full h-32 object-cover rounded-lg mb-3"
                         />
-                        <h3 className="font-semibold">{selectedVehicle.brand} {selectedVehicle.model}</h3>
+                        <h3 className="font-semibold">{displayVehicle.brand} {displayVehicle.model}</h3>
                         <div className="flex items-center justify-center mt-2">
                           <MapPin className="h-4 w-4 mr-1 text-gray-400" />
                           <span className="text-sm text-gray-600 dark:text-gray-300">
-                            {selectedVehicle.stations.length > 0 ? selectedVehicle.stations[0].name : 'Nhiều trạm'}
+                            {displayStationName}
                           </span>
                         </div>
                         <div className="mt-2">
                           <div className="text-sm text-gray-600 dark:text-gray-300">
-                            Pin: {selectedVehicle.battery_capacity}mAh | Tầm xa: {selectedVehicle.max_range}km
+                            Pin: {displayBattery}mAh | Tầm xa: {displayRange}km
                           </div>
                         </div>
                       </div>
@@ -858,16 +932,16 @@ const Booking: React.FC = () => {
                         <h4 className="font-semibold mb-2">Tổng chi phí</h4>
                         <div className="text-center">
                           <p className="text-2xl font-bold text-green-600">
-                            {selectedVehicle ? formatPrice(totalPrice) : "0 đ"}
+                            {displayVehicle ? formatPrice(totalPrice) : "0 đ"}
                           </p>
-                          {selectedVehicle && basePrice > 0 ? (
+                          {displayVehicle && basePrice > 0 ? (
                             <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                               <p>{numberOfDays} ngày × {formatPrice(pricePerDay)}</p>
                               <p className="text-xs">= {formatPrice(totalPrice)}</p>
                             </div>
                           ) : (
                             <p className="text-sm text-gray-500">
-                              {selectedVehicle ? `${formatPrice(pricePerDay)}/ngày` : "Chọn xe để xem giá"}
+                              {displayVehicle ? `${formatPrice(pricePerDay)}/ngày` : "Chọn xe để xem giá"}
                             </p>
                           )}
                         </div>

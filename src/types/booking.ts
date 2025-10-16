@@ -2,6 +2,7 @@
 export interface BookingRequest {
   brand: string;
   model: string;
+  vehicle_id?: string; // specific vehicle instance id (preferred)
   color: string;
   station_id: string;
   start_date: string;      // yyyy-mm-dd

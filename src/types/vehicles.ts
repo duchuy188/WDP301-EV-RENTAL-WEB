@@ -11,14 +11,15 @@ export interface Station {
 
 export interface ColorImage {
   color: string;
-  image: string;
+  images: string[];
   available_quantity: number;
   sample_vehicle_id: string;
 }
 
 export interface AvailableColor {
   sample_vehicle_id: string;
-  sample_image?: string;
+  sample_images?: string[];
+  images?: string[];
   price_per_day: number;
   deposit_percentage: number;
   color: string;
@@ -37,7 +38,7 @@ export interface Vehicle {
   battery_capacity: number;
   max_range: number;
   max_speed?: number; // km/h
-  power?: number; // Watts
+  power: number; // Watts
   price_per_day: number;
   deposit_percentage: number;
   images: string[];
@@ -51,6 +52,8 @@ export interface Vehicle {
 
 // Interface for vehicles list (FindCar API response)
 export interface VehicleListItem {
+  // Optional top-level id coming from API (e.g., model name used as id)
+  id?: string;
   brand: string;
   model: string;
   year: number;
@@ -69,6 +72,7 @@ export interface VehicleListItem {
   all_vehicle_ids: string[];
   stations: Station[];
   color_images: ColorImage[];
+  images?: string[]; // Added optional images property
 }
 
 // Interface for vehicle filter params

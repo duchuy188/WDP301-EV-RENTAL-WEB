@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -22,6 +22,8 @@ import { VehicleListItem, VehiclesResponse } from '@/types/vehicles';
 const FindCar: React.FC = () => {
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
+  // keep a stable map of initial prices by sample_vehicle_id to avoid UI showing changing prices
+  const initialPriceMap = useRef<Record<string, number>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +37,14 @@ const FindCar: React.FC = () => {
       try {
         setLoading(true);
         const response: VehiclesResponse = await vehiclesAPI.getVehicles();
+  // Debug: log received prices from API
+  console.debug && console.debug('vehiclesAPI.getVehicles response (prices):', response.vehicles.map(v => ({ id: v.sample_vehicle_id, price: v.price_per_day })));
+        // store initial prices into ref (only first time seen)
+        response.vehicles.forEach(v => {
+          if (v.sample_vehicle_id && initialPriceMap.current[v.sample_vehicle_id] == null) {
+            initialPriceMap.current[v.sample_vehicle_id] = v.price_per_day;
+          }
+        });
         setVehicles(response.vehicles);
         setError(null);
       } catch (err) {
@@ -209,7 +219,7 @@ const FindCar: React.FC = () => {
         {/* Car List or Map */}
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCars.length > 0 ? (
+              {filteredCars.length > 0 ? (
               filteredCars.map((vehicle, index) => {
                 return (
                   <motion.div
@@ -219,81 +229,111 @@ const FindCar: React.FC = () => {
                     transition={{ delay: index * 0.1 }}
                     whileHover={{ scale: 1.02 }}
                     className="cursor-pointer"
-                    onClick={() => navigate(`/vehicle/${vehicle.sample_vehicle_id}`)}
+                    onClick={() => navigate(`/vehicle/${encodeURIComponent(vehicle.sample_vehicle_id)}`, { state: { selectedVehicle: vehicle } })}
                   >
-                    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-white">
-                      {/* Header with name and price */}
-                      <div className="px-6 py-4 border-b border-gray-100">
-                        <div className="flex justify-between items-center">
-                          <h3 className="text-lg font-bold text-gray-900 uppercase">
-                            {vehicle.brand} {vehicle.model}
-                          </h3>
+                    <Card className="overflow-hidden hover:shadow-2xl transition-shadow duration-300 bg-white rounded-xl">
+                      {(() => { console.debug && console.debug('Rendering vehicle price', { id: vehicle.sample_vehicle_id, price: vehicle.price_per_day }); return null; })()}
+                      {/* Header with stacked labels */}
+                      <div className="px-6 pt-5 pb-3 border-b border-gray-100">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            {vehicle.brand && (<div className="text-sm text-gray-600">Thương hiệu: <span className="font-semibold text-gray-900">{vehicle.brand}</span></div>)}
+                            {vehicle.model && (<div className="text-sm text-gray-600">Mẫu: <span className="font-semibold text-gray-900">{vehicle.model}</span></div>)}
+                          </div>
                           <div className="text-right">
-                            <span className="text-xl font-bold text-red-500">
-                              {formatPrice(vehicle.price_per_day).replace('₫', 'Đ/NGÀY')}
-                            </span>
+                            {vehicle.year  && (<div className="text-sm text-gray-600">Năm: <span className="font-semibold text-gray-900">{vehicle.year}</span></div>)}
+                            {(vehicle.price_per_day) && (
+                              <div className="text-lg font-bold text-gray-900 mt-1">{(vehicle.price_per_day).toLocaleString('vi-VN') + ' đ/ngày'}</div>
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      {/* Vehicle Image */}
-                      <div className="p-6 flex justify-center items-center min-h-[280px] bg-white">
-                        <div className="w-full h-full max-w-sm">
-                          <VehicleImage
-                            src={vehicle.sample_image}
-                            alt={`${vehicle.brand} ${vehicle.model}`}
-                            className="w-full h-full object-contain rounded-lg"
-                          />
+                      {/* Vehicle Image - larger padded area */}
+                      <div className="p-6 bg-white flex items-center justify-center">
+                        <div className="w-full max-w-lg h-44 md:h-52 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <div className="w-[86%] h-[86%]">
+                            {/* Prefer first color image if available */}
+                            <VehicleImage
+                              src={(() => {
+                                if (vehicle.color_images && vehicle.color_images.length > 0) {
+                                  const white = vehicle.color_images.find(ci => ci.color && ci.color.toLowerCase() === 'trắng');
+                                  if (white && white.images && white.images.length > 0) return white.images[0];
+                                }
+                                return vehicle.sample_image || (vehicle.images && vehicle.images[0]);
+                              })()}
+                              alt={`${vehicle.brand} ${vehicle.model}`}
+                              className="w-full h-full rounded-md"
+                            />
+                          </div>
                         </div>
                       </div>
 
                       {/* Specifications Grid */}
-                      <CardContent className="p-6">
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Speed */}
-                          <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">⚡</span>
+                      <CardContent className="px-6 pb-6 pt-4">
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-6 items-start">
+                          {vehicle.type && (
+                            <div className="flex items-center space-x-4">
+                              <div className="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center">
+                                <span className="text-base">🚗</span>
+                              </div>
+                              <div>
+                                <div className="text-xs text-gray-500 uppercase font-medium">Loại</div>
+                                <div className="text-base font-semibold text-gray-900">{vehicle.type}</div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="text-xs text-gray-600 uppercase font-medium">Tốc độ tối đa</div>
-                              <div className="text-sm font-semibold">{vehicle.max_speed || 48} Km/h</div>
-                            </div>
-                          </div>
+                          )}
 
-                          {/* Range */}
-                          <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">🔋</span>
+                          {vehicle.max_range != null && (
+                            <div className="flex items-center space-x-4">
+                              <div className="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center">
+                                <span className="text-base">�</span>
+                              </div>
+                              <div>
+                                <div className="text-xs text-gray-500 uppercase font-medium">Km mỗi lần sạc</div>
+                                <div className="text-base font-semibold text-gray-900">{vehicle.max_range} Km</div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="text-xs text-gray-600 uppercase font-medium">Km mỗi lần sạc</div>
-                              <div className="text-sm font-semibold">{vehicle.max_range} Km</div>
-                            </div>
-                          </div>
+                          )}
 
-                          {/* Power */}
-                          <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">#</span>
+                          {vehicle.battery_capacity != null && (
+                            <div className="flex items-center space-x-4">
+                              <div className="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center">
+                                <span className="text-base">🔋</span>
+                              </div>
+                              <div>
+                                <div className="text-xs text-gray-500 uppercase font-medium">Dung lượng pin</div>
+                                <div className="text-base font-semibold text-gray-900">{vehicle.battery_capacity} kWh</div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="text-xs text-gray-600 uppercase font-medium">Công suất</div>
-                              <div className="text-sm font-semibold">{vehicle.power || 1200}W</div>
-                            </div>
-                          </div>
+                          )}
 
-                          {/* Status */}
-                          <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">📅</span>
+                          {vehicle.max_speed != null && (
+                            <div className="flex items-center space-x-4">
+                              <div className="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center">
+                                <span className="text-base">⚡</span>
+                              </div>
+                              <div>
+                                <div className="text-xs text-gray-500 uppercase font-medium">Tốc độ tối đa</div>
+                                <div className="text-base font-semibold text-gray-900">{vehicle.max_speed} Km/h</div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="text-xs text-gray-600 uppercase font-medium">Tình trạng</div>
-                              <div className="text-sm font-semibold text-green-600">Có thể thuê</div>
+                          )}
+
+                          {vehicle.deposit_percentage != null && (
+                            <div className="flex items-center space-x-4">
+                              <div className="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center">
+                                <span className="text-base">💰</span>
+                              </div>
+                              <div>
+                                <div className="text-xs text-gray-500 uppercase font-medium">Đặt cọc</div>
+                                <div className="text-base font-semibold text-gray-900">{vehicle.deposit_percentage}%</div>
+                              </div>
                             </div>
-                          </div>
+                          )}
+
                         </div>
+
                       </CardContent>
                     </Card>
                   </motion.div>
