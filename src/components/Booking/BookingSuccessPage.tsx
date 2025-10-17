@@ -64,7 +64,7 @@ const BookingSuccessPage: React.FC = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Có vẻ như trang này được truy cập trực tiếp mà không có thông tin booking. Bạn có thể vào lịch sử đặt xe để xem chi tiết.</p>
             <div className="flex justify-center gap-3">
               <button onClick={() => navigate('/booking')} className="px-4 py-2 rounded-lg border border-green-600 text-green-600">Đặt xe</button>
-              <button onClick={() => navigate('/history')} className="px-4 py-2 rounded-lg bg-green-600 text-white">Xem lịch sử</button>
+              <button onClick={() => navigate('/profile', { state: { activeTab: 'booking-history' } })} className="px-4 py-2 rounded-lg bg-green-600 text-white">Xem lịch sử</button>
             </div>
           </div>
         </div>
@@ -187,7 +187,7 @@ const BookingSuccessPage: React.FC = () => {
 
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-3 justify-center">
               <button onClick={() => navigate('/booking')} className="flex-1 sm:flex-none px-6 py-2 rounded-lg border-2 border-green-600 text-green-600 font-semibold hover:bg-green-50 dark:hover:bg-green-900/10 transition-all duration-200 hover:shadow-lg hover:shadow-green-200/50">🚗 Đặt xe khác</button>
-              <button onClick={() => navigate('/history')} className="flex-1 sm:flex-none px-6 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-xl hover:shadow-green-600/30 transition-all duration-200 flex items-center justify-center gap-2 group">📋 Xem lịch sử đặt xe <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></button>
+              <button onClick={() => navigate('/profile', { state: { activeTab: 'booking-history' } })} className="flex-1 sm:flex-none px-6 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-xl hover:shadow-green-600/30 transition-all duration-200 flex items-center justify-center gap-2 group">📋 Xem lịch sử đặt xe <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></button>
             </motion.div>
           </div>
         </motion.div>

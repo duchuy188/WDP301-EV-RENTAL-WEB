@@ -73,7 +73,6 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           setBookings([]);
         }
       } catch (error) {
-        console.error('Error fetching booking history:', error);
         toast.error('Không thể tải lịch sử đặt xe');
         setBookings([]);
       } finally {
