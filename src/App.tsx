@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import FindCar from './pages/FindCar';
 import VehicleDetail from './pages/VehicleDetail';
 import Booking from './pages/Booking';
+import BookingSuccessPage from './components/Booking/BookingSuccessPage';
 import CheckIn from './pages/CheckIn';
 import ReturnCar from './pages/ReturnCar';
 import History from './pages/History';
@@ -38,6 +39,7 @@ function App() {
                 <Route path="find-car" element={<FindCar />} />
                 <Route path="/vehicle/:id" element={<VehicleDetail />} />
                 <Route path="booking" element={<Booking />} />
+                <Route path="booking-success" element={<BookingSuccessPage />} />
                 <Route path="checkin" element={<CheckIn />} />
                 <Route path="return" element={<ReturnCar />} />
                 <Route path="history" element={<History />} />

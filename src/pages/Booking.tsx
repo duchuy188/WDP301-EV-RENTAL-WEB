@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 // UI inputs used inside step components
-import { formatDateVN } from '@/lib/utils';
 import BookingSidebar from '@/components/Booking/BookingSidebar';
 import StepChooseVehicle from '@/components/Booking/StepChooseVehicle';
 import StepChooseTime from '@/components/Booking/StepChooseTime';
@@ -233,23 +232,7 @@ const Booking: React.FC = () => {
     }).format(price);
   };
 
-  // Use utility function for consistent date formatting
-  const formatDateSafe = (dateString: string) => {
-    try {
-      if (!dateString) return 'Chưa có ngày';
-      
-      // Log để debug
-      console.log('Formatting date:', dateString, 'type:', typeof dateString);
-      
-      const result = formatDateVN(dateString);
-      console.log('Formatted result:', result);
-      return result;
-      
-    } catch (error) {
-      console.error('Error formatting date:', error, 'for date:', dateString);
-      return `Lỗi parse ngày (${dateString})`;
-    }
-  };
+  // Use utility function for consistent date formatting via import when needed
 
   // Display helpers for sidebar summary: prefer selectedVehicleDetail (full detail) then selectedVehicle
   const displayVehicle = selectedVehicleDetail || selectedVehicle;
@@ -355,21 +338,31 @@ const Booking: React.FC = () => {
 
 
       const response = await bookingAPI.postBooking(bookingData);
-      
-      
-      toast.success(`🎉 Tạo booking thành công! Mã booking: ${response.booking.code || 'N/A'}`);
 
-      // Navigate to the success page
-      navigate("/booking-success", {
-        state: {
-          bookingResponse: response,
-          selectedVehicle,
-          formatDateSafe,
-          formatPrice,
-        },
-      });
+      // Debug: log the raw response for troubleshooting
+      console.log('postBooking response:', response);
+
+      // Defensive: ensure response has booking
+      if (!response || !response.booking) {
+        console.error('Unexpected booking response:', response);
+        toast.error('Đặt xe thành công nhưng máy chủ trả về dữ liệu không hợp lệ. Vui lòng kiểm tra lịch sử đặt xe.');
+      } else {
+        toast.success(`🎉 Tạo booking thành công! Mã booking: ${response.booking.code || 'N/A'}`);
+
+          // Navigate to the success page. Do NOT pass functions in location.state because
+          // history.pushState performs a structured clone which fails for functions.
+          navigate('/booking-success', {
+            state: {
+              bookingResponse: response,
+              selectedVehicle,
+            },
+          });
+      }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi đặt xe");
+      console.error('Error during postBooking:', error);
+      const serverMessage = error?.response?.data?.message || error?.message;
+      // If validation or server error, surface it
+      toast.error(serverMessage || 'Có lỗi xảy ra khi đặt xe');
     } finally {
       setIsLoading(false);
     }
