@@ -14,9 +14,10 @@ export const bookingAPI = {
     return response.data;
   },
 
-  // Cancel (delete) a booking by id
-  cancelBooking: async (id: string) => {
-    const response = await apiClient.delete(`/bookings/${id}`);
+  // Cancel (delete) a booking by id. Accept an optional payload (e.g. { reason })
+  // Note: axios.delete only accepts a request body when passed as `data` in the config.
+  cancelBooking: async (id: string, payload?: { reason?: string }) => {
+    const response = await apiClient.delete(`/bookings/${id}`, { data: payload ?? {} });
     return response.data;
   },
 

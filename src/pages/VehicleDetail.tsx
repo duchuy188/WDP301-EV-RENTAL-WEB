@@ -392,7 +392,8 @@ const VehicleDetail: React.FC = () => {
                     <div className="flex items-start space-x-3">
                       <MapPin className="h-5 w-5 text-green-600 mt-1" />
                       <div>
-                        <h4 className="font-semibold">{station?.name }</h4>
+                        {/* Make station name clickable and navigate to station detail page */}
+                        <h4 className="font-semibold cursor-pointer text-blue-600 hover:underline" onClick={() => navigate(`/station/${(station as any)._id}`)}>{station?.name }</h4>
                         <p className="text-gray-600 dark:text-gray-300">{station?.address}</p>
                       </div>
                     </div>

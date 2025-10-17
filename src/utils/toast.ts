@@ -15,7 +15,7 @@ export const toast = {
   // Error toast
   error: (message: string, description?: string) => {
     return toastBase({
-      title: '❌ Lỗi',
+      title: '❌ Thông báo',
       description: description || message,
       variant: 'destructive',
       duration: 5000,

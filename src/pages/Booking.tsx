@@ -555,14 +555,14 @@ const Booking: React.FC = () => {
 
               {/* Navigation Buttons */}
               <div className="flex justify-between mt-8">
-                <Button
+                {/* <Button
                   variant="outline"
                   onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
                   disabled={currentStep === 1}
                 >
                   <ChevronLeft className="mr-2 h-4 w-4" />
                   Quay lại
-                </Button>
+                </Button> */}
 
                 {currentStep < 3 ? (
                   <Button
