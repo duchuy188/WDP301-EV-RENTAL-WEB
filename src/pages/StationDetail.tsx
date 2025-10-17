@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { stationAPI } from '../api/stationAPI';
 import { Station } from '../types/station';
-import { Button } from '../components/ui/button';
 import { MapPin, Phone, Mail, Calendar, Users, Zap, Wrench, TrendingUp } from 'lucide-react';
 
 const StationDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [station, setStation] = useState<Station | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,14 +36,7 @@ const StationDetail: React.FC = () => {
     return () => { mounted = false; };
   }, [id]);
 
-  const formatDate = (iso?: string) => {
-    if (!iso) return '-';
-    try {
-      return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
-    } catch {
-      return iso;
-    }
-  };
+  
 
   if (loading) return <div className="p-6">Đang tải thông tin trạm...</div>;
   if (error) return <div className="p-6 text-red-600">Lỗi: {error}</div>;
