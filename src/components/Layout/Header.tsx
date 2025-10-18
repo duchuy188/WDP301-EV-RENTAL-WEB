@@ -25,6 +25,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/utils/toast';
 
+
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -40,6 +41,7 @@ const Header: React.FC = () => {
 
   const navItems = [
     { path: '/', label: 'Trang chủ' },
+    // { path: '/stations', label: 'Trạm' },
     { path: '/find-car', label: 'Tìm xe' },
     { path: '/history', label: 'Thống kê' },
     { path: '/chatbot', label: 'Chatbot' },

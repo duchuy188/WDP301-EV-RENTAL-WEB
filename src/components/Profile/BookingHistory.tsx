@@ -73,7 +73,6 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           setBookings([]);
         }
       } catch (error) {
-        console.error('Error fetching booking history:', error);
         toast.error('Không thể tải lịch sử đặt xe');
         setBookings([]);
       } finally {
@@ -82,7 +81,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
     };
 
     fetchData();
-  }, []); // Remove currentPage dependency since we're doing client-side pagination
+  }, []);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -140,7 +139,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
 
     try {
       setLoading(true);
-      await bookingAPI.cancelBooking(bookingId);
+  await bookingAPI.cancelBooking(bookingId, { reason: 'User cancelled via UI' });
       // Optimistically update UI by removing or marking cancelled
       setBookings((prev) => prev.map(b => b._id === bookingId ? { ...b, status: 'cancelled', cancelled_at: new Date().toISOString() } : b));
       toast.success('Huỷ đặt xe thành công');
@@ -160,6 +159,8 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'completed':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
@@ -173,6 +174,8 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         return 'Đã xác nhận';
       case 'cancelled':
         return 'Đã hủy';
+      case 'completed':
+        return 'Hoàn thành';
       default:
         return status;
     }
@@ -346,6 +349,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                     <SelectItem value="all">--</SelectItem>
                     <SelectItem value="pending">Đang chờ</SelectItem>
                     <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                    <SelectItem value="completed">Hoàn thành</SelectItem>
                     <SelectItem value="cancelled">Đã hủy</SelectItem>
                   </SelectContent>
                 </Select>

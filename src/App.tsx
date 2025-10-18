@@ -19,6 +19,8 @@ import AuthPage from './pages/AuthPage';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Terms from './pages/Terms';
+import StationPage from './pages/StationPage';
+import StationDetail from './pages/StationDetail';
 
 function App() {
   return (
@@ -45,6 +47,8 @@ function App() {
                 <Route path="history" element={<History />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="support" element={<Support />} />
+                <Route path="stations" element={<StationPage />} />
+                <Route path="station/:id" element={<StationDetail />} />
               </Route>
             </Routes>
             <Toaster />
