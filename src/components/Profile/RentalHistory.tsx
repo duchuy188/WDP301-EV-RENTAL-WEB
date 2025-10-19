@@ -28,8 +28,8 @@ const RentalHistory: React.FC = () => {
       setRentals(data.rentals || []);
     } catch (err: any) {
       console.error('Error fetching rentals:', err);
-      setError('Không thể tải lịch sử đặt xe');
-      toast.error('Không thể tải lịch sử đặt xe');
+      setError('Không thể tải lịch sử thuê xe');
+      toast.error('Không thể tải lịch sử thuê xe');
     } finally {
       setLoading(false);
     }
@@ -149,7 +149,7 @@ const RentalHistory: React.FC = () => {
       <Card>
         <CardContent className="p-6 text-center">
           <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Bạn chưa có lịch sử đặt xe nào</p>
+          <p className="text-gray-500">Bạn chưa có lịch sử thuê xe nào</p>
         </CardContent>
       </Card>
     );
@@ -198,7 +198,7 @@ const RentalHistory: React.FC = () => {
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
-                            <DialogTitle>Chi tiết đặt xe #{selectedRental?.code}</DialogTitle>
+                            <DialogTitle>Chi tiết thuê xe #{selectedRental?.code}</DialogTitle>
                             <DialogDescription>Thông tin chi tiết lượt thuê</DialogDescription>
                           </DialogHeader>
                           {/* Reuse the existing detailed layout inside dialog */}

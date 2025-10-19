@@ -18,7 +18,6 @@ import ViewBooking from '../Booking/ViewBooking';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { bookingAPI } from '@/api/bookingAPI';
-import { authAPI } from '@/api/personaAPI';
 import { UserStatsData } from '@/types/perssonal';
 import { Booking } from '@/types/booking';
 import { toast } from '@/utils/toast';
@@ -27,12 +26,12 @@ interface BookingHistoryProps {
   className?: string;
 }
 
-const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
+const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const [currentPage, setCurrentPage] = useState(1);
   // 'all' means no filter (show all)
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
-  const [userStats, setUserStats] = useState<UserStatsData | null>(null);
+  const [userStats] = useState<UserStatsData | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 5;
@@ -52,26 +51,33 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         setLoading(true);
         
         // Fetch user stats and bookings in parallel
-        const [statsResponse, bookingsResponse] = await Promise.all([
-          authAPI.getPersonal().catch((error) => {
-            console.warn('Failed to fetch user stats:', error);
-            return null;
-          }),
-          bookingAPI.getBookings({ page: 1, limit: 100 }).catch((error) => {
-            console.warn('Failed to fetch bookings:', error);
-            return null;
-          })
-        ]);
-
-        if (statsResponse) {
-          setUserStats(statsResponse.data);
-        }
+        const bookingsResponse = await bookingAPI.getBookings({ page: 1, limit: 100 }).catch((error) => {
+          console.warn('Failed to fetch bookings:', error);
+          return null;
+        });
 
         if (bookingsResponse && bookingsResponse.bookings) {
-          setBookings(bookingsResponse.bookings);
-        } else {
-          setBookings([]);
+          // fetch detailed booking for each id in parallel (tolerate failures)
+          const detailed = await Promise.allSettled(
+            bookingsResponse.bookings.map((b) => bookingAPI.getBooking(b._id).catch((e) => {
+              console.warn('Failed to fetch booking detail for', b._id, e);
+              return null;
+            }))
+          );
+
+          const merged = bookingsResponse.bookings.map((orig, idx) => {
+            const res = detailed[idx];
+            if (res && res.status === 'fulfilled' && res.value) {
+              // API returns { booking: Booking } or booking directly; handle both
+              const value = res.value as any;
+              return value.booking ?? value;
+            }
+            return orig;
+          });
+
+          setBookings(merged);
         }
+
       } catch (error) {
         toast.error('Không thể tải lịch sử đặt xe');
         setBookings([]);
@@ -151,6 +157,32 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
     }
   };
 
+  // When opening detail modal, ensure we have full booking detail from API
+  const openDetail = async (booking: Booking) => {
+    try {
+      setDetailOpen(true);
+      // If the booking already contains detailed fields (e.g. price_per_day), use it; otherwise fetch
+      const needsFetch = typeof booking.price_per_day === 'undefined' || !booking.vehicle_id || typeof booking.total_price === 'undefined';
+      if (needsFetch) {
+        const resp = await bookingAPI.getBooking(booking._id).catch((e) => {
+          console.warn('Failed to fetch booking detail', e);
+          return null;
+        });
+        if (resp && resp.booking) {
+          setSelectedBooking(resp.booking as Booking);
+          // update cached list
+          setBookings((prev) => prev.map(b => b._id === resp.booking._id ? resp.booking : b));
+          return;
+        }
+      }
+      setSelectedBooking(booking);
+    } catch (error) {
+      console.error(error);
+      toast.error('Không thể tải chi tiết đặt xe');
+      setDetailOpen(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -204,10 +236,11 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
-  // Statistics from API or fallback to calculations
-  const totalTrips = userStats?.overview.total_rentals ?? 0;
-  const totalSpent = userStats?.overview.total_spent ?? 0;
-  const activeTrips = bookings.filter((booking: Booking) => booking.status === 'active').length;
+  // Statistics from bookings (fallback if userStats not provided)
+  const totalTrips = userStats?.overview.total_rentals ?? bookings.length;
+  const totalSpent = userStats?.overview.total_spent ?? bookings.reduce((s, b) => s + (b.total_price ?? 0), 0);
+  // Count trips that are currently active/on-going. Backend may use 'active' or 'confirmed' for ongoing trips.
+  const activeTrips = bookings.filter((booking: Booking) => booking.status === 'active' || booking.status === 'confirmed').length;
   
   // Check if user has any booking history
   const hasBookingHistory = totalTrips > 0 || bookings.length > 0;
@@ -411,7 +444,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                             <TableCell className="text-right">
                               <div className="flex items-center gap-2">
                                 <button
-                                  onClick={() => { setSelectedBooking(booking); setDetailOpen(true); }}
+                                  onClick={() => openDetail(booking)}
                                   className="text-blue-600 hover:text-blue-800"
                                   aria-label={`Xem chi tiết ${booking.code}`}
                                 >
@@ -481,7 +514,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                 ) : (
                   <>
                     <p className="text-gray-600 dark:text-gray-300 mb-2">
-                      {statusFilter === '' ? 'Chưa có lịch sử đặt xe' : `Không có đặt xe nào với trạng thái "${getStatusText(statusFilter)}"`}
+                      {statusFilter === 'all' ? 'Chưa có lịch sử đặt xe' : `Không có đặt xe nào với trạng thái "${getStatusText(statusFilter)}"`}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {bookings.length === 0 ? 'Hãy bắt đầu đặt xe đầu tiên của bạn!' : 'Thử thay đổi bộ lọc để xem các đặt xe khác.'}
@@ -506,4 +539,4 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   );
 };
 
-export default RentalHistory;
+export default BookingHistory;
