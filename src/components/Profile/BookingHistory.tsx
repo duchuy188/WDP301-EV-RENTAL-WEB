@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Calendar, 
   Clock, 
   Car, 
   ChevronLeft,
   ChevronRight,
   CreditCard,
-  Eye,
-  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -90,10 +87,18 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   }, []);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
+    // Format as in screenshot: group thousands and append ' đ'
+    try {
+      return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+    } catch (e) {
+      return price + ' đ';
+    }
+  };
+
+  const formatTime = (dateString?: string | null) => {
+    const d = parseBookingDate(dateString);
+    if (d.getTime() === 0) return '';
+    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   };
 
   // Parse dates returned by backend which may be in "DD/MM/YYYY HH:mm:ss" format
@@ -139,23 +144,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
     });
   };
 
-  const handleCancel = async (bookingId: string) => {
-    const confirm = window.confirm('Bạn có chắc chắn muốn huỷ đặt xe này?');
-    if (!confirm) return;
-
-    try {
-      setLoading(true);
-  await bookingAPI.cancelBooking(bookingId, { reason: 'User cancelled via UI' });
-      // Optimistically update UI by removing or marking cancelled
-      setBookings((prev) => prev.map(b => b._id === bookingId ? { ...b, status: 'cancelled', cancelled_at: new Date().toISOString() } : b));
-      toast.success('Huỷ đặt xe thành công');
-    } catch (error: any) {
-      console.error('Failed to cancel booking', error);
-      toast.error(error?.response?.data?.message || 'Huỷ đặt xe không thành công');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Cancellation handled via API elsewhere; removed inline cancel action to match UI design
 
   // When opening detail modal, ensure we have full booking detail from API
   const openDetail = async (booking: Booking) => {
@@ -407,11 +396,12 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                   <Table className="border border-gray-200 rounded-lg">
                     <TableHeader className="bg-gray-100 dark:bg-gray-800">
                       <TableRow>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Tên xe</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Mã</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Xe</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạm</TableHead>
                         <TableHead className="text-left text-gray-600 dark:text-gray-300">Thời gian</TableHead>
                         <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Tên trạm</TableHead>
-                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Giá</TableHead>
+                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Tổng phí</TableHead>
                         <TableHead className="text-right text-gray-600 dark:text-gray-300">Hành động</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -420,45 +410,38 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                         return (
                           <TableRow key={booking._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <TableCell className="text-gray-900 dark:text-white font-medium">
-                              {booking.vehicle_id.name}
+                              {booking.code ?? booking._id}
+                            </TableCell>
+                            <TableCell className="text-gray-900 dark:text-white font-medium">
+                              {/* show vehicle short code if available or name */}
+                              {booking.vehicle_id?.license_plate ?? booking.vehicle_id?.name ?? '-'}
+                            </TableCell>
+                            <TableCell className="text-gray-600 dark:text-gray-400">
+                              {booking.station_id?.name ?? '-'}
                             </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                  <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                                  {formatDate(booking.start_date)} - {formatDate(booking.end_date)}
-                                </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                <div className="font-medium">{formatTime(booking.createdAt)}</div>
+                                <div className="text-xs">{formatDate(booking.createdAt)}</div>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Badge className={`${getStatusColor(booking.status)} px-2 py-1 rounded-full text-sm`}> 
+                              <Badge className={`${getStatusColor(booking.status)} px-3 py-1 rounded-md text-sm`}> 
                                 {getStatusText(booking.status)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-gray-600 dark:text-gray-400">
-                              {booking.station_id.name}
-                            </TableCell>
                             <TableCell className="text-right font-medium text-gray-900 dark:text-white">
-                              {formatPrice(booking.total_price)}
+                              {formatPrice(booking.total_price ?? 0)}
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-end">
                                 <button
                                   onClick={() => openDetail(booking)}
-                                  className="text-blue-600 hover:text-blue-800"
+                                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
                                   aria-label={`Xem chi tiết ${booking.code}`}
                                 >
-                                  <Eye className="h-5 w-5" />
+                                  Xem chi tiết
                                 </button>
-                                {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-                                  <button
-                                    onClick={() => handleCancel(booking._id)}
-                                    className="text-red-600 hover:text-red-800"
-                                    aria-label={`Huỷ đặt xe ${booking.code}`}
-                                  >
-                                    <Trash2 className="h-5 w-5" />
-                                  </button>
-                                )}
                               </div>
                             </TableCell>
                           </TableRow>

@@ -20,7 +20,7 @@ export interface Pagination {
 export interface Rental {
   _id: string;
   code: string;
-  booking_id: string;
+  booking_id: string | BookingSummary;
   user_id: UserSummary | string;
   vehicle_id: VehicleSummary | string;
   station_id: StationSummary | string;
@@ -76,6 +76,14 @@ export interface StationSummary {
 export interface StaffSummary {
   _id: string;
   fullname?: string;
+}
+
+export interface BookingSummary {
+  _id?: string;
+  code?: string;
+  start_date?: string;
+  end_date?: string;
+  total_price?: number;
 }
 
 export type RentalStatus = 'active' | 'completed' | 'cancelled' | string;
