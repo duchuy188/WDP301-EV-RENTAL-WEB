@@ -15,6 +15,7 @@ import ReturnCar from './pages/ReturnCar';
 import History from './pages/History';
 import Profile from './pages/Profile';
 import Support from './pages/Support';
+import ChatbotPage from './pages/ChatbotPage';
 import AuthPage from './pages/AuthPage';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -47,6 +48,7 @@ function App() {
                 <Route path="history" element={<History />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="support" element={<Support />} />
+                <Route path="chatbot" element={<ChatbotPage />} />
                 <Route path="stations" element={<StationPage />} />
                 <Route path="station/:id" element={<StationDetail />} />
               </Route>
