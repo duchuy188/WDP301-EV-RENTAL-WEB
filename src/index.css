@@ -69,3 +69,12 @@
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 }
+
+/* Utility to hide native scrollbars (works across modern browsers) */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}

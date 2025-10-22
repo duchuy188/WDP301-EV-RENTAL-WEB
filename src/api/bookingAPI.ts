@@ -21,5 +21,11 @@ export const bookingAPI = {
     return response.data;
   },
 
+  // Get detailed booking by id
+  getBooking: async (id: string): Promise<any> => {
+    const response = await apiClient.get(`/bookings/${id}`);
+    return response.data;
+  },
+
 
 };

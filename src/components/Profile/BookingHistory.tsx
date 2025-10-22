@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Calendar, 
   Clock, 
   Car, 
   ChevronLeft,
   ChevronRight,
   CreditCard,
-  Eye,
-  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +15,6 @@ import ViewBooking from '../Booking/ViewBooking';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { bookingAPI } from '@/api/bookingAPI';
-import { authAPI } from '@/api/personaAPI';
 import { UserStatsData } from '@/types/perssonal';
 import { Booking } from '@/types/booking';
 import { toast } from '@/utils/toast';
@@ -27,12 +23,12 @@ interface BookingHistoryProps {
   className?: string;
 }
 
-const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
+const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const [currentPage, setCurrentPage] = useState(1);
   // 'all' means no filter (show all)
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
-  const [userStats, setUserStats] = useState<UserStatsData | null>(null);
+  const [userStats] = useState<UserStatsData | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 5;
@@ -52,26 +48,33 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         setLoading(true);
         
         // Fetch user stats and bookings in parallel
-        const [statsResponse, bookingsResponse] = await Promise.all([
-          authAPI.getPersonal().catch((error) => {
-            console.warn('Failed to fetch user stats:', error);
-            return null;
-          }),
-          bookingAPI.getBookings({ page: 1, limit: 100 }).catch((error) => {
-            console.warn('Failed to fetch bookings:', error);
-            return null;
-          })
-        ]);
-
-        if (statsResponse) {
-          setUserStats(statsResponse.data);
-        }
+        const bookingsResponse = await bookingAPI.getBookings({ page: 1, limit: 100 }).catch((error) => {
+          console.warn('Failed to fetch bookings:', error);
+          return null;
+        });
 
         if (bookingsResponse && bookingsResponse.bookings) {
-          setBookings(bookingsResponse.bookings);
-        } else {
-          setBookings([]);
+          // fetch detailed booking for each id in parallel (tolerate failures)
+          const detailed = await Promise.allSettled(
+            bookingsResponse.bookings.map((b) => bookingAPI.getBooking(b._id).catch((e) => {
+              console.warn('Failed to fetch booking detail for', b._id, e);
+              return null;
+            }))
+          );
+
+          const merged = bookingsResponse.bookings.map((orig, idx) => {
+            const res = detailed[idx];
+            if (res && res.status === 'fulfilled' && res.value) {
+              // API returns { booking: Booking } or booking directly; handle both
+              const value = res.value as any;
+              return value.booking ?? value;
+            }
+            return orig;
+          });
+
+          setBookings(merged);
         }
+
       } catch (error) {
         toast.error('Không thể tải lịch sử đặt xe');
         setBookings([]);
@@ -84,10 +87,18 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   }, []);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
+    // Format as in screenshot: group thousands and append ' đ'
+    try {
+      return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+    } catch (e) {
+      return price + ' đ';
+    }
+  };
+
+  const formatTime = (dateString?: string | null) => {
+    const d = parseBookingDate(dateString);
+    if (d.getTime() === 0) return '';
+    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   };
 
   // Parse dates returned by backend which may be in "DD/MM/YYYY HH:mm:ss" format
@@ -133,21 +144,31 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
     });
   };
 
-  const handleCancel = async (bookingId: string) => {
-    const confirm = window.confirm('Bạn có chắc chắn muốn huỷ đặt xe này?');
-    if (!confirm) return;
+  // Cancellation handled via API elsewhere; removed inline cancel action to match UI design
 
+  // When opening detail modal, ensure we have full booking detail from API
+  const openDetail = async (booking: Booking) => {
     try {
-      setLoading(true);
-  await bookingAPI.cancelBooking(bookingId, { reason: 'User cancelled via UI' });
-      // Optimistically update UI by removing or marking cancelled
-      setBookings((prev) => prev.map(b => b._id === bookingId ? { ...b, status: 'cancelled', cancelled_at: new Date().toISOString() } : b));
-      toast.success('Huỷ đặt xe thành công');
-    } catch (error: any) {
-      console.error('Failed to cancel booking', error);
-      toast.error(error?.response?.data?.message || 'Huỷ đặt xe không thành công');
-    } finally {
-      setLoading(false);
+      setDetailOpen(true);
+      // If the booking already contains detailed fields (e.g. price_per_day), use it; otherwise fetch
+      const needsFetch = typeof booking.price_per_day === 'undefined' || !booking.vehicle_id || typeof booking.total_price === 'undefined';
+      if (needsFetch) {
+        const resp = await bookingAPI.getBooking(booking._id).catch((e) => {
+          console.warn('Failed to fetch booking detail', e);
+          return null;
+        });
+        if (resp && resp.booking) {
+          setSelectedBooking(resp.booking as Booking);
+          // update cached list
+          setBookings((prev) => prev.map(b => b._id === resp.booking._id ? resp.booking : b));
+          return;
+        }
+      }
+      setSelectedBooking(booking);
+    } catch (error) {
+      console.error(error);
+      toast.error('Không thể tải chi tiết đặt xe');
+      setDetailOpen(false);
     }
   };
 
@@ -204,10 +225,11 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
-  // Statistics from API or fallback to calculations
-  const totalTrips = userStats?.overview.total_rentals ?? 0;
-  const totalSpent = userStats?.overview.total_spent ?? 0;
-  const activeTrips = bookings.filter((booking: Booking) => booking.status === 'active').length;
+  // Statistics from bookings (fallback if userStats not provided)
+  const totalTrips = userStats?.overview.total_rentals ?? bookings.length;
+  const totalSpent = userStats?.overview.total_spent ?? bookings.reduce((s, b) => s + (b.total_price ?? 0), 0);
+  // Count trips that are currently active/on-going. Backend may use 'active' or 'confirmed' for ongoing trips.
+  const activeTrips = bookings.filter((booking: Booking) => booking.status === 'active' || booking.status === 'confirmed').length;
   
   // Check if user has any booking history
   const hasBookingHistory = totalTrips > 0 || bookings.length > 0;
@@ -374,11 +396,12 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                   <Table className="border border-gray-200 rounded-lg">
                     <TableHeader className="bg-gray-100 dark:bg-gray-800">
                       <TableRow>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Tên xe</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Mã</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Xe</TableHead>
+                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạm</TableHead>
                         <TableHead className="text-left text-gray-600 dark:text-gray-300">Thời gian</TableHead>
                         <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Tên trạm</TableHead>
-                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Giá</TableHead>
+                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Tổng phí</TableHead>
                         <TableHead className="text-right text-gray-600 dark:text-gray-300">Hành động</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -387,45 +410,38 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                         return (
                           <TableRow key={booking._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <TableCell className="text-gray-900 dark:text-white font-medium">
-                              {booking.vehicle_id.name}
+                              {booking.code ?? booking._id}
+                            </TableCell>
+                            <TableCell className="text-gray-900 dark:text-white font-medium">
+                              {/* show vehicle short code if available or name */}
+                              {booking.vehicle_id?.license_plate ?? booking.vehicle_id?.name ?? '-'}
+                            </TableCell>
+                            <TableCell className="text-gray-600 dark:text-gray-400">
+                              {booking.station_id?.name ?? '-'}
                             </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                  <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                                  {formatDate(booking.start_date)} - {formatDate(booking.end_date)}
-                                </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                <div className="font-medium">{formatTime(booking.createdAt)}</div>
+                                <div className="text-xs">{formatDate(booking.createdAt)}</div>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Badge className={`${getStatusColor(booking.status)} px-2 py-1 rounded-full text-sm`}> 
+                              <Badge className={`${getStatusColor(booking.status)} px-3 py-1 rounded-md text-sm`}> 
                                 {getStatusText(booking.status)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-gray-600 dark:text-gray-400">
-                              {booking.station_id.name}
-                            </TableCell>
                             <TableCell className="text-right font-medium text-gray-900 dark:text-white">
-                              {formatPrice(booking.total_price)}
+                              {formatPrice(booking.total_price ?? 0)}
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-end">
                                 <button
-                                  onClick={() => { setSelectedBooking(booking); setDetailOpen(true); }}
-                                  className="text-blue-600 hover:text-blue-800"
+                                  onClick={() => openDetail(booking)}
+                                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
                                   aria-label={`Xem chi tiết ${booking.code}`}
                                 >
-                                  <Eye className="h-5 w-5" />
+                                  Xem chi tiết
                                 </button>
-                                {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-                                  <button
-                                    onClick={() => handleCancel(booking._id)}
-                                    className="text-red-600 hover:text-red-800"
-                                    aria-label={`Huỷ đặt xe ${booking.code}`}
-                                  >
-                                    <Trash2 className="h-5 w-5" />
-                                  </button>
-                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -481,7 +497,7 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                 ) : (
                   <>
                     <p className="text-gray-600 dark:text-gray-300 mb-2">
-                      {statusFilter === '' ? 'Chưa có lịch sử đặt xe' : `Không có đặt xe nào với trạng thái "${getStatusText(statusFilter)}"`}
+                      {statusFilter === 'all' ? 'Chưa có lịch sử đặt xe' : `Không có đặt xe nào với trạng thái "${getStatusText(statusFilter)}"`}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {bookings.length === 0 ? 'Hãy bắt đầu đặt xe đầu tiên của bạn!' : 'Thử thay đổi bộ lọc để xem các đặt xe khác.'}
@@ -506,4 +522,4 @@ const RentalHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   );
 };
 
-export default RentalHistory;
+export default BookingHistory;

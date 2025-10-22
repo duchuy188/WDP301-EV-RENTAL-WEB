@@ -2,7 +2,7 @@
 export interface BookingRequest {
   brand: string;
   model: string;
-  vehicle_id?: string; // specific vehicle instance id (preferred)
+  vehicle_id?: string; 
   color: string;
   station_id: string;
   start_date: string;      // yyyy-mm-dd
@@ -54,15 +54,15 @@ export interface Booking {
   final_amount: number;
   special_requests?: string;
   notes?: string;
-  cancellation_reason?: string | null;
-  cancelled_at?: string | null;
-  cancelled_by?: string | null;
-  confirmed_at?: string | null;
-  confirmed_by?: string | null;
-  qr_code?: string | null;
-  qr_expires_at?: string | null;
-  qr_used_at?: string | null;
-  created_by?: string | null;
+  cancellation_reason?: string ;
+  cancelled_at?: string ;
+  cancelled_by?: string ;
+  confirmed_at?: string ;
+  confirmed_by?: string ;
+  qr_code?: string ;
+  qr_expires_at?: string ;
+  qr_used_at?: string ;
+  created_by?: string ;
   is_active: boolean;
   createdAt: string;
   updatedAt: string;
