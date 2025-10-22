@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import RentalDetail from './RentalDetail';
+import { feedbackAPI } from '@/api/feedbackAPI';
+import FeedbackForm from './FeedbackForm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { rentalAPI } from '@/api/rentalsAPI';
@@ -33,6 +35,11 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
   // detail modal
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedRental, setSelectedRental] = useState<Rental | null>(null);
+  // feedback modal
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackRentalId, setFeedbackRentalId] = useState<string | null>(null);
+  // rentals that already have feedback
+  const [ratedRentalIds, setRatedRentalIds] = useState<string[]>([]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -46,6 +53,18 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
           console.warn('Failed to fetch rentals', e);
           return null as any;
         });
+        // also fetch user's feedbacks to know which rentals were rated
+        const fdata = await feedbackAPI.getFeedbacks().catch(() => [] as any[]);
+        if (Array.isArray(fdata)) {
+          const ids = Array.from(new Set(fdata.map((f: any) => {
+            const rid = f.rental_id;
+            if (!rid) return null;
+            if (typeof rid === 'string') return rid;
+            if (typeof rid === 'object') return rid._id ?? rid.id ?? null;
+            return String(rid);
+          }).filter(Boolean)));
+          setRatedRentalIds(ids as string[]);
+        }
         if (data && data.rentals) {
           setRentals(data.rentals);
         } else if (data && Array.isArray(data)) {
@@ -65,7 +84,6 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
 
     fetchData();
   }, []);
-
   const parseBookingDate = (dateString?: string | null) => {
     if (!dateString) return new Date(0);
 
@@ -300,7 +318,9 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                         <TableHead className="text-left text-gray-600 dark:text-gray-300">Thời gian</TableHead>
                         <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
                         <TableHead className="text-right text-gray-600 dark:text-gray-300">Tổng phí</TableHead>
+                        
                         <TableHead className="text-right text-gray-600 dark:text-gray-300">Hành động</TableHead>
+                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Đánh giá</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -328,6 +348,27 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                               >
                                 Xem chi tiết
                               </button>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end">
+                              { (ratedRentalIds.includes(r._id) || r.status !== 'completed') ? (
+                                <button
+                                  disabled
+                                  className="bg-yellow-300 text-white px-3 py-2 rounded-md opacity-60 cursor-not-allowed"
+                                  aria-label={`Đã đánh giá ${r.code}`}
+                                >
+                                  Đã đánh giá
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => { setFeedbackRentalId(r._id); setFeedbackOpen(true); }}
+                                  className="bg-yellow-500 text-white px-3 py-2 rounded-md hover:bg-yellow-600"
+                                  aria-label={`Đánh giá ${r.code}`}
+                                >
+                                  Đánh giá
+                                </button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -373,6 +414,45 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
             <DialogTitle>Chi tiết thuê xe</DialogTitle>
           </DialogHeader>
           {selectedRental ? <RentalDetail rental={selectedRental} /> : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Feedback modal */}
+      <Dialog open={!!feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Đánh giá chuyến đi</DialogTitle>
+          </DialogHeader>
+          {feedbackRentalId ? (
+            <FeedbackForm
+              rentalId={feedbackRentalId}
+              // pass staff ids from the rental if available
+              staffIds={(() => {
+                const r = rentals.find(x => x._id === feedbackRentalId);
+                const ids: string[] = [];
+                if (r) {
+                  const pick = r.pickup_staff_id;
+                  const ret = r.return_staff_id;
+                  if (pick) ids.push(typeof pick === 'string' ? pick : (pick as any)._id ?? String(pick));
+                  if (ret) ids.push(typeof ret === 'string' ? ret : (ret as any)._id ?? String(ret));
+                }
+                return ids.filter(Boolean);
+              })()}
+              onClose={() => setFeedbackOpen(false)}
+              onSuccess={(created) => {
+                // try to determine rental id from created feedback and mark as rated
+                try {
+                  const rid = (created as any).rental_id ?? (created as any).rental?._id ?? (created as any).rental?.id ?? feedbackRentalId;
+                  if (rid) {
+                    setRatedRentalIds(prev => Array.from(new Set([...prev, String(rid)])));
+                  }
+                } catch (_) {
+                  setRatedRentalIds(prev => Array.from(new Set([...prev, feedbackRentalId])));
+                }
+                setFeedbackOpen(false);
+              }}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
