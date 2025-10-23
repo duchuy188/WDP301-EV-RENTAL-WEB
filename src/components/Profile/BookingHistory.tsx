@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import ViewBooking from '../Booking/ViewBooking';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -36,6 +37,12 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   // For detail modal
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+
+  // For cancel modal
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelingBooking, setCancelingBooking] = useState<Booking | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   // Reset current page when filters change
   useEffect(() => {
@@ -199,6 +206,26 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         return 'Hoàn thành';
       default:
         return status;
+    }
+  };
+
+  // Cancel booking handler
+  const confirmCancel = async () => {
+    if (!cancelingBooking) return;
+    try {
+      setCancelLoading(true);
+      await bookingAPI.cancelBooking(cancelingBooking._id, cancelReason ? { reason: cancelReason } : {});
+      // Update local state: mark as cancelled and update updatedAt/ status fields if present
+      setBookings((prev) => prev.map((b) => (b._id === cancelingBooking._id ? { ...b, status: 'cancelled' } : b)));
+      toast.success('Đã hủy đặt xe thành công');
+    } catch (error) {
+      console.error('Cancel failed', error);
+      toast.error('Hủy đặt xe thất bại');
+    } finally {
+      setCancelLoading(false);
+      setCancelOpen(false);
+      setCancelingBooking(null);
+      setCancelReason('');
     }
   };
 
@@ -393,55 +420,61 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
             {paginatedBookings.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table className="border border-gray-200 rounded-lg">
-                    <TableHeader className="bg-gray-100 dark:bg-gray-800">
+                  <Table className="border border-gray-200 rounded-lg min-w-[750px]">
+                    <TableHeader className="bg-white dark:bg-gray-800">
                       <TableRow>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Mã</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Xe</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạm</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Thời gian</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
-                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Tổng phí</TableHead>
-                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Hành động</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[90px]">Mã</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[110px]">Xe</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[200px]">Trạm</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Thời gian</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Trạng thái</TableHead>
+                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300 w-[150px]">Hành động</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedBookings.map((booking: Booking) => {
                         return (
                           <TableRow key={booking._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <TableCell className="text-gray-900 dark:text-white font-medium">
+                            <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[90px] truncate">
                               {booking.code ?? booking._id}
                             </TableCell>
-                            <TableCell className="text-gray-900 dark:text-white font-medium">
-                              {/* show vehicle short code if available or name */}
+                            <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[110px] truncate">
                               {booking.vehicle_id?.license_plate ?? booking.vehicle_id?.name ?? '-'}
                             </TableCell>
-                            <TableCell className="text-gray-600 dark:text-gray-400">
+                            <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate">
                               {booking.station_id?.name ?? '-'}
                             </TableCell>
-                            <TableCell>
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <TableCell className="px-3 py-2 max-w-[100px]">
+                              <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                 <div className="font-medium">{formatTime(booking.createdAt)}</div>
                                 <div className="text-xs">{formatDate(booking.createdAt)}</div>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <Badge className={`${getStatusColor(booking.status)} px-3 py-1 rounded-md text-sm`}> 
+                            <TableCell className="px-3 py-2 max-w-[100px]">
+                              <Badge className={`${getStatusColor(booking.status)} px-2 py-1 rounded-md text-sm whitespace-nowrap`}> 
                                 {getStatusText(booking.status)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-medium text-gray-900 dark:text-white">
-                              {formatPrice(booking.total_price ?? 0)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end">
-                                <button
-                                  onClick={() => openDetail(booking)}
-                                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                                  aria-label={`Xem chi tiết ${booking.code}`}
-                                >
+                            <TableCell className="px-3 py-2 text-right max-w-[150px]">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button size="sm" onClick={() => openDetail(booking)} aria-label={`Xem chi tiết ${booking.code}`}>
                                   Xem chi tiết
-                                </button>
+                                </Button>
+                                {/* Show Cancel button for cancellable statuses */}
+                                {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => {
+                                      setCancelingBooking(booking);
+                                      setCancelReason('');
+                                      setCancelOpen(true);
+                                    }}
+                                    aria-label={`Hủy đặt xe ${booking.code}`}
+                                  >
+                                    Hủy
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -517,6 +550,25 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           </DialogHeader>
           {selectedBooking && <ViewBooking booking={selectedBooking} />}
         </DialogContent>  
+      </Dialog>
+      {/* Cancel confirmation dialog */}
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Xác nhận hủy đặt xe</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-700">Bạn có chắc muốn hủy đặt xe <span className="font-medium">{cancelingBooking?.code ?? cancelingBooking?._id}</span>?</p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Lý do (tuỳ chọn)</label>
+              <Textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setCancelOpen(false); setCancelingBooking(null); setCancelReason(''); }} disabled={cancelLoading}>Huỷ</Button>
+              <Button onClick={confirmCancel} disabled={cancelLoading}>{cancelLoading ? 'Đang hủy...' : 'Xác nhận hủy'}</Button>
+            </div>
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );

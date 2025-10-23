@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap } from 'lucide-react';
+import { Zap, Sparkles, History, ArrowLeft, Paperclip, Image as ImageIcon, Mic, Send } from 'lucide-react';
 import { sendMessage, conversations, getConversationHistory } from '@/api/chatbotAPI';
 import { toast } from '@/utils/toast';
 import { ChatMessage } from '@/types/chatbot';
@@ -169,35 +169,41 @@ const ChatbotPage: React.FC = () => {
 
   return (
     <ChatbotContext.Provider value={{ sessionId, conversationId }}>
-      <div className="flex flex-row w-full min-h-screen bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex flex-row w-full min-h-screen bg-gradient-to-br from-gray-50 via-green-50/30 to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {/* Main scrollable area */}
         <div className="flex flex-row w-full h-screen overflow-y-auto">
           {/* Sidebar */}
-          <aside className="w-64 bg-white/90 dark:bg-gray-900/90 border-r border-gray-200 dark:border-gray-800 shadow flex flex-col items-center py-8 px-4">
-            <div className="mb-8 flex flex-col items-center">
-              <div className="bg-gradient-to-r from-green-600 to-blue-600 p-3 rounded-lg mb-2">
-                <Zap className="h-6 w-6 text-white" />
+          <aside className="w-64 bg-white/80 backdrop-blur-md dark:bg-gray-900/80 border-r border-gray-200 dark:border-gray-800 shadow-lg flex flex-col items-center py-8 px-4">
+            <div className="mb-8 flex flex-col items-center group cursor-pointer transition-transform hover:scale-105">
+              <div className="bg-gradient-to-r from-green-500 to-green-600 p-3 rounded-xl mb-3 shadow-lg group-hover:shadow-green-500/50 transition-all duration-300">
+                <Zap className="h-6 w-6 text-white animate-pulse" />
               </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">EV Rental</span>
+              <span className="text-lg font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">EV Rental</span>
             </div>
-            <nav className="flex flex-col gap-4 w-full">
+            <nav className="flex flex-col gap-3 w-full">
               <button
-                className="w-full text-left px-4 py-2 rounded-lg hover:bg-green-100 text-gray-700 font-medium"
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 dark:hover:from-green-900/20 dark:hover:to-green-800/20 text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 flex items-center gap-3 group disabled:opacity-50"
                 onClick={createSession}
                 disabled={isCreating}
               >
-                {isCreating ? 'Đang tạo...' : CHATBOT.aiButtonLabel}
+                <Sparkles className="h-5 w-5 text-green-600 dark:text-green-500 group-hover:rotate-12 transition-transform" />
+                <span>{isCreating ? 'Đang tạo...' : CHATBOT.aiButtonLabel}</span>
               </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg hover:bg-green-100 text-gray-700 font-medium" onClick={() => setShowHistory(s => !s)}>
-                {CHATBOT.historyButtonLabel}
+              <button 
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 dark:hover:from-green-900/20 dark:hover:to-green-800/20 text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 flex items-center gap-3 group" 
+                onClick={() => setShowHistory(s => !s)}
+              >
+                <History className="h-5 w-5 text-green-600 dark:text-green-500 group-hover:scale-110 transition-transform" />
+                <span>{CHATBOT.historyButtonLabel}</span>
               </button>
             </nav>
-            <div className="mt-auto w-full px-4">
+            <div className="mt-auto w-full px-0">
               <button
-                className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium"
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 flex items-center gap-3 group"
                 onClick={() => navigate('/')}
               >
-                Quay về
+                <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:-translate-x-1 transition-transform" />
+                <span>Quay về</span>
               </button>
             </div>
           </aside>
@@ -212,82 +218,107 @@ const ChatbotPage: React.FC = () => {
             ) : (
               <div className="w-full max-w-4xl flex flex-col justify-end min-h-[60vh] h-[calc(100vh-64px)]">
                 {/* Messages */}
-                <div className="flex-1 px-4 py-6 space-y-4 overflow-y-auto" style={{ minHeight: '1px' }}>
-                  {messages.map((m) => (
-                    <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className="flex-1 px-4 py-6 space-y-6 overflow-y-auto chatbot-scrollbar" style={{ minHeight: '1px' }}>
+                  {messages.map((m, idx) => (
+                    <div 
+                      key={m.id} 
+                      className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}
+                      style={{ animationDelay: `${idx * 50}ms` }}
+                    >
                       <div
-                        className={`relative max-w-[80%] px-4 py-3 rounded-2xl whitespace-pre-wrap shadow-sm transition-all
+                        className={`relative max-w-[80%] px-5 py-4 rounded-2xl whitespace-pre-wrap shadow-md hover:shadow-lg transition-all duration-300
                       ${
                         m.role === 'user'
-                          ? 'bg-green-600 text-white rounded-br-lg rounded-tr-2xl rounded-tl-2xl'
+                          ? 'bg-gradient-to-br from-green-600 to-green-700 text-white rounded-br-sm'
                           : m.role === 'assistant'
-                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-bl-lg rounded-tl-2xl rounded-tr-2xl'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-xl'
+                          ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-sm backdrop-blur-sm'
+                          : 'bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg'
                       }`}
                       >
                         {m.role === 'assistant' && (
-                          <span className="absolute -top-6 left-0 text-xs text-green-600 font-semibold">
-                            {CHATBOT.roleLabels.assistant}
-                          </span>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                              <Sparkles className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                            </div>
+                            <span className="text-xs text-green-600 dark:text-green-500 font-semibold">
+                              {CHATBOT.roleLabels.assistant}
+                            </span>
+                          </div>
                         )}
                         {m.role === 'user' && (
-                          <span className="absolute -top-6 right-0 text-xs text-blue-600 font-semibold">
+                          <span className="absolute -top-6 right-0 text-xs text-green-700 dark:text-green-400 font-semibold">
                             {CHATBOT.roleLabels.user}
                           </span>
                         )}
-                        {m.content}
+                        <div className="text-[15px] leading-relaxed">{m.content}</div>
                       </div>
                     </div>
                   ))}
+                  {loading && (
+                    <div className="flex justify-start animate-in fade-in slide-in-from-bottom-4">
+                      <div className="bg-white dark:bg-gray-800 px-5 py-4 rounded-2xl rounded-bl-sm shadow-md border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                            <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                            <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          </div>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Đang suy nghĩ...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div ref={bottomRef} />
                 </div>
 
-                {/* ✅ Chat input fixed */}
-                <div className="w-full px-0 pb-4 pt-0 flex justify-center items-end" style={{ minHeight: '64px' }}>
+                {/* Chat input */}
+                <div className="w-full px-4 pb-6 pt-0 flex justify-center items-end" style={{ minHeight: '64px' }}>
                   <form
-                    className="flex items-end w-full max-w-3xl bg-white border border-green-300 rounded-2xl p-0 shadow-sm"
+                    className="flex items-end w-full max-w-3xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-2 border-green-200 dark:border-green-800 rounded-2xl p-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-green-300 dark:hover:border-green-700"
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleSend();
                     }}
                     autoComplete="off"
                   >
-                    {/* ✅ Khung chứa icon riêng biệt, cố định chiều cao */}
-                    <div className="flex flex-col justify-end h-full px-3 py-2 border-r border-green-100 bg-green-50/30 rounded-l-2xl">
+                    {/* Icon buttons */}
+                    <div className="flex flex-col justify-end h-full px-3 py-3 border-r border-green-100 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-green-100/30 dark:from-green-900/20 dark:to-green-800/10 rounded-l-2xl">
                       <div className="flex items-center gap-2">
-                        <button type="button" tabIndex={-1} className="p-0 rounded-full hover:bg-green-100" title="Đính kèm file"
-                          style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <svg width="20" height="20" fill="none" stroke="#10A37F" strokeWidth="2" viewBox="0 0 24 24">
-                            <path d="M17 7v7a5 5 0 01-10 0V7a3 3 0 016 0v7a1 1 0 01-2 0V7" />
-                          </svg>
+                        <button 
+                          type="button" 
+                          tabIndex={-1} 
+                          className="p-2 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-all duration-300 hover:scale-110 active:scale-95 group" 
+                          title="Đính kèm file"
+                        >
+                          <Paperclip className="h-5 w-5 text-green-600 dark:text-green-500 group-hover:rotate-12 transition-transform" />
                         </button>
-                        <button type="button" tabIndex={-1} className="p-0 rounded-full hover:bg-green-100" title="Đính kèm ảnh"
-                          style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <svg width="20" height="20" fill="none" stroke="#10A37F" strokeWidth="2" viewBox="0 0 24 24">
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <path d="M21 15l-5-5-4 4-2-2-4 4" />
-                          </svg>
+                        <button 
+                          type="button" 
+                          tabIndex={-1} 
+                          className="p-2 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-all duration-300 hover:scale-110 active:scale-95 group" 
+                          title="Đính kèm ảnh"
+                        >
+                          <ImageIcon className="h-5 w-5 text-green-600 dark:text-green-500 group-hover:scale-110 transition-transform" />
                         </button>
-                        <button type="button" tabIndex={-1} className="p-0 rounded-full hover:bg-green-100" title="Gửi giọng nói"
-                          style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <svg width="20" height="20" fill="none" stroke="#10A37F" strokeWidth="2" viewBox="0 0 24 24">
-                            <rect x="9" y="2" width="6" height="12" rx="3" />
-                            <path d="M5 10v2a7 7 0 0014 0v-2" />
-                            <line x1="12" y1="22" x2="12" y2="18" />
-                          </svg>
+                        <button 
+                          type="button" 
+                          tabIndex={-1} 
+                          className="p-2 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-all duration-300 hover:scale-110 active:scale-95 group" 
+                          title="Gửi giọng nói"
+                        >
+                          <Mic className="h-5 w-5 text-green-600 dark:text-green-500 group-hover:scale-110 transition-transform" />
                         </button>
                       </div>
                     </div>
 
                     {/* Textarea */}
-                    <div className="flex-1 flex items-end px-3 py-2">
+                    <div className="flex-1 flex items-end px-4 py-3">
                       <textarea
                         ref={textareaRef}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder={CHATBOT.inputPlaceholder}
-                        className="flex-1 rounded-2xl border-none outline-none px-2 py-2 text-base bg-transparent focus:ring-0 resize-none overflow-y-auto transition-all duration-200 no-scrollbar"
+                        className="flex-1 rounded-2xl border-none outline-none px-2 py-2 text-[15px] bg-transparent focus:ring-0 resize-none overflow-y-auto transition-all duration-200 no-scrollbar dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                         rows={1}
                         style={{ minHeight: '32px', maxHeight: '180px', lineHeight: '1.6' }}
                         onKeyDown={(e) => {
@@ -301,17 +332,14 @@ const ChatbotPage: React.FC = () => {
                     </div>
 
                     {/* Send button */}
-                    <div className="flex items-end px-2 py-2">
+                    <div className="flex items-end px-3 py-3">
                       <button
                         type="submit"
-                        className="ml-2 mr-4 h-10 w-10 flex items-center justify-center rounded-full bg-green-300 hover:bg-green-400 transition shadow-none"
+                        className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
                         disabled={loading || !input.trim()}
                         title="Gửi"
                       >
-                        <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24">
-                          <path d="M22 2L11 13" />
-                          <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                        </svg>
+                        <Send className="h-5 w-5 text-white" />
                       </button>
                     </div>
                   </form>

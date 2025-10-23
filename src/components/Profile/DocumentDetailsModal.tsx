@@ -1,5 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatDateVN } from '@/lib/utils';
+import { useState } from 'react';
+import ImagePreviewDialog from './ImagePreviewDialog';
 import type {
   KYCStatusResponse,
   KYCIdentityResponse,
@@ -87,6 +89,9 @@ function formatDate(dateString: string | undefined | null) {
 }
 
 export default function DocumentDetailsModal({ open, onOpenChange, response }: Props) {
+  // State for image preview
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
   // Extract the actual data from the API response structure
   const resp = response as any;
   const actualData = resp?.data || resp; // Handle both nested and direct data structures
@@ -118,11 +123,11 @@ export default function DocumentDetailsModal({ open, onOpenChange, response }: P
                     {frontImage && (
                       <div className="flex-1">
                         <h3 className="text-xs font-medium mb-1 text-gray-800">Mặt trước</h3>
-                        <div className="h-full max-h-[calc(25vh-1rem)] bg-white rounded border border-gray-300 p-1 flex items-center justify-center">
+                        <div className="h-full max-h-[calc(25vh-1rem)] bg-white rounded border border-gray-300 p-1 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors" onClick={() => setPreviewImage(frontImage)}>
                           <img 
                             src={frontImage} 
                             alt="Mặt trước giấy tờ" 
-                            className="max-w-full max-h-full object-contain rounded" 
+                            className="max-w-full max-h-full object-contain rounded hover:opacity-90 transition-opacity" 
                           />
                         </div>
                       </div>
@@ -130,11 +135,11 @@ export default function DocumentDetailsModal({ open, onOpenChange, response }: P
                     {backImage && (
                       <div className="flex-1">
                         <h3 className="text-xs font-medium mb-1 text-gray-800">Mặt sau</h3>
-                        <div className="h-full max-h-[calc(25vh-1rem)] bg-white rounded border border-gray-300 p-1 flex items-center justify-center">
+                        <div className="h-full max-h-[calc(25vh-1rem)] bg-white rounded border border-gray-300 p-1 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors" onClick={() => setPreviewImage(backImage)}>
                           <img 
                             src={backImage} 
                             alt="Mặt sau giấy tờ" 
-                            className="max-w-full max-h-full object-contain rounded" 
+                            className="max-w-full max-h-full object-contain rounded hover:opacity-90 transition-opacity" 
                           />
                         </div>
                       </div>
@@ -425,6 +430,12 @@ export default function DocumentDetailsModal({ open, onOpenChange, response }: P
           )}
         </div>
       </DialogContent>
+
+      {/* Image Preview Dialog */}
+      <ImagePreviewDialog 
+        imageUrl={previewImage} 
+        onClose={() => setPreviewImage(null)} 
+      />
     </Dialog>
   );
 }

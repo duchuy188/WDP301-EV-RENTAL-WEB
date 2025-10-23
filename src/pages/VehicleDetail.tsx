@@ -58,13 +58,21 @@ const VehicleDetail: React.FC = () => {
       try {
         setLoading(true);
         const vehicleData = await vehiclesAPI.getVehicleById(fetchId);
-  console.log('Vehicle API response for id=', id, vehicleData);
+        console.log('Vehicle API response for id=', id, vehicleData);
+        console.log('Available colors from API:', vehicleData?.available_colors);
 
-        if (vehicleData && vehicleData.available_colors) {
+        // Always set the vehicle data first
+        setVehicle(vehicleData);
+        
+        // Set available colors - use empty array if not present
+        if (vehicleData && Array.isArray(vehicleData.available_colors)) {
+          console.log('Setting available colors:', vehicleData.available_colors.length, 'colors');
           setAvailableColors(vehicleData.available_colors);
+        } else {
+          console.warn('No available_colors in API response, using empty array');
+          setAvailableColors([]);
         }
 
-        setVehicle(vehicleData);
         setError(null);
 
         // If vehicle detail doesn't include stations, try to fetch stations from the vehicles list endpoint
@@ -203,8 +211,14 @@ const VehicleDetail: React.FC = () => {
     );
   }
 
+  // Determine color source: prefer availableColors state, fallback to vehicle.available_colors
+  const colorSource: AvailableColor[] = (availableColors && availableColors.length > 0) 
+    ? availableColors 
+    : (vehicle.available_colors && vehicle.available_colors.length > 0 ? vehicle.available_colors : []);
   
-  const colorSource: AvailableColor[] = (availableColors && availableColors.length > 0) ? availableColors : (vehicle.available_colors || []);
+  console.log('Color source length:', colorSource.length);
+  console.log('Selected color index:', selectedColorIndex);
+  
   const selectedColor = colorSource && colorSource.length > selectedColorIndex ? colorSource[selectedColorIndex] : null;
 
   const colorImages: string[] = [];
@@ -242,9 +256,13 @@ const VehicleDetail: React.FC = () => {
             </div>
             
            
-            {colorSource && colorSource.length > 0 && (
+            {/* Color Selection Gallery */}
+            {colorSource && colorSource.length > 0 ? (
               <div className="mt-2">
-                <div className="flex space-x-3 overflow-x-auto">
+                <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Chọn màu xe ({colorSource.length} màu có sẵn):
+                </h4>
+                <div className="flex space-x-3 overflow-x-auto pb-2">
                   {colorSource.map((c, idx) => {
                     const img = c.images?.[0] ?? c.sample_images?.[0] ?? c.image ?? undefined;
                     return (
@@ -252,14 +270,14 @@ const VehicleDetail: React.FC = () => {
                         key={c.sample_vehicle_id ?? idx}
                         onClick={() => setSelectedColorIndex(idx)}
                         className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                          selectedColorIndex === idx ? 'border-green-500' : 'border-gray-200 dark:border-gray-700'
+                          selectedColorIndex === idx ? 'border-green-500 shadow-lg' : 'border-gray-200 dark:border-gray-700'
                         }`}
                         title={c.color || `Màu ${idx + 1}`}
                       >
                         {img ? (
                           <VehicleImage src={img} alt={c.color || `Màu ${idx + 1}`} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-100 text-sm">
+                          <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-sm">
                             {c.color || '-'}
                           </div>
                         )}
@@ -267,6 +285,12 @@ const VehicleDetail: React.FC = () => {
                     );
                   })}
                 </div>
+              </div>
+            ) : (
+              <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ Không có thông tin màu xe từ API. Vui lòng kiểm tra lại dữ liệu.
+                </p>
               </div>
             )}
           </motion.div>

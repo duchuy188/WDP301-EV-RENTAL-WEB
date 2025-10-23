@@ -1,4 +1,4 @@
-import type { Feedback } from '@/types/feedback';
+import type { Feedback, FeedbackResponse } from '@/types/feedback';
 import apiClient from './config';
 
 export const feedbackAPI = {
@@ -15,9 +15,14 @@ export const feedbackAPI = {
     return response.data;
   },
 
-  // Get feedbacks for current customer
-  getFeedbacks: async (): Promise<Feedback[]> => {
-    const response = await apiClient.get<Feedback[]>('/feedback/customer');
+  // Get feedbacks for current customer with pagination
+  getFeedbacks: async (params?: { 
+    type?: string; 
+    status?: string; 
+    page?: number; 
+    limit?: number;
+  }): Promise<FeedbackResponse> => {
+    const response = await apiClient.get<FeedbackResponse>('/feedback/customer', { params });
     return response.data;
   }
 };

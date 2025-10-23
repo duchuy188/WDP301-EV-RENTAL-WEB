@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Edit, Check, X, Shield, User, FileCheck, Car } from 'lucide-react';
+import { Edit, Check, X, Shield, User, FileCheck, Car, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -17,7 +17,8 @@ import {
   ProfileActions, 
   ImagePreviewDialog,
   BookingHistory,
-  RentalHistory 
+  RentalHistory,
+  FeedbackHistory 
 } from '@/components/Profile';
 
 const Profile: React.FC = () => {
@@ -383,48 +384,55 @@ const Profile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Page Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6"
         >
-          <div className="flex items-center gap-4">
-            {isGoogleUser() && (
-              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                <Shield className="w-3 h-3 mr-1" />
-                Google Account
-              </Badge>
-            )}
-          </div>
-          
-          {/* Google Account Info */}
-          {isGoogleUser() && googleInfo && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
-            >
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Hồ sơ cá nhân
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Quản lý thông tin cá nhân, xác thực và lịch sử của bạn
+          </p>
+        </motion.div>
+
+        {/* Google Account Badge */}
+        {isGoogleUser() && googleInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm">
               <div className="flex items-center gap-3">
                 {googleInfo.avatar && (
                   <img
                     src={googleInfo.avatar}
                     alt="Google Avatar"
-                    className="w-8 h-8 rounded-full"
+                    className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow"
                   />
                 )}
-                <div>
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Đăng nhập bằng Google
-                  </p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                      Đăng nhập bằng Google
+                    </p>
+                  </div>
                   <p className="text-xs text-blue-700 dark:text-blue-300">
-                    {googleInfo.verifiedEmail && "Email đã được xác minh"} • ID: {googleInfo.googleId || 'N/A'}
+                    {googleInfo.verifiedEmail && "✓ Email đã được xác minh"} • ID: {googleInfo.googleId || 'N/A'}
                   </p>
                 </div>
+                <Badge className="bg-blue-600 text-white border-0 shadow">
+                  Google Account
+                </Badge>
               </div>
-            </motion.div>
-          )}
-        </motion.div>
+            </div>
+          </motion.div>
+        )}
 
         {(authLoading || loading) ? (
           <div className="flex justify-center items-center py-20">
@@ -472,6 +480,14 @@ const Profile: React.FC = () => {
                       <Car className="h-4 w-4" />
                       Lịch sử thuê xe
                     </TabsTrigger>
+
+                    <TabsTrigger
+                      value="feedback-history"
+                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Lịch sử đánh giá
+                    </TabsTrigger>
                   </TabsList>
                 </div>
               
@@ -484,45 +500,12 @@ const Profile: React.FC = () => {
                   >
                     <Card>
                       <CardHeader className="pb-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <CardTitle className="text-lg">Thông tin cá nhân</CardTitle>
-                            {isGoogleUser() && (
-                              <Badge variant="outline" className="text-xs">
-                                Tài khoản Google
-                              </Badge>
-                            )}
-                          </div>
-                          {!isEditing ? (
-                            <Button
-                              variant="outline"
-                              onClick={() => setIsEditing(true)}
-                              className="h-9"
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Chỉnh sửa
-                            </Button>
-                          ) : (
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleCancel}
-                                className="h-9"
-                              >
-                                <X className="mr-2 h-4 w-4" />
-                                Hủy
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={handleSave}
-                                className="bg-green-600 hover:bg-green-700 h-9"
-                                disabled={loading || !hasChanges()}
-                              >
-                                <Check className="mr-2 h-4 w-4" />
-                                Lưu
-                              </Button>
-                            </div>
+                        <div className="flex items-center gap-3">
+                          <CardTitle className="text-lg">Thông tin cá nhân</CardTitle>
+                          {isGoogleUser() && (
+                            <Badge variant="outline" className="text-xs">
+                              Tài khoản Google
+                            </Badge>
                           )}
                         </div>
                       </CardHeader>
@@ -535,45 +518,34 @@ const Profile: React.FC = () => {
                           avatarPreview={avatarPreview}
                           formData={formData}
                           onFormDataChange={handleFormDataChange}
+                          showActions={!isGoogleUser()}
+                          onEditClick={() => setIsEditing(true)}
+                          onCancelClick={handleCancel}
+                          onSaveClick={handleSave}
+                          loading={loading}
+                          hasChanges={hasChanges()}
                         />
                         
-                        {/* Profile Actions - Đổi mật khẩu */}
-                        <Separator />
-                        <div className="space-y-4">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            Hành động tài khoản
-                          </h3>
-                          <ProfileActions />
-                        </div>
-                        
-                        {/* Google-specific information */}
-                        {isGoogleUser() && googleInfo && (
+                        {/* Google-specific information note */}
+                        {isGoogleUser() && (
                           <>
                             <Separator />
-                            <div className="space-y-4">
-                              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                Thông tin tài khoản Google
-                              </h3>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Google ID</span>
-                                  <p className="font-mono text-xs p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border">
-                                    {googleInfo.googleId || 'N/A'}
-                                  </p>
-                                </div>
-                                <div className="space-y-2">
-                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nhà cung cấp</span>
-                                  <div className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border">
-                                    <Shield className="w-4 h-4 text-blue-500" />
-                                    <span className="text-sm font-medium">{googleInfo.provider}</span>
+                            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 mt-0.5">
+                                  <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center">
+                                    <span className="text-base">💡</span>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                                <p className="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
-                                  💡 <strong>Lưu ý:</strong> Một số thông tin có thể được đồng bộ từ tài khoản Google của bạn. 
-                                  Thay đổi sẽ được lưu cục bộ nếu chưa tích hợp với backend.
-                                </p>
+                                <div className="flex-1 space-y-1">
+                                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                                    Thông tin về tài khoản Google
+                                  </p>
+                                  <p className="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+                                    Bạn đang đăng nhập bằng tài khoản Google. Một số thông tin sẽ được đồng bộ tự động từ Google. 
+                                    Các thay đổi khác sẽ được lưu trữ trong hệ thống của chúng tôi.
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </>
@@ -617,6 +589,17 @@ const Profile: React.FC = () => {
                   transition={{ delay: 0.1 }}
                 >
                   <RentalHistory />
+                </motion.div>
+              </TabsContent>
+
+              <TabsContent value="feedback-history" className="mt-0">
+                {/* Feedback History */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <FeedbackHistory />
                 </motion.div>
               </TabsContent>
 

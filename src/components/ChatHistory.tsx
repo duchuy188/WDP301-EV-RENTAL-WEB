@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { MessageSquare, RefreshCw, Clock } from 'lucide-react';
 import { getConversations, getConversationHistory } from '@/api/chatbotAPI';
 import { ConversationResponse } from '@/types/chatbot';
 
@@ -79,42 +80,82 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ onSelect, loading: propLoadin
 
   return (
     <div className={`w-full ${full ? 'mt-2' : 'mt-4'}`}>
-      <div className="flex items-center justify-between px-2">
-        <div className="text-sm font-medium text-gray-800">Lịch sử chat</div>
+      <div className="flex items-center justify-between px-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
+            <MessageSquare className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">Lịch sử chat</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Các cuộc trò chuyện trước đây</p>
+          </div>
+        </div>
         <div>
           <button
-            className="text-xs px-2 py-1 rounded bg-green-100 hover:bg-green-200"
+            className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-200 hover:to-green-300 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-green-700 dark:text-green-400 font-medium transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md disabled:opacity-50"
             onClick={load}
             disabled={localLoading || propLoading}
           >
-            {(localLoading || propLoading) ? 'Đang tải...' : 'Làm mới'}
+            <RefreshCw className={`h-3.5 w-3.5 ${(localLoading || propLoading) ? 'animate-spin' : ''}`} />
+            <span>{(localLoading || propLoading) ? 'Đang tải...' : 'Làm mới'}</span>
           </button>
         </div>
       </div>
 
-      {error && <div className="text-xs text-red-500 mt-2 px-2">{error}</div>}
+      {error && (
+        <div className="mx-4 mb-4 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
-      <div className="mt-2 px-1" style={full ? { maxHeight: 'calc(100vh - 220px)', overflow: 'auto' } : undefined}>
-        {list.length === 0 && !localLoading && !propLoading && <div className="text-xs text-gray-500 px-2">Không có lịch sử</div>}
-        <ul className="">
+      <div className="px-2" style={full ? { maxHeight: 'calc(100vh - 220px)', overflow: 'auto' } : undefined}>
+        {list.length === 0 && !localLoading && !propLoading && (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+              <MessageSquare className="h-8 w-8 text-gray-400 dark:text-gray-600" />
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">Chưa có lịch sử trò chuyện</p>
+          </div>
+        )}
+        <ul className="space-y-2">
           {list.map((c) => {
             const rawPreview = (c.title && String(c.title)) || (c.last_message && String(c.last_message)) || previews[c.session_id] || null;
             const preview = rawPreview ? (rawPreview.length > 120 ? rawPreview.slice(0, 117) + '...' : rawPreview) : null;
             return (
               <li
                 key={c.session_id}
-                className="py-3 cursor-pointer hover:bg-green-50"
+                className="group cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                 onClick={() => onSelect?.(c.session_id)}
               >
-                <div className="flex items-start justify-between border-b border-gray-100 pb-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold truncate">{c.user_role ?? 'Unknown'}</div>
-                    {preview && <div className="text-xs text-gray-500 mt-1 truncate">{preview}</div>}
-                    {!preview && c.last_activity && (
-                      <div className="text-xs text-gray-500 mt-1">{new Date(c.last_activity).toLocaleString()}</div>
-                    )}
+                <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700 hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 flex items-center justify-center flex-shrink-0">
+                          <MessageSquare className="h-4 w-4 text-green-600 dark:text-green-500" />
+                        </div>
+                        <div className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">
+                          {c.user_role ?? 'Unknown'}
+                        </div>
+                      </div>
+                      {preview && (
+                        <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed ml-10">
+                          {preview}
+                        </div>
+                      )}
+                      {!preview && c.last_activity && (
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-500 ml-10">
+                          <Clock className="h-3 w-3" />
+                          <span>{new Date(c.last_activity).toLocaleString('vi-VN')}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <div className="px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-xs font-semibold text-green-700 dark:text-green-400">
+                        {c.total_messages ?? 0} tin
+                      </div>
+                    </div>
                   </div>
-                  <div className="ml-4 text-xs text-gray-400 text-right">{c.total_messages ?? 0} tin</div>
                 </div>
               </li>
             );

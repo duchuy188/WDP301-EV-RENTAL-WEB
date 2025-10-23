@@ -27,9 +27,13 @@ const ProfileActions: React.FC = () => {
   };
 
   return (
-    <div className="space-y-3">
-      <Button variant="outline" className="w-full justify-start" onClick={() => setOpenChangePassword(true)}>
-        <Shield className="mr-2 h-4 w-4" />
+    <div>
+      <Button 
+        variant="outline" 
+        className="w-full text-sm px-3 py-2 h-9 border hover:border-green-500 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20" 
+        onClick={() => setOpenChangePassword(true)}
+      >
+        <Shield className="h-4 w-4 mr-2" />
         Đổi mật khẩu
       </Button>
       <ChangePasswordDialog
@@ -38,18 +42,6 @@ const ProfileActions: React.FC = () => {
         onSubmit={handleChangePassword}
         loading={loading}
       />
-      {/* <Button variant="outline" className="w-full justify-start">
-        <User className="mr-2 h-4 w-4" />
-        Cài đặt riêng tư
-      </Button>
-      <Separator />
-      <Button 
-        variant="destructive" 
-        className="w-full justify-start"
-        onClick={handleLogout}
-      >
-        Đăng xuất
-      </Button> */}
     </div>
   );
 };

@@ -8,3 +8,4 @@ export { default as ProfileActions } from './ProfileActions';
 export { default as ImagePreviewDialog } from './ImagePreviewDialog';
 export { default as BookingHistory } from './BookingHistory';
 export { default as RentalHistory } from './RentalHistory';
+export { default as FeedbackHistory } from './FeedbackHistory';

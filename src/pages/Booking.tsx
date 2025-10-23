@@ -44,6 +44,9 @@ const Booking: React.FC = () => {
   const [kycStatus, setKycStatus] = useState<KYCStatusResponseUnion | null>(null);
   const [isLoadingKYC, setIsLoadingKYC] = useState(true);
 
+  // Track if user came from VehicleDetail page (skip step 1)
+  const [cameFromVehicleDetail, setCameFromVehicleDetail] = useState(false);
+
   const steps = [
     { number: 1, title: 'Chọn xe', description: 'Chọn xe phù hợp' },
     { number: 2, title: 'Chọn thời gian', description: 'Thời gian đặt xe' },
@@ -115,6 +118,7 @@ const Booking: React.FC = () => {
           
           // Skip to step 2 since vehicle is already selected
           setCurrentStep(2);
+          setCameFromVehicleDetail(true);
         } else if (vehiclesArr.length > 0) {
           setSelectedVehicle(vehiclesArr[0]);
           // Load detail for the first vehicle
@@ -369,19 +373,28 @@ const Booking: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-green-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Đặt xe
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">
-            Hoàn tất đặt xe trong 3 bước đơn giản
-          </p>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                Đặt xe
+              </h1>
+              <p className="text-base text-gray-600 dark:text-gray-400">
+                Hoàn tất đặt xe trong 3 bước đơn giản
+              </p>
+            </div>
+          </div>
         </motion.div>
 
         {/* KYC Status Warning */}
@@ -391,36 +404,36 @@ const Booking: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6"
           >
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-start">
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-xl p-5 shadow-md">
+              <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
+                  <div className="w-10 h-10 rounded-full bg-yellow-500 dark:bg-yellow-600 flex items-center justify-center">
+                    <svg className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">
+                <div className="flex-1">
+                  <h3 className="text-base font-bold text-yellow-900 dark:text-yellow-100 mb-2">
                     Cần hoàn tất xác thực để đặt xe
                   </h3>
-                  <div className="mt-2 text-sm text-yellow-700">
+                  <div className="text-sm text-yellow-800 dark:text-yellow-200 space-y-1">
                     <p>
-                      Trạng thái KYC hiện tại: <span className="font-semibold">{getKYCStatusLabel(kycStatus)}</span>
+                      Trạng thái KYC hiện tại: <span className="font-bold">{getKYCStatusLabel(kycStatus)}</span>
                     </p>
-                    <p className="mt-1">
+                    <p>
                       Bạn cần hoàn tất quá trình xác thực danh tính (KYC) trước khi có thể đặt xe.
                     </p>
                   </div>
                   <div className="mt-4">
-                    <div className="-mx-2 -my-1.5 flex">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate('/profile?tab=verification')}
-                        className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200"
-                      >
-                        Xác thực ngay
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/profile?tab=verification')}
+                      className="bg-yellow-600 text-white border-0 hover:bg-yellow-700 shadow-md"
+                    >
+                      Xác thực ngay →
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -435,16 +448,18 @@ const Booking: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6"
           >
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-300 dark:border-green-700 rounded-xl p-4 shadow-md">
+              <div className="flex items-center gap-3">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
+                  <div className="w-10 h-10 rounded-full bg-green-500 dark:bg-green-600 flex items-center justify-center animate-pulse">
+                    <svg className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">
-                     Xác thực hoàn tất! Bạn có thể đặt xe ngay bây giờ.
+                <div className="flex-1">
+                  <p className="text-base font-bold text-green-900 dark:text-green-100">
+                    ✓ Xác thực hoàn tất! Bạn có thể đặt xe ngay bây giờ.
                   </p>
                 </div>
               </div>
@@ -459,16 +474,16 @@ const Booking: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6"
             >
               <div className="flex items-center justify-between">
                 {steps.map((step, index) => (
                   <div key={step.number} className="flex items-center">
                     <div className={`
-                      flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300
+                      flex items-center justify-center w-11 h-11 rounded-full border-2 transition-all duration-500 shadow-sm
                       ${currentStep >= step.number 
-                        ? 'bg-green-600 border-green-600 text-white' 
-                        : 'border-gray-300 text-gray-300'
+                        ? 'bg-gradient-to-br from-green-500 to-emerald-600 border-green-500 text-white shadow-green-200 dark:shadow-green-900/50' 
+                        : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500'
                       }
                     `}>
                       {currentStep > step.number ? (
@@ -478,13 +493,17 @@ const Booking: React.FC = () => {
                       )}
                     </div>
                     <div className="ml-3 hidden sm:block">
-                      <p className="text-sm font-medium">{step.title}</p>
-                      <p className="text-xs text-gray-500">{step.description}</p>
+                      <p className={`text-sm font-semibold transition-colors ${currentStep >= step.number ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {step.title}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{step.description}</p>
                     </div>
                     {index < steps.length - 1 && (
                       <div className={`
-                        w-8 sm:w-16 h-0.5 mx-2 sm:mx-4 transition-colors duration-300
-                        ${currentStep > step.number ? 'bg-green-600' : 'bg-gray-300'}
+                        w-8 sm:w-16 h-1 mx-2 sm:mx-4 rounded-full transition-all duration-500
+                        ${currentStep > step.number 
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                          : 'bg-gray-300 dark:bg-gray-600'}
                       `} />
                     )}
                   </div>
@@ -498,7 +517,7 @@ const Booking: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6"
             >
               {currentStep === 1 && (
                 <StepChooseVehicle
@@ -555,51 +574,65 @@ const Booking: React.FC = () => {
 
               {/* Navigation Buttons */}
               <div className="flex justify-between mt-8">
-                {/* <Button
-                  variant="outline"
-                  onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-                  disabled={currentStep === 1}
-                >
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Quay lại
-                </Button> */}
-
-                {currentStep < 3 ? (
+                {/* Back Button - Only show if not at step 1, and if came from VehicleDetail, only show at step 3 */}
+                {(currentStep > 1 && (!cameFromVehicleDetail || currentStep > 2)) && (
                   <Button
-                    onClick={() => setCurrentStep(Math.min(3, currentStep + 1))}
-                    disabled={
-                      (currentStep === 2 && (!bookingDate || !startTime || !endTime || !selectedColor || !selectedStation)) ||
-                      (currentStep === 1 && !selectedVehicle)
-                    }
-                    className="bg-green-600 hover:bg-green-700"
+                    variant="outline"
+                    onClick={() => {
+                      // If came from VehicleDetail and at step 3, go back to step 2
+                      // Otherwise go to previous step but not below step 2 if came from VehicleDetail
+                      const minStep = cameFromVehicleDetail ? 2 : 1;
+                      setCurrentStep(Math.max(minStep, currentStep - 1));
+                    }}
+                    className="border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200"
                   >
-                    Tiếp tục
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleConfirmBooking}
-                    disabled={isLoading || !canRentVehicles(kycStatus)}
-                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={!canRentVehicles(kycStatus) ? 'Cần hoàn tất xác thực KYC để đặt xe' : ''}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Đang xử lý...
-                      </>
-                    ) : !canRentVehicles(kycStatus) ? (
-                      <>
-                        🔒 Cần xác thực KYC
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        Tạo booking
-                      </>
-                    )}
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Quay lại
                   </Button>
                 )}
+
+                {/* Next/Submit Button */}
+                <div className={currentStep === 1 ? 'w-full flex justify-end' : 'ml-auto'}>
+                  {currentStep < 3 ? (
+                    <Button
+                      onClick={() => setCurrentStep(Math.min(3, currentStep + 1))}
+                      disabled={
+                        (currentStep === 2 && (!bookingDate || !startTime || !endTime || !selectedColor || !selectedStation)) ||
+                        (currentStep === 1 && !selectedVehicle)
+                      }
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Tiếp tục
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleConfirmBooking}
+                      disabled={isLoading || !canRentVehicles(kycStatus)}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={!canRentVehicles(kycStatus) ? 'Cần hoàn tất xác thực KYC để đặt xe' : ''}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Đang xử lý...
+                        </>
+                      ) : !canRentVehicles(kycStatus) ? (
+                        <>
+                          <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                          Cần xác thực KYC
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Tạo booking
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
