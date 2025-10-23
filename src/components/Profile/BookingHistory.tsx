@@ -420,48 +420,43 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
             {paginatedBookings.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table className="border border-gray-200 rounded-lg">
+                  <Table className="border border-gray-200 rounded-lg min-w-[750px]">
                     <TableHeader className="bg-white dark:bg-gray-800">
                       <TableRow>
-                        <TableHead className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Mã</TableHead>
-                        <TableHead className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Xe</TableHead>
-                        <TableHead className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Trạm</TableHead>
-                        <TableHead className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Thời gian</TableHead>
-                        <TableHead className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
-                        <TableHead className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">Tổng phí</TableHead>
-                        <TableHead className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">Hành động</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[90px]">Mã</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[110px]">Xe</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[200px]">Trạm</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Thời gian</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Trạng thái</TableHead>
+                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300 w-[150px]">Hành động</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedBookings.map((booking: Booking) => {
                         return (
                           <TableRow key={booking._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <TableCell className="px-4 py-3 text-gray-900 dark:text-white font-medium">
+                            <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[90px] truncate">
                               {booking.code ?? booking._id}
                             </TableCell>
-                            <TableCell className="px-4 py-3 text-gray-900 dark:text-white font-medium">
-                              {/* show vehicle short code if available or name */}
+                            <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[110px] truncate">
                               {booking.vehicle_id?.license_plate ?? booking.vehicle_id?.name ?? '-'}
                             </TableCell>
-                            <TableCell className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                            <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate">
                               {booking.station_id?.name ?? '-'}
                             </TableCell>
-                            <TableCell className="px-4 py-3">
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <TableCell className="px-3 py-2 max-w-[100px]">
+                              <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                 <div className="font-medium">{formatTime(booking.createdAt)}</div>
                                 <div className="text-xs">{formatDate(booking.createdAt)}</div>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <Badge className={`${getStatusColor(booking.status)} px-2 py-1 rounded-md text-sm`}> 
+                            <TableCell className="px-3 py-2 max-w-[100px]">
+                              <Badge className={`${getStatusColor(booking.status)} px-2 py-1 rounded-md text-sm whitespace-nowrap`}> 
                                 {getStatusText(booking.status)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
-                              {formatPrice(booking.total_price ?? 0)}
-                            </TableCell>
-                            <TableCell className="px-4 py-3 text-right">
-                              <div className="flex items-center justify-end">
+                            <TableCell className="px-3 py-2 text-right max-w-[150px]">
+                              <div className="flex items-center justify-end gap-2">
                                 <Button size="sm" onClick={() => openDetail(booking)} aria-label={`Xem chi tiết ${booking.code}`}>
                                   Xem chi tiết
                                 </Button>
@@ -470,7 +465,6 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                                   <Button
                                     size="sm"
                                     variant="destructive"
-                                    className="ml-3"
                                     onClick={() => {
                                       setCancelingBooking(booking);
                                       setCancelReason('');

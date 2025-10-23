@@ -17,45 +17,63 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import VehicleImage from '@/components/VehicleImage';
 import { vehiclesAPI } from '@/api/vehiclesAPI';
+import { stationAPI } from '@/api/stationAPI';
 import { VehicleListItem, VehiclesResponse } from '@/types/vehicles';
+import { Station } from '@/types/station';
 
 const FindCar: React.FC = () => {
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
+  const [stations, setStations] = useState<Station[]>([]);
   // keep a stable map of initial prices by sample_vehicle_id to avoid UI showing changing prices
   const initialPriceMap = useRef<Record<string, number>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [carType, setCarType] = useState<string>('all');
+  const [selectedStation, setSelectedStation] = useState<string>('all');
   const [priceRange, setPriceRange] = useState([0, 500000]);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
-  // Fetch vehicles from API
+  // Fetch vehicles and stations from API
   useEffect(() => {
-    const fetchVehicles = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response: VehiclesResponse = await vehiclesAPI.getVehicles();
-  // Debug: log received prices from API
-  console.debug && console.debug('vehiclesAPI.getVehicles response (prices):', response.vehicles.map(v => ({ id: v.sample_vehicle_id, price: v.price_per_day })));
-        // store initial prices into ref (only first time seen)
-        response.vehicles.forEach(v => {
+        
+        // Fetch vehicles
+        const vehiclesResponse: VehiclesResponse = await vehiclesAPI.getVehicles();
+        console.debug && console.debug('vehiclesAPI.getVehicles response (prices):', vehiclesResponse.vehicles.map(v => ({ id: v.sample_vehicle_id, price: v.price_per_day })));
+        
+        // Store initial prices into ref (only first time seen)
+        vehiclesResponse.vehicles.forEach(v => {
           if (v.sample_vehicle_id && initialPriceMap.current[v.sample_vehicle_id] == null) {
             initialPriceMap.current[v.sample_vehicle_id] = v.price_per_day;
           }
         });
-        setVehicles(response.vehicles);
+        setVehicles(vehiclesResponse.vehicles);
+        
+        // Fetch stations (all stations)
+        try {
+          const stationsResponse = await stationAPI.getStation({ limit: 100 });
+          if (stationsResponse.success && stationsResponse.data) {
+            setStations(stationsResponse.data.stations || []);
+          }
+        } catch (stationErr) {
+          console.warn('Could not fetch stations:', stationErr);
+          // Don't fail the whole page if stations fail to load
+        }
+        
         setError(null);
       } catch (err) {
         setError('Không thể tải dữ liệu xe. Vui lòng thử lại sau.');
-        console.error('Error fetching vehicles:', err);
+        console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchVehicles();
+    fetchData();
   }, []);
 
   const filteredCars = useMemo(() => {
@@ -67,11 +85,13 @@ const FindCar: React.FC = () => {
                              station.address.toLowerCase().includes(searchTerm.toLowerCase())
                            );
       const matchesType = carType === 'all' || vehicle.type === carType;
+      const matchesStation = selectedStation === 'all' || 
+                            vehicle.stations.some(station => station._id === selectedStation);
       const matchesPrice = vehicle.price_per_day >= priceRange[0] && vehicle.price_per_day <= priceRange[1];
       
-      return matchesSearch && matchesType && matchesPrice;
+      return matchesSearch && matchesType && matchesStation && matchesPrice;
     });
-  }, [vehicles, searchTerm, carType, priceRange]);
+  }, [vehicles, searchTerm, carType, selectedStation, priceRange]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -131,7 +151,7 @@ const FindCar: React.FC = () => {
           transition={{ delay: 0.2 }}
           className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
             {/* Search */}
             <div className="space-y-2">
               <Label htmlFor="search">Tìm kiếm</Label>
@@ -157,6 +177,25 @@ const FindCar: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">Tất cả</SelectItem>
                   <SelectItem value="scooter">Xe tay ga</SelectItem>
+                  <SelectItem value="motorcycle">Xe mô tô</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Station Filter */}
+            <div className="space-y-2">
+              <Label htmlFor="station">Trạm</Label>
+              <Select value={selectedStation} onValueChange={setSelectedStation}>
+                <SelectTrigger id="station">
+                  <SelectValue placeholder="Chọn trạm" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả trạm</SelectItem>
+                  {stations.map((station) => (
+                    <SelectItem key={station._id} value={station._id}>
+                      {station.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -357,6 +396,7 @@ const FindCar: React.FC = () => {
                   onClick={() => {
                     setSearchTerm('');
                     setCarType('all');
+                    setSelectedStation('all');
                     setPriceRange([0, 500000]);
                   }}
                 >

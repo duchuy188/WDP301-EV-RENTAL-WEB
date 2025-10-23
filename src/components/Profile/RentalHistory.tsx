@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Clock, 
@@ -45,45 +45,102 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
     setCurrentPage(1);
   }, [statusFilter, sortBy]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const data = await rentalAPI.getRentals().catch((e) => {
-          console.warn('Failed to fetch rentals', e);
-          return null as any;
-        });
-        // also fetch user's feedbacks to know which rentals were rated
-        const fdata = await feedbackAPI.getFeedbacks().catch(() => [] as any[]);
+  // Function to fetch data (extracted to allow refetching)
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch rentals
+      const data = await rentalAPI.getRentals().catch((e) => {
+        console.warn('Failed to fetch rentals', e);
+        return null as any;
+      });
+      
+      // Fetch user's feedbacks to know which rentals were rated
+      console.log('🔄 Fetching feedbacks...');
+      const fdata = await feedbackAPI.getFeedbacks().catch((err) => {
+        console.error('❌ Failed to fetch feedbacks:', err);
+        return null;
+      });
+      
+      console.log('📥 Raw feedback response:', fdata);
+      
+      // Handle different response formats
+      let feedbackList: any[] = [];
+      if (fdata) {
         if (Array.isArray(fdata)) {
-          const ids = Array.from(new Set(fdata.map((f: any) => {
-            const rid = f.rental_id;
-            if (!rid) return null;
-            if (typeof rid === 'string') return rid;
-            if (typeof rid === 'object') return rid._id ?? rid.id ?? null;
-            return String(rid);
-          }).filter(Boolean)));
-          setRatedRentalIds(ids as string[]);
+          feedbackList = fdata;
+        } else if (fdata && typeof fdata === 'object') {
+          // Handle { success: true, data: { feedbacks: [...] } }
+          if ((fdata as any).success && (fdata as any).data) {
+            feedbackList = (fdata as any).data.feedbacks || [];
+          } else {
+            // Handle { feedbacks: [...] } or { data: [...] }
+            feedbackList = (fdata as any).feedbacks || (fdata as any).data || [];
+          }
         }
-        if (data && data.rentals) {
-          setRentals(data.rentals);
-        } else if (data && Array.isArray(data)) {
-          // some APIs may return array directly
-          setRentals(data as Rental[]);
-        } else {
-          setRentals([]);
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error('Không thể tải lịch sử thuê xe');
-        setRentals([]);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchData();
+      
+      console.log('📋 Feedback list:', feedbackList, 'Count:', feedbackList.length);
+      
+      // Extract rental IDs from feedbacks
+      const ratedIds: string[] = [];
+      if (Array.isArray(feedbackList) && feedbackList.length > 0) {
+        feedbackList.forEach((f: any) => {
+          const rid = f.rental_id;
+          console.log('  📌 Processing feedback:', {
+            feedback_id: f._id,
+            rental_id: rid,
+            rental_id_type: typeof rid,
+            type: f.type
+          });
+          
+          if (!rid) return;
+          
+          // Handle different formats of rental_id
+          let rentalId: string | null = null;
+          if (typeof rid === 'string') {
+            rentalId = rid;
+          } else if (typeof rid === 'object' && rid !== null) {
+            rentalId = rid._id || rid.id || null;
+          }
+          
+          if (rentalId) {
+            ratedIds.push(rentalId);
+          }
+        });
+        
+        const uniqueRatedIds = Array.from(new Set(ratedIds));
+        console.log('✅ Rated rental IDs:', uniqueRatedIds);
+        setRatedRentalIds(uniqueRatedIds);
+      } else {
+        console.log('⚠️ No feedbacks found');
+        setRatedRentalIds([]);
+      }
+      
+      // Set rentals data
+      if (data && data.rentals) {
+        setRentals(data.rentals);
+        console.log('📦 Rentals loaded:', data.rentals.length);
+      } else if (data && Array.isArray(data)) {
+        setRentals(data as Rental[]);
+        console.log('📦 Rentals loaded:', data.length);
+      } else {
+        setRentals([]);
+      }
+    } catch (error) {
+      console.error('Error in fetchData:', error);
+      toast.error('Không thể tải lịch sử thuê xe');
+      setRentals([]);
+      setRatedRentalIds([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
   const parseBookingDate = (dateString?: string | null) => {
     if (!dateString) return new Date(0);
 
@@ -193,10 +250,6 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
 
-  const totalTrips = rentals.length;
-  const totalSpent = rentals.reduce((s, r) => s + (r.total_fees ?? 0), 0);
-  const activeTrips = rentals.filter((r) => r.status === 'active' || r.status === 'confirmed').length;
-
   if (loading) {
     return (
       <div className={`space-y-6 ${className}`}>
@@ -219,59 +272,8 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Statistics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <Car className="h-5 w-5 text-green-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng lượt thuê</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{totalTrips}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng chi tiêu</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">{formatPrice(totalSpent)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                  <Clock className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đang thuê</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{activeTrips}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
       {/* Table and filters */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -309,66 +311,93 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
             {paginated.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table className="border border-gray-200 rounded-lg">
+                  <Table className="border border-gray-200 rounded-lg min-w-[820px]">
                     <TableHeader className="bg-gray-100 dark:bg-gray-800">
                       <TableRow>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Mã</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Xe</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạm</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Thời gian</TableHead>
-                        <TableHead className="text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
-                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Tổng phí</TableHead>
-                        
-                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Hành động</TableHead>
-                        <TableHead className="text-right text-gray-600 dark:text-gray-300">Đánh giá</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[90px]">Mã</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[110px]">Xe</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[200px]">Trạm</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Thời gian</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Trạng thái</TableHead>
+                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300 w-[120px]">Hành động</TableHead>
+                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300 w-[100px]">Đánh giá</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginated.map((r) => (
                         <TableRow key={r._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <TableCell className="text-gray-900 dark:text-white font-medium">{r.code ?? r._id}</TableCell>
-                          <TableCell className="text-gray-900 dark:text-white font-medium">{typeof r.vehicle_id === 'string' ? r.vehicle_id : r.vehicle_id?.name ?? r.vehicle_id?.license_plate ?? '-'}</TableCell>
-                          <TableCell className="text-gray-600 dark:text-gray-400">{typeof r.station_id === 'string' ? r.station_id : r.station_id?.name ?? '-'}</TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[90px] truncate">{r.code ?? r._id}</TableCell>
+                          <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[110px] truncate">{typeof r.vehicle_id === 'string' ? r.vehicle_id : r.vehicle_id?.license_plate ?? r.vehicle_id?.name ?? '-'}</TableCell>
+                          <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate">{typeof r.station_id === 'string' ? r.station_id : r.station_id?.name ?? '-'}</TableCell>
+                          <TableCell className="px-3 py-2 max-w-[100px]">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                               <div className="font-medium">{formatTime(r.actual_start_time ?? r.createdAt)}</div>
                               <div className="text-xs">{formatDate(r.actual_start_time ?? r.createdAt)}</div>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <Badge className={`${getStatusColor(r.status)} px-3 py-1 rounded-md text-sm`}>{getStatusText(r.status)}</Badge>
+                          <TableCell className="px-3 py-2 max-w-[100px]">
+                            <Badge className={`${getStatusColor(r.status)} px-2 py-1 rounded-md text-sm whitespace-nowrap`}>{getStatusText(r.status)}</Badge>
                           </TableCell>
-                          <TableCell className="text-right font-medium text-gray-900 dark:text-white">{formatPrice(r.total_fees ?? 0)}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="px-3 py-2 text-right max-w-[120px]">
                             <div className="flex items-center justify-end">
                               <button
                                 onClick={() => { setSelectedRental(r); setDetailOpen(true); }}
-                                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+                                className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 text-sm"
                                 aria-label={`Xem chi tiết ${r.code}`}
                               >
                                 Xem chi tiết
                               </button>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="px-3 py-2 text-right max-w-[100px]">
                             <div className="flex items-center justify-end">
-                              { (ratedRentalIds.includes(r._id) || r.status !== 'completed') ? (
-                                <button
-                                  disabled
-                                  className="bg-yellow-300 text-white px-3 py-2 rounded-md opacity-60 cursor-not-allowed"
-                                  aria-label={`Đã đánh giá ${r.code}`}
-                                >
-                                  Đã đánh giá
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => { setFeedbackRentalId(r._id); setFeedbackOpen(true); }}
-                                  className="bg-yellow-500 text-white px-3 py-2 rounded-md hover:bg-yellow-600"
-                                  aria-label={`Đánh giá ${r.code}`}
-                                >
-                                  Đánh giá
-                                </button>
-                              )}
+                              { (() => {
+                                const isRated = ratedRentalIds.includes(r._id);
+                                const isCompleted = r.status === 'completed';
+                                
+                                // Debug log
+                                console.log(`Rental ${r._id} (${r.code}):`, {
+                                  status: r.status,
+                                  isRated,
+                                  isCompleted,
+                                  canRate: isCompleted && !isRated,
+                                  ratedRentalIds
+                                });
+                                
+                                // Chỉ cho đánh giá nếu rental đã hoàn thành VÀ chưa được đánh giá
+                                if (!isCompleted) {
+                                  // Không phải completed -> không hiện nút đánh giá
+                                  return (
+                                    <span className="text-xs text-gray-400">
+                                      Chưa hoàn thành
+                                    </span>
+                                  );
+                                }
+                                
+                                if (isRated) {
+                                  // Đã đánh giá
+                                  return (
+                                    <button
+                                      disabled
+                                      className="bg-gray-300 text-gray-600 px-2 py-1.5 rounded-md opacity-60 cursor-not-allowed text-xs whitespace-nowrap"
+                                      aria-label={`Đã đánh giá ${r.code}`}
+                                    >
+                                      Đã đánh giá
+                                    </button>
+                                  );
+                                }
+                                
+                                // Chưa đánh giá và đã hoàn thành -> hiện nút đánh giá
+                                return (
+                                  <button
+                                    onClick={() => { setFeedbackRentalId(r._id); setFeedbackOpen(true); }}
+                                    className="bg-yellow-500 text-white px-2 py-1.5 rounded-md hover:bg-yellow-600 text-xs whitespace-nowrap"
+                                    aria-label={`Đánh giá ${r.code}`}
+                                  >
+                                    Đánh giá
+                                  </button>
+                                );
+                              })()}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -439,17 +468,80 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                 return ids.filter(Boolean);
               })()}
               onClose={() => setFeedbackOpen(false)}
-              onSuccess={(created) => {
-                // try to determine rental id from created feedback and mark as rated
-                try {
-                  const rid = (created as any).rental_id ?? (created as any).rental?._id ?? (created as any).rental?.id ?? feedbackRentalId;
-                  if (rid) {
-                    setRatedRentalIds(prev => Array.from(new Set([...prev, String(rid)])));
+              onSuccess={async (created) => {
+                console.log('✅ Feedback created successfully:', created);
+                console.log('Current rental ID:', feedbackRentalId);
+                
+                // Optimistic update: immediately mark this rental as rated
+                if (feedbackRentalId) {
+                  console.log('➕ Adding rental to rated list:', feedbackRentalId);
+                  setRatedRentalIds(prev => {
+                    const updated = Array.from(new Set([...prev, feedbackRentalId]));
+                    console.log('Updated rated IDs (optimistic):', updated);
+                    return updated;
+                  });
+                  
+                  // Also try to extract rental_id from the created feedback response
+                  const rentalIdFromResponse = (created as any).rental_id || 
+                                               (created as any).rental?._id || 
+                                               (created as any).rental?.id;
+                  if (rentalIdFromResponse && String(rentalIdFromResponse) !== String(feedbackRentalId)) {
+                    console.log('➕ Also adding rental ID from response:', rentalIdFromResponse);
+                    setRatedRentalIds(prev => Array.from(new Set([...prev, String(rentalIdFromResponse)])));
                   }
-                } catch (_) {
-                  setRatedRentalIds(prev => Array.from(new Set([...prev, feedbackRentalId])));
                 }
+                
+                // Close modal
                 setFeedbackOpen(false);
+                setFeedbackRentalId(null);
+                
+                // Show success message
+                toast.success('Cảm ơn bạn đã đánh giá!');
+                
+                // Refetch in background to sync with server
+                setTimeout(async () => {
+                  console.log('🔄 Syncing with server...');
+                  try {
+                    const fdata = await feedbackAPI.getFeedbacks().catch(() => null);
+                    
+                    let feedbackList: any[] = [];
+                    if (fdata) {
+                      if (Array.isArray(fdata)) {
+                        feedbackList = fdata;
+                      } else if ((fdata as any).success && (fdata as any).data) {
+                        feedbackList = (fdata as any).data.feedbacks || [];
+                      } else {
+                        feedbackList = (fdata as any).feedbacks || (fdata as any).data || [];
+                      }
+                    }
+                    
+                    if (feedbackList.length > 0) {
+                      const ratedIds: string[] = [];
+                      feedbackList.forEach((f: any) => {
+                        const rid = f.rental_id;
+                        if (!rid) return;
+                        
+                        let rentalId: string | null = null;
+                        if (typeof rid === 'string') {
+                          rentalId = rid;
+                        } else if (typeof rid === 'object' && rid !== null) {
+                          rentalId = rid._id || rid.id || null;
+                        }
+                        
+                        if (rentalId) {
+                          ratedIds.push(rentalId);
+                        }
+                      });
+                      
+                      const uniqueRatedIds = Array.from(new Set(ratedIds));
+                      console.log('✅ Synced rated rental IDs from server:', uniqueRatedIds);
+                      setRatedRentalIds(uniqueRatedIds);
+                    }
+                  } catch (error) {
+                    console.warn('Failed to sync feedbacks:', error);
+                    // Keep optimistic update even if refetch fails
+                  }
+                }, 500);
               }}
             />
           ) : null}

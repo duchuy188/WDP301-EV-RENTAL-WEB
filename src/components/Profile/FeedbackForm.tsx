@@ -201,8 +201,14 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
       toast.success(type === 'rating' ? 'Gửi đánh giá thành công' : 'Gửi khiếu nại thành công');
 
       setSubmittedType(type); // Ghi lại loại đã gửi
-      onSuccess?.(created);
-      onClose?.();
+      
+      // Let parent handle closing and refetching
+      if (onSuccess) {
+        onSuccess(created);
+      } else {
+        // If no onSuccess callback provided, close by default
+        onClose?.();
+      }
     } catch (e) {
       toast.error(type === 'rating' ? 'Gửi đánh giá thất bại' : 'Gửi khiếu nại thất bại');
       console.error('Feedback submission error:', e);

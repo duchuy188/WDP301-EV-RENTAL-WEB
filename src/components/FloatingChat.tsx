@@ -224,15 +224,13 @@ const FloatingChat: React.FC = () => {
           >
             <Button
               onClick={toggleChat}
-              className="h-14 w-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+              className="h-14 w-14 rounded-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-green-500/50 transition-all duration-300"
               size="icon"
             >
               <MessageCircle className="h-6 w-6 text-white" />
             </Button>
-            {/* Notification dot */}
-            <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-bold">1</span>
-            </div>
+            {/* Notification pulse */}
+            <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-400 rounded-full animate-pulse"></div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -252,21 +250,21 @@ const FloatingChat: React.FC = () => {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="fixed bottom-6 right-6 z-50 w-80"
           >
-            <Card className="shadow-2xl border-0 overflow-hidden">
+            <Card className="shadow-2xl border-0 overflow-hidden backdrop-blur-md">
               {/* Header */}
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
+              <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-white text-blue-600">
-                        <Bot className="h-4 w-4" />
+                    <Avatar className="h-9 w-9 border-2 border-white/30">
+                      <AvatarFallback className="bg-white text-green-600">
+                        <Bot className="h-5 w-5" />
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <CardTitle className="text-sm font-semibold">Trợ lý ảo</CardTitle>
-                      <div className="flex items-center space-x-1">
-                        <div className="h-2 w-2 bg-green-400 rounded-full"></div>
-                        <span className="text-xs opacity-90">Đang online</span>
+                      <CardTitle className="text-sm font-bold">Trợ lý ảo EV</CardTitle>
+                      <div className="flex items-center space-x-1.5">
+                        <div className="h-2 w-2 bg-green-300 rounded-full animate-pulse"></div>
+                        <span className="text-xs opacity-95 font-medium">Đang online</span>
                       </div>
                     </div>
                   </div>
@@ -275,7 +273,7 @@ const FloatingChat: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       onClick={minimizeChat}
-                      className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                      className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg transition-all duration-300"
                     >
                       <Minimize2 className="h-4 w-4" />
                     </Button>
@@ -283,7 +281,7 @@ const FloatingChat: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       onClick={closeChat}
-                      className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                      className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg transition-all duration-300"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -302,40 +300,41 @@ const FloatingChat: React.FC = () => {
                   >
                     <CardContent className="p-0">
                       {/* Messages */}
-                      <div className="h-64 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-800">
+                      <div className="h-64 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
                         {chatMessages.map((message) => (
                           <motion.div
                             key={message.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
                             className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                           >
-                            <div className={`flex items-start space-x-2 max-w-[80%] ${
+                            <div className={`flex items-start space-x-2 max-w-[85%] ${
                               message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
                             }`}>
                               {message.type === 'bot' && (
-                                <Avatar className="h-6 w-6 mt-1">
-                                  <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                                    <Bot className="h-3 w-3" />
+                                <Avatar className="h-7 w-7 mt-1 border-2 border-green-100 dark:border-green-900">
+                                  <AvatarFallback className="bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 text-green-600 dark:text-green-400 text-xs">
+                                    <Bot className="h-3.5 w-3.5" />
                                   </AvatarFallback>
                                 </Avatar>
                               )}
                               {message.type === 'user' && (
-                                <Avatar className="h-6 w-6 mt-1">
-                                  <AvatarFallback className="bg-gray-200 text-gray-600 text-xs">
-                                    <User className="h-3 w-3" />
+                                <Avatar className="h-7 w-7 mt-1 border-2 border-green-100 dark:border-green-900">
+                                  <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300 text-xs">
+                                    <User className="h-3.5 w-3.5" />
                                   </AvatarFallback>
                                 </Avatar>
                               )}
-                              <div className={`p-3 rounded-lg ${
+                              <div className={`p-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 ${
                                 message.type === 'user' 
-                                  ? 'bg-blue-600 text-white' 
-                                  : 'bg-white dark:bg-gray-700 border'
+                                  ? 'bg-gradient-to-br from-green-600 to-green-700 text-white rounded-br-sm' 
+                                  : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-bl-sm'
                               }`}>
-                                <div className="text-sm whitespace-pre-line">{message.message}</div>
-                                <p className={`text-xs mt-1 ${
+                                <div className="text-[13px] leading-relaxed whitespace-pre-line">{message.message}</div>
+                                <p className={`text-[10px] mt-1.5 ${
                                   message.type === 'user' 
-                                    ? 'text-blue-100' 
+                                    ? 'text-green-100' 
                                     : 'text-gray-500 dark:text-gray-400'
                                 }`}>
                                   {message.timestamp.toLocaleTimeString('vi-VN', { 
@@ -347,23 +346,46 @@ const FloatingChat: React.FC = () => {
                             </div>
                           </motion.div>
                         ))}
+                        {isTyping && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex justify-start"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <Avatar className="h-7 w-7 border-2 border-green-100 dark:border-green-900">
+                                <AvatarFallback className="bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 text-green-600 dark:text-green-400">
+                                  <Bot className="h-3.5 w-3.5" />
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-3 rounded-xl rounded-bl-sm">
+                                <div className="flex gap-1">
+                                  <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                  <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                  <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
                         <div ref={messagesEndRef} />
                       </div>
 
                       {/* Input */}
-                      <div className="p-4 border-t bg-white dark:bg-gray-900">
+                      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
                         <form onSubmit={handleChatSubmit} className="flex space-x-2">
                           <Input
                             value={chatInput}
                             onChange={(e) => setChatInput(e.target.value)}
                             placeholder="Nhập tin nhắn..."
-                            className="flex-1 text-sm"
+                            className="flex-1 text-sm border-2 border-gray-200 dark:border-gray-700 focus:border-green-500 dark:focus:border-green-600 rounded-lg transition-all duration-300"
+                            disabled={isTyping}
                           />
                           <Button 
                             type="submit" 
                             size="sm" 
-                            disabled={!chatInput.trim()}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            disabled={!chatInput.trim() || isTyping}
+                            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-green-500/50 transition-all duration-300 hover:scale-105 active:scale-95 rounded-lg"
                           >
                             <Send className="h-4 w-4" />
                           </Button>
