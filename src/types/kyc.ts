@@ -4,7 +4,11 @@ export interface KYCIdentityResponse {
     id: string;
     name: string;
     dob: string;
+    identityHome?: string;
     address: string;
+    sex?: string;
+    nationality?: string;
+    identityDoe?: string; // date of expiry - ngày hết hạn
     frontImage: string;
   };
   kycStatus: string;

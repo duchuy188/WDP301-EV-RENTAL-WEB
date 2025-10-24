@@ -295,6 +295,15 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
           <div><b>Số CCCD:</b> {identityFrontResponse?.identityCard?.id || identityData?.id}</div>
           <div><b>Họ tên:</b> {identityFrontResponse?.identityCard?.name || (identityData as any)?.name}</div>
           <div><b>Ngày sinh:</b> {identityFrontResponse?.identityCard?.dob || (identityData as any)?.dob}</div>
+          {identityFrontResponse?.identityCard?.sex && (
+            <div><b>Giới tính:</b> {identityFrontResponse.identityCard.sex}</div>
+          )}
+          {identityFrontResponse?.identityCard?.nationality && (
+            <div><b>Quốc tịch:</b> {identityFrontResponse.identityCard.nationality}</div>
+          )}
+          {identityFrontResponse?.identityCard?.identityHome && (
+            <div><b>Quê quán:</b> {identityFrontResponse.identityCard.identityHome}</div>
+          )}
           <div><b>Địa chỉ:</b> {identityFrontResponse?.identityCard?.address || (identityData as any)?.address}</div>
           {identityBackResponse?.identityCard?.issueDate && (
             <div><b>Ngày cấp:</b> {identityBackResponse.identityCard.issueDate}</div>

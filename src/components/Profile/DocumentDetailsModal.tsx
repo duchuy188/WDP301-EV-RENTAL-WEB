@@ -184,9 +184,17 @@ export default function DocumentDetailsModal({ open, onOpenChange, response }: P
                             <span className="text-xs font-medium text-gray-700">Ngày cấp:</span>
                             <span className="text-xs text-gray-900">{formatDate(actualData.identityCard.issueDate)}</span>
                           </div>
+                          <div className="flex justify-between py-0.5 border-b border-blue-200">
+                            <span className="text-xs font-medium text-gray-700">Ngày hết hạn:</span>
+                            <span className="text-xs text-gray-900">{formatDate(actualData.identityCard.identityDoe)}</span>
+                          </div>
                           <div className="flex flex-col py-0.5 border-b border-blue-200">
                             <span className="text-xs font-medium text-gray-700">Nơi cấp:</span>
                             <span className="text-xs text-gray-900">{actualData.identityCard.issueLocation || '—'}</span>
+                          </div>
+                          <div className="flex flex-col py-0.5 border-b border-blue-200">
+                            <span className="text-xs font-medium text-gray-700">Quê quán:</span>
+                            <span className="text-xs text-gray-900">{actualData.identityCard.identityHome || '—'}</span>
                           </div>
                           <div className="flex flex-col py-0.5 border-b border-blue-200">
                             <span className="text-xs font-medium text-gray-700">Địa chỉ:</span>
