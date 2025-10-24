@@ -15,6 +15,12 @@ export const CHATBOT = {
     assistant: 'Chatbot',
     user: 'Bạn',
   },
+  suggestedQuestions: [
+    'Tôi muốn thuê xe điện ở Quận 1',
+    'Giá thuê xe điện là bao nhiêu?',
+    'Có những loại xe nào?',
+    'Quy trình thuê xe như thế nào?',
+  ],
 };
 
 export type ChatbotConfig = typeof CHATBOT;

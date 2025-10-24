@@ -7,6 +7,7 @@ import type { KYCStatusResponseUnion, KYCIdentityResponse, KYCIdentityCardRespon
 import { getIdentityData } from '@/utils/kycUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '../ui/input';
+import { toast } from '@/utils/toast';
 
 interface IdentityCardVerificationProps {
   kyc: KYCStatusResponseUnion | null;
@@ -25,6 +26,12 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
   const [reuploadEnabled, setReuploadEnabled] = useState<Record<string, boolean>>({});
   const [identityFrontResponse, setIdentityFrontResponse] = useState<KYCIdentityResponse | null>(null);
   const [identityBackResponse, setIdentityBackResponse] = useState<KYCIdentityCardResponse | null>(null);
+  
+  // Preview states
+  const [frontPreview, setFrontPreview] = useState<string | null>(null);
+  const [backPreview, setBackPreview] = useState<string | null>(null);
+  const [frontFile, setFrontFile] = useState<File | null>(null);
+  const [backFile, setBackFile] = useState<File | null>(null);
 
   // Auth user (to compare names)
   const { user: authUser } = useAuth();
@@ -44,8 +51,25 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
   const identityExtractedName = identityFrontResponse?.identityCard?.name || '';
   const identityNameMatches = !!identityExtractedName && normalizeName(identityExtractedName) === normalizeName(accountName);
 
-  // Hàm upload ảnh CCCD
-  const handleDocumentUpload = async (side: 'front' | 'back', file: File) => {
+  // Hàm xử lý khi chọn file - chỉ hiển thị preview
+  const handleFileSelect = (side: 'front' | 'back', file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (side === 'front') {
+        setFrontPreview(reader.result as string);
+        setFrontFile(file);
+      } else {
+        setBackPreview(reader.result as string);
+        setBackFile(file);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Hàm upload ảnh CCCD - thực hiện khi bấm nút Upload
+  const handleDocumentUpload = async (side: 'front' | 'back') => {
+    const file = side === 'front' ? frontFile : backFile;
+    if (!file) return;
     try {
       setLoading(true);
       let response: any;
@@ -54,19 +78,25 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
         response = await uploadIdentityCardFront(file);
         setIdentityFrontResponse(response);
         setReuploadEnabled(prev => ({ ...prev, ['identity-front']: false }));
+        // Clear preview after successful upload
+        setFrontPreview(null);
+        setFrontFile(null);
       } else {
         response = await uploadIdentityCardBack(file);
         setIdentityBackResponse(response);
         setReuploadEnabled(prev => ({ ...prev, ['identity-back']: false }));
+        // Clear preview after successful upload
+        setBackPreview(null);
+        setBackFile(null);
       }
       
       // Sau khi upload xong, lấy lại trạng thái KYC mới nhất
       await onKycUpdate();
       
-      alert(`Upload CCCD ${side === 'front' ? 'mặt trước' : 'mặt sau'} thành công! Nhấn "Xem chi tiết" để xem thông tin OCR.`);
+      toast.success(`Upload CCCD ${side === 'front' ? 'mặt trước' : 'mặt sau'} thành công! Nhấn "Xem chi tiết" để xem thông tin OCR.`);
     } catch (err) {
       console.error('Upload error:', err);
-      alert('Tải lên ảnh thất bại!');
+      toast.error('Tải lên ảnh thất bại!');
     } finally {
       setLoading(false);
     }
@@ -92,7 +122,8 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
         <div className="space-y-2">
           <Label className="text-sm font-medium">Mặt trước</Label>
           <div className="relative">
-            {frontImage ? (
+            {/* Hiển thị ảnh đã upload thành công */}
+            {frontImage && !frontPreview ? (
               <div className="relative group">
                 <img
                   src={frontImage}
@@ -107,30 +138,52 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  {/* show upload control if no OCR response OR user enabled reupload */}
-                  {(!identityFrontResponse || !!reuploadEnabled['identity-front']) && (
-                    <>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        id="upload-identity-front"
-                        onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            handleDocumentUpload('front', e.target.files[0]);
-                          }
-                        }}
-                      />
-                      <label htmlFor="upload-identity-front">
-                        <Button size="sm" variant="secondary" asChild>
-                          <span><Upload className="h-4 w-4" /></span>
-                        </Button>
-                      </label>
-                    </>
-                  )}
+                </div>
+              </div>
+            ) : frontPreview ? (
+              /* Hiển thị preview ảnh đã chọn */
+              <div className="space-y-2">
+                <div className="relative group">
+                  <img
+                    src={frontPreview}
+                    alt="Preview CCCD mặt trước"
+                    className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-green-400"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => onImagePreview(frontPreview)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={() => handleDocumentUpload('front')}
+                    disabled={loading}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {loading ? 'Đang upload...' : 'Upload ảnh'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setFrontPreview(null);
+                      setFrontFile(null);
+                    }}
+                    disabled={loading}
+                  >
+                    Hủy
+                  </Button>
                 </div>
               </div>
             ) : (
+              /* Nút chọn file */
               <label className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors">
                 <input
                   type="file"
@@ -139,42 +192,23 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
                   disabled={loading}
                   onChange={e => {
                     if (e.target.files && e.target.files[0]) {
-                      handleDocumentUpload('front', e.target.files[0]);
+                      handleFileSelect('front', e.target.files[0]);
                     }
                   }}
                 />
                 <ImageIcon className="h-8 w-8 text-gray-400" />
-                <p className="text-sm text-gray-500 mt-1">{loading ? 'Đang tải...' : 'Tải lên ảnh'}</p>
+                <p className="text-sm text-gray-500 mt-1">Tải lên ảnh</p>
               </label>
             )}
           </div>
-          {/* Nút xem chi tiết response mặt trước */}
-          {identityFrontResponse && (
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => showResponseDetails(identityFrontResponse, 'Căn cước công dân - Mặt trước')}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Xem chi tiết OCR
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setReuploadEnabled(prev => ({ ...prev, 'identity-front': true }))}
-              >
-                Thay ảnh
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Mặt sau */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Mặt sau</Label>
           <div className="relative">
-            {backImage ? (
+            {/* Hiển thị ảnh đã upload thành công */}
+            {backImage && !backPreview ? (
               <div className="relative group">
                 <img
                   src={backImage}
@@ -189,30 +223,52 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  {/* show upload control if no OCR response OR user enabled reupload */}
-                  {(!identityBackResponse || !!reuploadEnabled['identity-back']) && (
-                    <>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        id="upload-identity-back"
-                        onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            handleDocumentUpload('back', e.target.files[0]);
-                          }
-                        }}
-                      />
-                      <label htmlFor="upload-identity-back">
-                        <Button size="sm" variant="secondary" asChild>
-                          <span><Upload className="h-4 w-4" /></span>
-                        </Button>
-                      </label>
-                    </>
-                  )}
+                </div>
+              </div>
+            ) : backPreview ? (
+              /* Hiển thị preview ảnh đã chọn */
+              <div className="space-y-2">
+                <div className="relative group">
+                  <img
+                    src={backPreview}
+                    alt="Preview CCCD mặt sau"
+                    className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-green-400"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => onImagePreview(backPreview)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={() => handleDocumentUpload('back')}
+                    disabled={loading}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {loading ? 'Đang upload...' : 'Upload ảnh'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setBackPreview(null);
+                      setBackFile(null);
+                    }}
+                    disabled={loading}
+                  >
+                    Hủy
+                  </Button>
                 </div>
               </div>
             ) : (
+              /* Nút chọn file */
               <label className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors">
                 <input
                   type="file"
@@ -221,35 +277,15 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
                   disabled={loading}
                   onChange={e => {
                     if (e.target.files && e.target.files[0]) {
-                      handleDocumentUpload('back', e.target.files[0]);
+                      handleFileSelect('back', e.target.files[0]);
                     }
                   }}
                 />
                 <ImageIcon className="h-8 w-8 text-gray-400" />
-                <p className="text-sm text-gray-500 mt-1">{loading ? 'Đang tải...' : 'Tải lên ảnh'}</p>
+                <p className="text-sm text-gray-500 mt-1">Tải lên ảnh</p>
               </label>
             )}
           </div>
-          {/* Nút xem chi tiết response mặt sau */}
-          {identityBackResponse && (
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => showResponseDetails(identityBackResponse, 'Căn cước công dân - Mặt sau')}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Xem chi tiết OCR
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setReuploadEnabled(prev => ({ ...prev, 'identity-back': true }))}
-              >
-                Thay ảnh
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 

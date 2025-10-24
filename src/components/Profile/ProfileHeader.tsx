@@ -84,18 +84,18 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   return (
     <div className="space-y-4">
       {/* Avatar bên trái, thông tin bên phải */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-6">
         {/* Cột trái: Avatar và Actions */}
-        <div className="flex-shrink-0 flex flex-col items-center space-y-3">
+        <div className="flex-shrink-0 flex flex-col items-center space-y-4">
           {/* Avatar */}
           <div className="relative">
-            <Avatar className="h-24 w-24 border-2 border-gray-200 dark:border-gray-700 shadow-md">
+            <Avatar className="h-40 w-40 border-4 border-gray-200 dark:border-gray-700 shadow-lg">
               <AvatarImage 
                 src={avatarPreview || user.avatar || ''} 
                 alt={user.fullname}
                 className="object-cover"
               />
-              <AvatarFallback className="text-2xl font-semibold bg-gradient-to-br from-green-500 to-blue-500 text-white">
+              <AvatarFallback className="text-4xl font-semibold bg-gradient-to-br from-green-500 to-blue-500 text-white">
                 {getInitials(user.fullname)}
               </AvatarFallback>
             </Avatar>
@@ -133,7 +133,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </div>
           
           {/* Nút chỉnh sửa / lưu / hủy */}
-          <div className="w-full max-w-[160px] space-y-2">
+          <div className="w-full max-w-[180px] space-y-2">
             <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center uppercase">
               Hành động
             </h3>
@@ -177,17 +177,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         
         {/* Cột phải: Thông tin chi tiết */}
         <div className="flex-1 space-y-4">
-          {/* Header info */}
-          <div className="space-y-1 pb-3 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {user.fullname}
-            </h2>
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <span className="block w-2 h-2 bg-green-500 rounded-full"></span>
-              <span className="text-sm">{user.email}</span>
-            </div>
-          </div>
-          
           {/* Form thông tin chi tiết */}
           <div className="space-y-3">
             {/* Họ và tên */}

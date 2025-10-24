@@ -10,7 +10,8 @@ import {
   User, 
   Settings, 
   LogOut,
-  Zap
+  Zap,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -44,7 +45,7 @@ const Header: React.FC = () => {
     // { path: '/stations', label: 'Trạm' },
     { path: '/find-car', label: 'Tìm xe' },
     { path: '/history', label: 'Thống kê' },
-    { path: '/chatbot', label: 'Chatbot' },
+    // { path: '/chatbot', label: 'Chatbot' },
     { path: '/support', label: 'Hỗ trợ' },
   ];
 
@@ -137,7 +138,12 @@ const Header: React.FC = () => {
                       <span>Hồ sơ</span>
                     </Link>
                   </DropdownMenuItem>
-                  
+                  <DropdownMenuItem asChild>
+                    <Link to="/chat-history" className="cursor-pointer">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      <span>Lịch sử chat</span>
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Cài đặt</span>

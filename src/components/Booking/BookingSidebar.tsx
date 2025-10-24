@@ -29,6 +29,32 @@ type Props = {
   formatPrice: (p: number) => string;
 };
 
+// Helper function to format time in Vietnam timezone
+const formatTimeVN = (timeString?: string, dateString?: string): string => {
+  if (!timeString) return '';
+  
+  try {
+    // If we have a date, combine it with time to create a full datetime
+    if (dateString) {
+      // Create a date object from the date and time strings
+      const datetime = new Date(`${dateString}T${timeString}`);
+      
+      // Format the time in Vietnam timezone (GMT+7)
+      return datetime.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Ho_Chi_Minh'
+      });
+    }
+    
+    // If no date provided, just return the time string as is
+    return timeString;
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return timeString || '';
+  }
+};
+
 const BookingSidebar: React.FC<Props> = ({
   displayVehicle,
   displayImage,
@@ -124,7 +150,7 @@ const BookingSidebar: React.FC<Props> = ({
                   {startTime && endTime && (
                     <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mt-2">
                       <Clock className="h-4 w-4 text-blue-600" />
-                      <span>{startTime} - {endTime}</span>
+                      <span>{formatTimeVN(startTime, bookingDate)} - {formatTimeVN(endTime, endDate || bookingDate)}</span>
                     </div>
                   )}
                 </div>

@@ -17,6 +17,32 @@ type Props = {
   formatPrice: (p: number) => string;
 };
 
+// Helper function to format time in Vietnam timezone
+const formatTimeVN = (timeString?: string, dateString?: string): string => {
+  if (!timeString) return '—';
+  
+  try {
+    // If we have a date, combine it with time to create a full datetime
+    if (dateString) {
+      // Create a date object from the date and time strings
+      const datetime = new Date(`${dateString}T${timeString}`);
+      
+      // Format the time in Vietnam timezone (GMT+7)
+      return datetime.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Ho_Chi_Minh'
+      });
+    }
+    
+    // If no date provided, just return the time string as is
+    return timeString;
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return timeString || '—';
+  }
+};
+
 const StepConfirm: React.FC<Props> = ({
   selectedVehicle,
   selectedColor,
@@ -115,7 +141,7 @@ const StepConfirm: React.FC<Props> = ({
                 <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 <div>
                   <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Giờ nhận xe:</span>
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">{startTime || '—'}</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{formatTimeVN(startTime, bookingDate)}</p>
                 </div>
               </div>
             </div>
@@ -125,7 +151,7 @@ const StepConfirm: React.FC<Props> = ({
                 <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 <div>
                   <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Giờ trả xe:</span>
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">{endTime || '—'}</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{formatTimeVN(endTime, endDate || bookingDate)}</p>
                 </div>
               </div>
             </div>

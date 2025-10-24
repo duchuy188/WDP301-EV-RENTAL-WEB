@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MessageSquare, RefreshCw, Clock } from 'lucide-react';
+import { MessageSquare, Clock } from 'lucide-react';
 import { getConversations, getConversationHistory } from '@/api/chatbotAPI';
 import { ConversationResponse } from '@/types/chatbot';
 
@@ -63,9 +63,11 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ onSelect, loading: propLoadin
     try {
       const res = await getConversations();
       const parsed = parseList(res);
-      setList(parsed);
+      // Filter to show only conversations with messages
+      const filtered = parsed.filter(c => (c.total_messages ?? 0) > 0);
+      setList(filtered);
       // fetch previews for first 20 items
-      fetchPreviews(parsed.slice(0, 20));
+      fetchPreviews(filtered.slice(0, 20));
     } catch (err: any) {
       setError(err?.message ?? 'Failed to fetch');
     } finally {
@@ -80,28 +82,6 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ onSelect, loading: propLoadin
 
   return (
     <div className={`w-full ${full ? 'mt-2' : 'mt-4'}`}>
-      <div className="flex items-center justify-between px-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
-            <MessageSquare className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">Lịch sử chat</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Các cuộc trò chuyện trước đây</p>
-          </div>
-        </div>
-        <div>
-          <button
-            className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-200 hover:to-green-300 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-green-700 dark:text-green-400 font-medium transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md disabled:opacity-50"
-            onClick={load}
-            disabled={localLoading || propLoading}
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${(localLoading || propLoading) ? 'animate-spin' : ''}`} />
-            <span>{(localLoading || propLoading) ? 'Đang tải...' : 'Làm mới'}</span>
-          </button>
-        </div>
-      </div>
-
       {error && (
         <div className="mx-4 mb-4 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
           {error}

@@ -167,6 +167,10 @@ const ChatbotPage: React.FC = () => {
     }
   };
 
+  const handleSuggestedQuestion = (question: string) => {
+    handleSend(question);
+  };
+
   return (
     <ChatbotContext.Provider value={{ sessionId, conversationId }}>
       <div className="flex flex-row w-full min-h-screen bg-gradient-to-br from-gray-50 via-green-50/30 to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -219,6 +223,47 @@ const ChatbotPage: React.FC = () => {
               <div className="w-full max-w-4xl flex flex-col justify-end min-h-[60vh] h-[calc(100vh-64px)]">
                 {/* Messages */}
                 <div className="flex-1 px-4 py-6 space-y-6 overflow-y-auto chatbot-scrollbar" style={{ minHeight: '1px' }}>
+                  {/* Suggested Questions - Show only when there's only the system message */}
+                  {messages.length === 1 && messages[0].role === 'system' && !loading && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="max-w-2xl mx-auto space-y-4 py-8"
+                    >
+                      <div className="text-center mb-6">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-2xl mb-4">
+                          <Sparkles className="h-8 w-8 text-green-600 dark:text-green-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                          Bạn cần giúp gì?
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Chọn một câu hỏi gợi ý hoặc nhập câu hỏi của bạn bên dưới
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {CHATBOT.suggestedQuestions.map((question, idx) => (
+                          <motion.button
+                            key={idx}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            onClick={() => handleSuggestedQuestion(question)}
+                            className="group text-left p-4 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-600 hover:bg-gradient-to-br hover:from-green-50 hover:to-green-100/50 dark:hover:from-green-900/20 dark:hover:to-green-800/10 transition-all duration-300 shadow-sm hover:shadow-md"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-800/50 transition-colors">
+                                <MessageCircle className="h-4 w-4 text-green-600 dark:text-green-500" />
+                              </div>
+                              <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-green-700 dark:group-hover:text-green-400 font-medium leading-relaxed">
+                                {question}
+                              </span>
+                            </div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
                   {messages.map((m, idx) => (
                     <div 
                       key={m.id} 

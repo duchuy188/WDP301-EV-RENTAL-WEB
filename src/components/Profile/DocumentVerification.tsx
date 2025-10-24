@@ -19,6 +19,7 @@ import {
 import DocumentDetailsModal, { DocumentResponse } from './DocumentDetailsModal';
 import DriverLicenseVerification from './DriverLicenseVerification';
 import IdentityCardVerification from './IdentityCardVerification';
+import ImagePreviewDialog from './ImagePreviewDialog';
 
 interface DocumentVerificationProps {
   onDocumentUpload?: (type: 'license' | 'identity', side: 'front' | 'back') => void;
@@ -29,6 +30,7 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
   const [kyc, setKyc] = useState<KYCStatusResponseUnion | null>(null);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [currentResponse, setCurrentResponse] = useState<(DocumentResponse & { title?: string }) | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   // Gọi lấy trạng thái KYC khi mount lần đầu
   React.useEffect(() => {
@@ -51,8 +53,8 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
   };
 
   // Hàm preview ảnh
-  const handleImagePreview = (_imageUrl: string) => {
-    // Image preview functionality can be implemented here if needed
+  const handleImagePreview = (imageUrl: string) => {
+    setPreviewImageUrl(imageUrl);
   };
 
   // Use formatDateTimeVN from utils for consistent date formatting
@@ -243,6 +245,12 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
         open={showResponseModal}
         onOpenChange={setShowResponseModal}
         response={currentResponse}
+      />
+      
+      {/* Image Preview Dialog */}
+      <ImagePreviewDialog
+        imageUrl={previewImageUrl}
+        onClose={() => setPreviewImageUrl(null)}
       />
     </Card>
   );
