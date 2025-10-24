@@ -198,11 +198,11 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400';
       case 'pending_payment':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
       case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       default:

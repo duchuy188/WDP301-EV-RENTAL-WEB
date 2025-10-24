@@ -340,6 +340,9 @@ const Booking: React.FC = () => {
         notes: notes || "", // Ghi chú từ form
       };
 
+      // Debug: Log booking data before sending
+      console.log('📤 Sending booking data:', bookingData);
+      console.log('🕐 Times being sent - pickup:', startTime, 'return:', endTime);
 
       const response = await bookingAPI.postBooking(bookingData);
 

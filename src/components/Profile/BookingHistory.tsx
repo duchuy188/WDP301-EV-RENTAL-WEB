@@ -182,13 +182,13 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
       case 'confirmed':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400';
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
@@ -460,8 +460,8 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                                 <Button size="sm" onClick={() => openDetail(booking)} aria-label={`Xem chi tiết ${booking.code}`}>
                                   Xem chi tiết
                                 </Button>
-                                {/* Show Cancel button for cancellable statuses */}
-                                {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                                {/* Show Cancel button only for pending status */}
+                                {booking.status === 'pending' && (
                                   <Button
                                     size="sm"
                                     variant="destructive"
@@ -544,7 +544,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       </motion.div>
       {/* Modal for booking detail */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi tiết đặt xe</DialogTitle>
           </DialogHeader>

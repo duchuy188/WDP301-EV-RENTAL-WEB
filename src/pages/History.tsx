@@ -6,8 +6,10 @@ import { mockUser } from '@/data/mockData';
 import { authAPI } from '@/api/personaAPI';
 import { UserStatsData } from '@/types/perssonal';
 import { formatDateVN, formatDateTimeVN } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const History: React.FC = () => {
+  const { user: authUser } = useAuth();
   const [userStats, setUserStats] = useState<UserStatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -85,20 +87,32 @@ const History: React.FC = () => {
       const dayNum = safeDay(topDay);
       const dayCount = safeCount(topDay);
       const dayName = topDay.dayName ? topDay.dayName : dayNumberToName(dayNum);
-      if (dayCount > 0) {
+      
+      if (dayName && dayCount > 0) {
         computedInsights.push(`Ngày thuê nhiều nhất: ${dayName} (${dayCount} lần)`);
       }
     }
   }
 
-  const monthlyBookings = userStats?.monthly_stats && userStats.monthly_stats.length > 0
-    ? userStats.monthly_stats.map((stat: any) => ({ month: `T${stat.month}`, count: stat.rentals }))
-    : Array.from({ length: 6 }).map((_, i) => ({ month: `T${i + 1}`, count: 0 }));
+  // Create array for all 12 months and fill with data from API
+  const monthlyBookings = Array.from({ length: 12 }).map((_, i) => {
+    const monthNum = i + 1;
+    const monthLabel = `T${monthNum}`;
+    
+    // Find data for this month from API
+    const monthData = userStats?.monthly_stats?.find((stat: any) => stat.month === monthNum);
+    
+    return {
+      month: monthLabel,
+      count: monthData?.rentals ?? 0
+    };
+  });
 
   const totalTrips = userStats?.overview.total_rentals ?? 0;
   const totalSpent = userStats?.overview.total_spent ?? 0;
   const averageTrip = userStats?.overview.avg_spent_per_rental ?? 0;
-  const memberSince = userStats?.overview.last_rental_date || mockUser.memberSince;
+  // Use createdAt from auth user, fallback to last_rental_date or mockUser
+  const memberSince = authUser?.createdAt || userStats?.overview.last_rental_date || mockUser.memberSince;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -201,17 +215,32 @@ const History: React.FC = () => {
                   <CardTitle>Thống kê theo tháng</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64 flex items-end justify-between space-x-2">
+                  <div className="h-64 flex items-end justify-between space-x-1">
                     {monthlyBookings.map((item: any) => {
                       const maxCount = Math.max(...monthlyBookings.map((m: any) => m.count), 1);
+                      const hasData = item.count > 0;
                       return (
-                        <div key={item.month} className="flex flex-col items-center flex-1">
-                          <div
-                            className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-sm w-full transition-all duration-300 hover:from-green-700 hover:to-green-500"
-                            style={{ height: `${(item.count / maxCount) * 200}px`, minHeight: '20px' }}
-                          />
-                          <span className="text-sm text-gray-600 dark:text-gray-400 mt-2">{item.month}</span>
-                          <span className="text-xs text-gray-500">{item.count}</span>
+                        <div key={item.month} className="flex flex-col items-center flex-1 group">
+                          <div className="relative w-full flex items-end justify-center" style={{ height: '200px' }}>
+                            {hasData && (
+                              <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center">
+                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {item.count}
+                                </span>
+                                <div
+                                  className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-sm w-full transition-all duration-300 hover:from-green-700 hover:to-green-500"
+                                  style={{ height: `${(item.count / maxCount) * 180}px` }}
+                                />
+                              </div>
+                            )}
+                            {!hasData && (
+                              <div
+                                className="bg-gray-200 dark:bg-gray-700 rounded-t-sm w-full"
+                                style={{ height: '8px' }}
+                              />
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-600 dark:text-gray-400 mt-2">{item.month}</span>
                         </div>
                       );
                     })}

@@ -7,15 +7,18 @@ import {
   Bot, 
   User, 
   X, 
-  Minimize2 
+  Minimize2,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { sendMessage } from '@/api/chatbotAPI';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { sendMessage, getConversationHistory } from '@/api/chatbotAPI';
 import { ChatbotAPIResponse } from '@/types/chatbot';
 import { ChatbotContext } from '@/pages/ChatbotPage';
+import { CHATBOT } from '@/config/chatbot';
 
 interface ChatMessage {
   id: string;
@@ -39,7 +42,7 @@ const FloatingChat: React.FC = () => {
   const location = useLocation();
   const { sessionId } = useContext(ChatbotContext);
 
-  // Return early if the pathname starts with '/chatbot'.
+  // Return early if the pathname starts with '/chatbot' (but allow on /chat-history).
   const shouldRender = !location.pathname.startsWith('/chatbot');
 
   // Hooks are now always called consistently.
@@ -63,7 +66,62 @@ const FloatingChat: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isTyping]);
 
-  // Request welcome message when chat is opened.
+  // Listen for event to open chat with specific session
+  useEffect(() => {
+    const handleOpenWithSession = async (event: CustomEvent) => {
+      const { sessionId: loadSessionId } = event.detail;
+      if (!loadSessionId) return;
+
+      // Open the chat
+      setIsOpen(true);
+      setIsMinimized(false);
+      setIsTyping(true);
+      
+      try {
+        // Load conversation history
+        const res = await getConversationHistory(loadSessionId);
+        if (res?.success && res?.data?.messages) {
+          const loadedMessages: ChatMessage[] = res.data.messages.map((m: any) => {
+            const role = (m.role || '').toLowerCase();
+            return {
+              id: `loaded-${m.timestamp || Date.now()}`,
+              type: role === 'user' ? 'user' : 'bot',
+              message: m.message || '',
+              timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+            };
+          });
+          
+          setChatMessages(loadedMessages);
+          setChatContext({
+            sessionId: loadSessionId,
+            conversationId: (res.data as any).conversation_id,
+            topic: '',
+            userIntent: '',
+            lastKeywords: [],
+            conversationStep: loadedMessages.length,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load chat history:', err);
+        const msg = extractErrorMessage(err) ?? 'Không thể tải lịch sử chat.';
+        setChatMessages([{
+          id: Date.now().toString(),
+          type: 'bot',
+          message: msg,
+          timestamp: new Date(),
+        }]);
+      } finally {
+        setIsTyping(false);
+      }
+    };
+
+    window.addEventListener('openChatWithSession', handleOpenWithSession as EventListener);
+    return () => {
+      window.removeEventListener('openChatWithSession', handleOpenWithSession as EventListener);
+    };
+  }, []);
+
+  // Request welcome message when chat is opened (only if no messages).
   useEffect(() => {
     if (!isOpen || chatMessages.length > 0) return;
 
@@ -134,14 +192,16 @@ const FloatingChat: React.FC = () => {
 
   // All message generation is delegated to the backend API. No local hardcoded replies.
 
-  const handleChatSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
+  const handleChatSubmit = async (e?: React.FormEvent, suggestedText?: string) => {
+    if (e) e.preventDefault();
+    
+    const messageText = suggestedText || chatInput.trim();
+    if (!messageText) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
-      message: chatInput,
+      message: messageText,
       timestamp: new Date(),
     };
 
@@ -150,7 +210,7 @@ const FloatingChat: React.FC = () => {
 
     try {
       const payload = {
-        message: chatInput,
+        message: messageText,
         session_id: chatContext.sessionId,
         conversation_id: chatContext.conversationId
       } as any;
@@ -206,11 +266,24 @@ const FloatingChat: React.FC = () => {
     setIsMinimized(false);
   };
 
+  const createNewChat = () => {
+    // Clear messages and reset context
+    setChatMessages([]);
+    setChatContext({
+      topic: '',
+      userIntent: '',
+      lastKeywords: [],
+      conversationStep: 0,
+      sessionId: undefined,
+      conversationId: undefined,
+    });
+  };
+
   // Return early if the component should not render.
   if (!shouldRender) return null;
 
   return (
-    <>
+    <TooltipProvider>
       {/* Chat Button */}
       <AnimatePresence>
         {!isOpen && (
@@ -269,22 +342,51 @@ const FloatingChat: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={minimizeChat}
-                      className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg transition-all duration-300"
-                    >
-                      <Minimize2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={closeChat}
-                      className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg transition-all duration-300"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={createNewChat}
+                          className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg transition-all duration-300"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Tạo cuộc trò chuyện mới</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={minimizeChat}
+                          className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg transition-all duration-300"
+                        >
+                          <Minimize2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Thu nhỏ</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={closeChat}
+                          className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg transition-all duration-300"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Đóng</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               </CardHeader>
@@ -301,6 +403,28 @@ const FloatingChat: React.FC = () => {
                     <CardContent className="p-0">
                       {/* Messages */}
                       <div className="h-64 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+                        {/* Suggested Questions - Show only when no messages */}
+                        {chatMessages.length === 0 && !isTyping && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-2"
+                          >
+                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">Gợi ý câu hỏi:</p>
+                            {CHATBOT.suggestedQuestions.map((question, idx) => (
+                              <motion.button
+                                key={idx}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                onClick={() => handleChatSubmit(undefined, question)}
+                                className="w-full text-left p-3 text-sm rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-green-500 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 shadow-sm hover:shadow-md"
+                              >
+                                {question}
+                              </motion.button>
+                            ))}
+                          </motion.div>
+                        )}
                         {chatMessages.map((message) => (
                           <motion.div
                             key={message.id}
@@ -399,7 +523,7 @@ const FloatingChat: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </TooltipProvider>
   );
 };
 

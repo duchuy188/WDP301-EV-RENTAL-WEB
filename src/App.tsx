@@ -16,6 +16,7 @@ import History from './pages/History';
 import Profile from './pages/Profile';
 import Support from './pages/Support';
 import ChatbotPage from './pages/ChatbotPage';
+import ChatHistoryPage from './pages/ChatHistoryPage';
 import AuthPage from './pages/AuthPage';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -49,6 +50,7 @@ function App() {
                 <Route path="profile" element={<Profile />} />
                 <Route path="support" element={<Support />} />
                 <Route path="chatbot" element={<ChatbotPage />} />
+                <Route path="chat-history" element={<ChatHistoryPage />} />
                 <Route path="stations" element={<StationPage />} />
                 <Route path="station/:id" element={<StationDetail />} />
               </Route>

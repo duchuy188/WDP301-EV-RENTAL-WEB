@@ -363,7 +363,7 @@ const Home: React.FC = () => {
               <Button size="lg" variant="secondary" className="px-8 py-6 text-lg">
                 Đăng ký ngay
               </Button>
-              <Button size="lg" variant="outline" className="px-8 py-6 text-lg border-white text-white hover:bg-white hover:text-blue-600">
+              <Button size="lg" variant="secondary" className="px-8 py-6 text-lg">
                 Liên hệ tư vấn
               </Button>
             </div>

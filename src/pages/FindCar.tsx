@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import VehicleImage from '@/components/VehicleImage';
@@ -30,8 +29,9 @@ const FindCar: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [carType, setCarType] = useState<string>('all');
-  const [selectedStation, setSelectedStation] = useState<string>('all');
+  const [carType, setCarType] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedStation, setSelectedStation] = useState<string>('');
   const [priceRange, setPriceRange] = useState([0, 500000]);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
@@ -54,15 +54,8 @@ const FindCar: React.FC = () => {
         setVehicles(vehiclesResponse.vehicles);
         
         // Fetch stations (all stations)
-        try {
-          const stationsResponse = await stationAPI.getStation({ limit: 100 });
-          if (stationsResponse.success && stationsResponse.data) {
-            setStations(stationsResponse.data.stations || []);
-          }
-        } catch (stationErr) {
-          console.warn('Could not fetch stations:', stationErr);
-          // Don't fail the whole page if stations fail to load
-        }
+        const stationsResponse = await stationAPI.getStation({ limit: 100 });
+        setStations(stationsResponse.stations || []);
         
         setError(null);
       } catch (err) {
@@ -76,6 +69,17 @@ const FindCar: React.FC = () => {
     fetchData();
   }, []);
 
+  // Get unique models from vehicles
+  const availableModels = useMemo(() => {
+    const models = new Set<string>();
+    vehicles.forEach(vehicle => {
+      if (vehicle.model) {
+        models.add(vehicle.model);
+      }
+    });
+    return Array.from(models).sort();
+  }, [vehicles]);
+
   const filteredCars = useMemo(() => {
     return vehicles.filter((vehicle) => {
       const matchesSearch = vehicle.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,21 +88,20 @@ const FindCar: React.FC = () => {
                              station.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                              station.address.toLowerCase().includes(searchTerm.toLowerCase())
                            );
-      const matchesType = carType === 'all' || vehicle.type === carType;
-      const matchesStation = selectedStation === 'all' || 
-                            vehicle.stations.some(station => station._id === selectedStation);
+      const matchesType = !carType || vehicle.type.toLowerCase().includes(carType.toLowerCase());
+      const matchesModel = !selectedModel || vehicle.model.toLowerCase().includes(selectedModel.toLowerCase());
+      const matchesStation = !selectedStation || 
+                            vehicle.stations.some(station => 
+                              station.name.toLowerCase().includes(selectedStation.toLowerCase()) ||
+                              station._id === selectedStation
+                            );
       const matchesPrice = vehicle.price_per_day >= priceRange[0] && vehicle.price_per_day <= priceRange[1];
       
-      return matchesSearch && matchesType && matchesStation && matchesPrice;
+      return matchesSearch && matchesType && matchesModel && matchesStation && matchesPrice;
     });
-  }, [vehicles, searchTerm, carType, selectedStation, priceRange]);
+  }, [vehicles, searchTerm, carType, selectedModel, selectedStation, priceRange]);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
-  };
+
 
   if (loading) {
     return (
@@ -149,12 +152,14 @@ const FindCar: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
             {/* Search */}
             <div className="space-y-2">
-              <Label htmlFor="search">Tìm kiếm</Label>
+              <Label htmlFor="search" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tìm kiếm
+              </Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -162,48 +167,76 @@ const FindCar: React.FC = () => {
                   placeholder="Nhập địa điểm hoặc tên xe..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
                 />
               </div>
             </div>
 
             {/* Car Type */}
             <div className="space-y-2">
-              <Label htmlFor="carType">Loại xe</Label>
-              <Select value={carType} onValueChange={setCarType}>
-                <SelectTrigger id="carType">
-                  <SelectValue placeholder="Chọn loại xe" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  <SelectItem value="scooter">Xe tay ga</SelectItem>
-                  <SelectItem value="motorcycle">Xe mô tô</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="carType" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Loại xe
+              </Label>
+              <Input
+                id="carType"
+                list="carTypeList"
+                placeholder="Tất cả"
+                value={carType}
+                onChange={(e) => setCarType(e.target.value)}
+                className="border-gray-300 focus:border-green-500 focus:ring-green-500"
+              />
+              <datalist id="carTypeList">
+                <option value="scooter">Xe tay ga</option>
+                <option value="motorcycle">Xe mô tô</option>
+              </datalist>
+            </div>
+
+            {/* Model Filter */}
+            <div className="space-y-2">
+              <Label htmlFor="model" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Mẫu xe
+              </Label>
+              <Input
+                id="model"
+                list="modelList"
+                placeholder="Tất cả"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="border-gray-300 focus:border-green-500 focus:ring-green-500"
+              />
+              <datalist id="modelList">
+                {availableModels.map((model) => (
+                  <option key={model} value={model} />
+                ))}
+              </datalist>
             </div>
 
             {/* Station Filter */}
             <div className="space-y-2">
-              <Label htmlFor="station">Trạm</Label>
-              <Select value={selectedStation} onValueChange={setSelectedStation}>
-                <SelectTrigger id="station">
-                  <SelectValue placeholder="Chọn trạm" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả trạm</SelectItem>
-                  {stations.map((station) => (
-                    <SelectItem key={station._id} value={station._id}>
-                      {station.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="station" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Trạm
+              </Label>
+              <Input
+                id="station"
+                list="stationList"
+                placeholder="Tất cả trạm"
+                value={selectedStation}
+                onChange={(e) => setSelectedStation(e.target.value)}
+                className="border-gray-300 focus:border-green-500 focus:ring-green-500"
+              />
+              <datalist id="stationList">
+                {stations.filter(s => s.status === 'active').map((station) => (
+                  <option key={station._id} value={station.name} />
+                ))}
+              </datalist>
             </div>
 
             {/* Price Range */}
             <div className="space-y-2">
-              <Label>Giá (VND/ngày)</Label>
-              <div className="px-3">
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Giá (VND/ngày)
+              </Label>
+              <div className="px-2 pt-2">
                 <Slider
                   value={priceRange}
                   onValueChange={setPriceRange}
@@ -211,19 +244,11 @@ const FindCar: React.FC = () => {
                   step={10000}
                   className="w-full"
                 />
-                <div className="flex justify-between text-sm text-gray-500 mt-1">
-                  <span>{formatPrice(priceRange[0])}</span>
-                  <span>{formatPrice(priceRange[1])}</span>
+                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-2">
+                  <span>{priceRange[0].toLocaleString('vi-VN')} đ</span>
+                  <span>{priceRange[1].toLocaleString('vi-VN')} đ</span>
                 </div>
               </div>
-            </div>
-
-            {/* Apply Button */}
-            <div>
-              <Button className="w-full bg-green-600 hover:bg-green-700">
-                <Filter className="mr-2 h-4 w-4" />
-                Áp dụng
-              </Button>
             </div>
           </div>
         </motion.div>
@@ -395,8 +420,9 @@ const FindCar: React.FC = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchTerm('');
-                    setCarType('all');
-                    setSelectedStation('all');
+                    setCarType('');
+                    setSelectedModel('');
+                    setSelectedStation('');
                     setPriceRange([0, 500000]);
                   }}
                 >

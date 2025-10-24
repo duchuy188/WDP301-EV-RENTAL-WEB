@@ -98,21 +98,21 @@ const FeedbackHistory: React.FC = () => {
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'resolved':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 flex items-center gap-1 w-fit"><CheckCircle className="w-3 h-3" /> Đã giải quyết</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 px-2 py-1 rounded-md text-sm whitespace-nowrap">Đã giải quyết</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 flex items-center gap-1 w-fit"><Clock className="w-3 h-3" /> Đang xử lý</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 px-2 py-1 rounded-md text-sm whitespace-nowrap">Đang xử lý</Badge>;
       default:
-        return <Badge variant="outline" className="flex items-center gap-1 w-fit"><AlertCircle className="w-3 h-3" /> {status}</Badge>;
+        return <Badge variant="outline" className="px-2 py-1 rounded-md text-sm whitespace-nowrap">{status}</Badge>;
     }
   };
 
   const getTypeBadge = (type: string) => {
     if (type === 'rating') {
-      return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 flex items-center gap-1 w-fit"><Star className="w-3 h-3" /> Đánh giá</Badge>;
+      return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded-md text-sm whitespace-nowrap">Đánh giá</Badge>;
     } else if (type === 'complaint') {
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 flex items-center gap-1 w-fit"><AlertCircle className="w-3 h-3" /> Khiếu nại</Badge>;
+      return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 px-2 py-1 rounded-md text-sm whitespace-nowrap">Khiếu nại</Badge>;
     }
-    return <Badge variant="outline">{type}</Badge>;
+    return <Badge variant="outline" className="px-2 py-1 rounded-md text-sm whitespace-nowrap">{type}</Badge>;
   };
 
   const formatDate = (dateString?: string) => {

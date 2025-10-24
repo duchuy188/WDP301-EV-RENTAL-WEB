@@ -376,8 +376,6 @@ const Profile: React.FC = () => {
       setAvatarLoading(false);
     };
     reader.readAsDataURL(file);
-    
-    toast.success('Đã chọn ảnh đại diện mới!');
   };
 
   const googleInfo = getGoogleUserInfo();
@@ -451,7 +449,7 @@ const Profile: React.FC = () => {
                   <TabsList className="inline-flex items-center gap-2 bg-gray-50 dark:bg-slate-800 p-1 rounded-lg shadow-sm">
                     <TabsTrigger
                       value="profile"
-                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:border-green-200 hover:text-green-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white data-[state=active]:border-green-400 data-[state=active]:shadow-lg data-[state=active]:shadow-green-500/50 transform hover:scale-105 active:scale-95"
                     >
                       <User className="h-4 w-4" />
                       Thông tin cá nhân
@@ -459,7 +457,7 @@ const Profile: React.FC = () => {
 
                     <TabsTrigger
                       value="verification"
-                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-200 hover:text-blue-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:border-blue-400 data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/50 transform hover:scale-105 active:scale-95"
                     >
                       <FileCheck className="h-4 w-4" />
                       Xác thực Kyc
@@ -467,7 +465,7 @@ const Profile: React.FC = () => {
 
                     <TabsTrigger
                       value="booking-history"
-                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:border-purple-200 hover:text-purple-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:border-purple-400 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/50 transform hover:scale-105 active:scale-95"
                     >
                       <Car className="h-4 w-4" />
                       Lịch sử đặt xe
@@ -475,7 +473,7 @@ const Profile: React.FC = () => {
 
                     <TabsTrigger
                       value="rental-history"
-                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 hover:border-orange-200 hover:text-orange-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:border-orange-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/50 transform hover:scale-105 active:scale-95"
                     >
                       <Car className="h-4 w-4" />
                       Lịch sử thuê xe
@@ -483,7 +481,7 @@ const Profile: React.FC = () => {
 
                     <TabsTrigger
                       value="feedback-history"
-                      className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 border border-transparent bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-slate-700 data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:border-green-200 data-[state=active]:shadow-sm transform hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 hover:border-teal-200 hover:text-teal-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:border-teal-400 data-[state=active]:shadow-lg data-[state=active]:shadow-teal-500/50 transform hover:scale-105 active:scale-95"
                     >
                       <MessageSquare className="h-4 w-4" />
                       Lịch sử đánh giá

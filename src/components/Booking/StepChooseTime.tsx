@@ -65,6 +65,33 @@ const StepChooseTime: React.FC<Props> = ({
     }
   }, [startTime, bookingDate, endDate]);
 
+  // Filter stations based on selected color
+  const availableStations = React.useMemo(() => {
+    if (!selectedColor || !selectedVehicleDetail?.available_colors) {
+      return selectedVehicle?.stations || [];
+    }
+    
+    // Find the selected color option
+    const colorOption = selectedVehicleDetail.available_colors.find(
+      c => c.color === selectedColor
+    );
+    
+    // Return stations for this color
+    return colorOption?.stations || [];
+  }, [selectedColor, selectedVehicleDetail, selectedVehicle]);
+
+  // Reset selected station when color changes and current station is not available
+  useEffect(() => {
+    if (selectedColor && selectedStation) {
+      const isStationAvailable = availableStations.some(
+        (station: any) => station._id === selectedStation
+      );
+      if (!isStationAvailable) {
+        setSelectedStation('');
+      }
+    }
+  }, [selectedColor, availableStations]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -114,16 +141,31 @@ const StepChooseTime: React.FC<Props> = ({
 
         <div className="mt-4 space-y-2">
           <Label htmlFor="startTime" className="text-sm font-medium text-gray-700 dark:text-gray-300">Giờ nhận xe</Label>
-          <div className="relative group max-w-xs">
-            <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-            <Input 
-              id="startTime" 
-              type="time" 
-              value={startTime} 
-              onChange={(e) => setStartTime(e.target.value)} 
-              className="pl-10 h-11 border-gray-200 dark:border-gray-600 focus:border-green-500 focus:ring-green-500 bg-white dark:bg-gray-800 transition-all w-full" 
-            />
+          <div className="flex items-center gap-3 max-w-xs">
+            <div className="relative group flex-1">
+              <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-green-500 transition-colors z-10" />
+              <Input 
+                id="startTime" 
+                type="time" 
+                value={startTime} 
+                onChange={(e) => setStartTime(e.target.value)} 
+                min="06:00"
+                max="22:00"
+                className="pl-10 h-11 border-gray-200 dark:border-gray-600 focus:border-green-500 focus:ring-green-500 bg-white dark:bg-gray-800 transition-all w-full" 
+              />
+            </div>
+            {startTime && (
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                {(() => {
+                  const [hours] = startTime.split(':').map(Number);
+                  if (hours < 12) return '🌅 Sáng (AM)';
+                  if (hours === 12) return '☀️ Trưa (PM)';
+                  return '🌆 Chiều/Tối (PM)';
+                })()}
+              </span>
+            )}
           </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Giờ hoạt động: 06:00 AM - 10:00 PM (6h sáng - 10h tối)</p>
         </div>
       </div>
 
@@ -149,11 +191,11 @@ const StepChooseTime: React.FC<Props> = ({
                   {selectedVehicleDetail?.available_colors && selectedVehicleDetail.available_colors.length > 0 ? (
                     selectedVehicleDetail.available_colors.map((colorOption) => (
                       <SelectItem key={colorOption.color} value={colorOption.color}>
-                        🎨 {colorOption.color} ({colorOption.available_quantity} xe)
+                        {colorOption.color} ({colorOption.available_quantity} xe)
                       </SelectItem>
                     ))
                   ) : selectedVehicle ? (
-                    <SelectItem value={selectedVehicle?.color || ''}>🎨 {selectedVehicle?.color || ''}</SelectItem>
+                    <SelectItem value={selectedVehicle?.color || ''}>{selectedVehicle?.color || ''}</SelectItem>
                   ) : null}
                 </SelectContent>
               </Select>
@@ -172,15 +214,17 @@ const StepChooseTime: React.FC<Props> = ({
                   <SelectValue placeholder="Chọn trạm nhận xe" />
                 </SelectTrigger>
                 <SelectContent>
-                  {selectedVehicleDetail?.station ? (
-                    <SelectItem value={selectedVehicleDetail.station._id}>
-                      📍 {selectedVehicleDetail.station.name} - {selectedVehicleDetail.station.address}
+                  {availableStations.length > 0 ? (
+                    availableStations.map((station: any) => (
+                      <SelectItem key={station._id} value={station._id}>
+                        {station.name} - {station.address}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>
+                      {selectedColor ? 'Không có trạm nào cho màu này' : 'Vui lòng chọn màu xe trước'}
                     </SelectItem>
-                  ) : selectedVehicle?.stations.map((station: any) => (
-                    <SelectItem key={station._id} value={station._id}>
-                      📍 {station.name} - {station.address}
-                    </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
