@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { uploadLicenseFront, uploadLicenseBack } from '@/api/kycAPI';
 import type { KYCStatusResponseUnion, KYCLicenseFrontResponse, KYCLicenseBackResponse } from '@/types/kyc';
-import { getLicenseData } from '@/utils/kycUtils';
+import { getLicenseData, isKYCRejected } from '@/utils/kycUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '../ui/input';
 import { toast } from '@/utils/toast';
@@ -32,6 +32,10 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
   const [backPreview, setBackPreview] = useState<string | null>(null);
   const [frontFile, setFrontFile] = useState<File | null>(null);
   const [backFile, setBackFile] = useState<File | null>(null);
+  
+  // State để ẩn ảnh cũ khi muốn upload lại (dùng cho trường hợp REJECTED)
+  const [hideFrontImage, setHideFrontImage] = useState(false);
+  const [hideBackImage, setHideBackImage] = useState(false);
 
   // Auth user (to compare names)
   const { user: authUser } = useAuth();
@@ -82,6 +86,8 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
         // Clear preview after successful upload
         setFrontPreview(null);
         setFrontFile(null);
+        // Reset hide state
+        setHideFrontImage(false);
       } else {
         response = await uploadLicenseBack(file);
         setLicenseBackResponse(response);
@@ -89,6 +95,8 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
         // Clear preview after successful upload
         setBackPreview(null);
         setBackFile(null);
+        // Reset hide state
+        setHideBackImage(false);
       }
       
       // Sau khi upload xong, lấy lại trạng thái KYC mới nhất
@@ -105,6 +113,9 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
 
   const frontImage = licenseFrontResponse?.license?.image || licenseData?.frontImage;
   const backImage = licenseBackResponse?.license?.backImage || licenseData?.backImage;
+  
+  // Kiểm tra trạng thái bị từ chối
+  const isRejected = isKYCRejected(kyc);
 
   return (
     <div className="border rounded-lg p-4">
@@ -124,22 +135,40 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
           <Label className="text-sm font-medium">Mặt trước</Label>
           <div className="relative">
             {/* Hiển thị ảnh đã upload thành công */}
-            {frontImage && !frontPreview ? (
-              <div className="relative group">
-                <img
-                  src={frontImage}
-                  alt="GPLX mặt trước"
-                  className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-gray-300"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+            {frontImage && !frontPreview && !hideFrontImage ? (
+              <div className="space-y-2">
+                <div className="relative group">
+                  <img
+                    src={frontImage}
+                    alt="GPLX mặt trước"
+                    className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-gray-300"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => onImagePreview(frontImage)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                {/* Nút Upload lại khi bị từ chối */}
+                {isRejected && (
                   <Button
                     size="sm"
-                    variant="secondary"
-                    onClick={() => onImagePreview(frontImage)}
+                    variant="outline"
+                    className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
+                    onClick={() => {
+                      setHideFrontImage(true);
+                      setFrontPreview(null);
+                      setFrontFile(null);
+                    }}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload lại
                   </Button>
-                </div>
+                )}
               </div>
             ) : frontPreview ? (
               /* Hiển thị preview ảnh đã chọn */
@@ -209,22 +238,40 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
           <Label className="text-sm font-medium">Mặt sau</Label>
           <div className="relative">
             {/* Hiển thị ảnh đã upload thành công */}
-            {backImage && !backPreview ? (
-              <div className="relative group">
-                <img
-                  src={backImage}
-                  alt="GPLX mặt sau"
-                  className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-gray-300"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+            {backImage && !backPreview && !hideBackImage ? (
+              <div className="space-y-2">
+                <div className="relative group">
+                  <img
+                    src={backImage}
+                    alt="GPLX mặt sau"
+                    className="w-full h-32 object-cover rounded-lg border-2 border-dashed border-gray-300"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-lg">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => onImagePreview(backImage)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                {/* Nút Upload lại khi bị từ chối */}
+                {isRejected && (
                   <Button
                     size="sm"
-                    variant="secondary"
-                    onClick={() => onImagePreview(backImage)}
+                    variant="outline"
+                    className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
+                    onClick={() => {
+                      setHideBackImage(true);
+                      setBackPreview(null);
+                      setBackFile(null);
+                    }}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload lại
                   </Button>
-                </div>
+                )}
               </div>
             ) : backPreview ? (
               /* Hiển thị preview ảnh đã chọn */

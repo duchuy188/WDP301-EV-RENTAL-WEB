@@ -128,7 +128,47 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
               <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">Tổng phí</h4>
             </div>
           </div>
-          <p className="font-bold text-xl text-purple-600 dark:text-purple-400 text-center">{formatPrice(rental.total_fees ?? 0)}</p>
+          <p className="font-bold text-xl text-purple-600 dark:text-purple-400 text-center">
+            {rental.payments && rental.payments.length > 0 
+              ? formatPrice(rental.payments.reduce((sum, p) => sum + (p.amount || 0), 0))
+              : formatPrice(rental.total_fees ?? 0)
+            }
+          </p>
+          {rental.payments && rental.payments.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {rental.payments.map((payment, idx) => {
+                const getPaymentMethodLabel = (method: string) => {
+                  switch (method.toLowerCase()) {
+                    case 'vnpay':
+                      return 'VNPay';
+                    case 'cash':
+                      return 'Tiền mặt';
+                    case 'momo':
+                      return 'MoMo';
+                    case 'bank_transfer':
+                      return 'Chuyển khoản';
+                    default:
+                      return method;
+                  }
+                };
+                
+                return (
+                  <div key={payment._id || idx} className="flex items-center justify-between text-xs bg-white dark:bg-gray-800 rounded p-1.5 border border-purple-200 dark:border-purple-700">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {getPaymentMethodLabel(payment.payment_method)}
+                    </span>
+                    <span className={`font-medium ${
+                      payment.status === 'completed' 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : 'text-orange-600 dark:text-orange-400'
+                    }`}>
+                      {formatPrice(payment.amount)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

@@ -246,7 +246,16 @@ const FeedbackHistory: React.FC = () => {
         {feedback.category && (
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Danh mục:</span>
-            <Badge variant="outline" className="capitalize">{feedback.category}</Badge>
+            <Badge variant="outline">{(() => {
+              switch (feedback.category.toLowerCase()) {
+                case 'payment': return 'Thanh toán';
+                case 'vehicle': return 'Xe';
+                case 'staff': return 'Nhân viên';
+                case 'service': return 'Dịch vụ';
+                case 'other': return 'Khác';
+                default: return feedback.category;
+              }
+            })()}</Badge>
           </div>
         )}
 

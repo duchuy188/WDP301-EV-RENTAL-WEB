@@ -198,15 +198,15 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400';
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400 border-2 border-emerald-600 dark:border-emerald-500';
       case 'pending_payment':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 border-2 border-orange-600 dark:border-orange-500';
       case 'completed':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 border-2 border-purple-600 dark:border-purple-500';
       case 'cancelled':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-2 border-red-600 dark:border-red-500';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400 border-2 border-gray-600 dark:border-gray-500';
     }
   };
 
@@ -317,10 +317,9 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[90px]">Mã</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[110px]">Xe</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[200px]">Trạm</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Thời gian</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Trạng thái</TableHead>
-                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300 w-[120px]">Hành động</TableHead>
-                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300 w-[100px]">Đánh giá</TableHead>
+                        <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300 w-[120px]">Hành động</TableHead>
+                        <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300 w-[130px]">Đánh giá</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -330,27 +329,21 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                           <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[110px] truncate">{typeof r.vehicle_id === 'string' ? r.vehicle_id : r.vehicle_id?.license_plate ?? r.vehicle_id?.name ?? '-'}</TableCell>
                           <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate">{typeof r.station_id === 'string' ? r.station_id : r.station_id?.name ?? '-'}</TableCell>
                           <TableCell className="px-3 py-2 max-w-[100px]">
-                            <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                              <div className="font-medium">{formatTime(r.actual_start_time ?? r.createdAt)}</div>
-                              <div className="text-xs">{formatDate(r.actual_start_time ?? r.createdAt)}</div>
-                            </div>
+                            <Badge className={`${getStatusColor(r.status)} px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap`}>{getStatusText(r.status)}</Badge>
                           </TableCell>
-                          <TableCell className="px-3 py-2 max-w-[100px]">
-                            <Badge className={`${getStatusColor(r.status)} px-2 py-1 rounded-md text-sm whitespace-nowrap`}>{getStatusText(r.status)}</Badge>
-                          </TableCell>
-                          <TableCell className="px-3 py-2 text-right max-w-[120px]">
-                            <div className="flex items-center justify-end">
+                          <TableCell className="px-3 py-2 max-w-[120px]">
+                            <div className="flex items-center justify-center">
                               <button
                                 onClick={() => { setSelectedRental(r); setDetailOpen(true); }}
-                                className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 text-sm"
+                                className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 text-xs font-semibold whitespace-nowrap border-2 border-green-700 dark:border-green-600"
                                 aria-label={`Xem chi tiết ${r.code}`}
                               >
                                 Xem chi tiết
                               </button>
                             </div>
                           </TableCell>
-                          <TableCell className="px-3 py-2 text-right max-w-[100px]">
-                            <div className="flex items-center justify-end">
+                          <TableCell className="px-3 py-2 max-w-[130px]">
+                            <div className="flex items-center justify-center">
                               { (() => {
                                 const isRated = ratedRentalIds.includes(r._id);
                                 const isCompleted = r.status === 'completed';
@@ -368,7 +361,7 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                                 if (!isCompleted) {
                                   // Không phải completed -> không hiện nút đánh giá
                                   return (
-                                    <span className="text-xs text-gray-400">
+                                    <span className="px-2 py-1.5 rounded-md text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-500 whitespace-nowrap">
                                       Chưa hoàn thành
                                     </span>
                                   );
@@ -379,7 +372,7 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                                   return (
                                     <button
                                       disabled
-                                      className="bg-gray-300 text-gray-600 px-2 py-1.5 rounded-md opacity-60 cursor-not-allowed text-xs whitespace-nowrap"
+                                      className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1.5 rounded-md cursor-not-allowed text-xs font-semibold whitespace-nowrap border-2 border-green-600 dark:border-green-500"
                                       aria-label={`Đã đánh giá ${r.code}`}
                                     >
                                       Đã đánh giá
@@ -391,7 +384,7 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                                 return (
                                   <button
                                     onClick={() => { setFeedbackRentalId(r._id); setFeedbackOpen(true); }}
-                                    className="bg-yellow-500 text-white px-2 py-1.5 rounded-md hover:bg-yellow-600 text-xs whitespace-nowrap"
+                                    className="bg-yellow-500 text-white px-2 py-1.5 rounded-md hover:bg-yellow-600 text-xs font-semibold whitespace-nowrap border-2 border-yellow-600 dark:border-yellow-500"
                                     aria-label={`Đánh giá ${r.code}`}
                                   >
                                     Đánh giá
