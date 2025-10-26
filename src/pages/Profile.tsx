@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Edit, Check, X, Shield, User, FileCheck, Car, MessageSquare, FileText } from 'lucide-react';
+import { Edit, Check, X, Shield, User, FileCheck, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -17,9 +17,7 @@ import {
   ProfileActions, 
   ImagePreviewDialog,
   BookingHistory,
-  RentalHistory,
-  FeedbackHistory,
-  ContractHistory 
+  RentalHistory
 } from '@/components/Profile';
 
 const Profile: React.FC = () => {
@@ -479,22 +477,6 @@ const Profile: React.FC = () => {
                       <Car className="h-4 w-4" />
                       Lịch sử thuê xe
                     </TabsTrigger>
-
-                    <TabsTrigger
-                      value="feedback-history"
-                      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 hover:border-teal-200 hover:text-teal-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:border-teal-400 data-[state=active]:shadow-lg data-[state=active]:shadow-teal-500/50 transform hover:scale-105 active:scale-95"
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      Lịch sử đánh giá
-                    </TabsTrigger>
-
-                    <TabsTrigger
-                      value="contract-history"
-                      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:border-purple-200 hover:text-purple-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:border-purple-400 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/50 transform hover:scale-105 active:scale-95"
-                    >
-                      <FileText className="h-4 w-4" />
-                      Lịch sử hợp đồng
-                    </TabsTrigger>
                   </TabsList>
                 </div>
               
@@ -589,35 +571,13 @@ const Profile: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="rental-history" className="mt-0">
-                {/* Rental History */}
+                {/* Rental History - Includes Contract & Feedback details */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                 >
                   <RentalHistory />
-                </motion.div>
-              </TabsContent>
-
-              <TabsContent value="feedback-history" className="mt-0">
-                {/* Feedback History */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <FeedbackHistory />
-                </motion.div>
-              </TabsContent>
-
-              <TabsContent value="contract-history" className="mt-0">
-                {/* Contract History */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <ContractHistory />
                 </motion.div>
               </TabsContent>
 
