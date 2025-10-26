@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import VehicleImage from '@/components/VehicleImage';
+import VehicleMap from '@/components/VehicleMap';
 import { vehiclesAPI } from '@/api/vehiclesAPI';
 import { stationAPI } from '@/api/stationAPI';
 import { VehicleListItem, VehiclesResponse } from '@/types/vehicles';
@@ -435,17 +436,11 @@ const FindCar: React.FC = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-md h-96 flex items-center justify-center"
           >
-            <div className="text-center">
-              <Map className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Chế độ xem bản đồ
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Tính năng bản đồ sẽ được cập nhật sớm
-              </p>
-            </div>
+            <VehicleMap 
+              vehicles={filteredCars}
+              searchLocation={selectedStation || searchTerm || ''}
+            />
           </motion.div>
         )}
       </div>

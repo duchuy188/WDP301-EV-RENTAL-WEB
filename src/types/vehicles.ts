@@ -7,6 +7,8 @@ export interface Station {
   opening_time?: string;
   closing_time?: string;
   available_quantity?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface ColorImage {

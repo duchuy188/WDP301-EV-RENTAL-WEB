@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { stationAPI } from '../api/stationAPI';
 import { Station } from '../types/station';
 import { Button } from '../components/ui/button';
+import StationMap from '../components/StationMap';
+import { MapIcon, LayoutGrid } from 'lucide-react';
 
 const StationCard: React.FC<{ station: Station }> = ({ station }) => {
   return (
@@ -49,15 +51,19 @@ const StationPage: React.FC = () => {
   const [district, setDistrict] = useState('');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
+  // View mode: 'list' or 'map'
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
       try {
+        // When in map mode, load all stations (no pagination)
+        // When in list mode, use pagination
         const res = await stationAPI.getStation({
-          page,
-          limit: PAGE_SIZE,
+          page: viewMode === 'map' ? undefined : page,
+          limit: viewMode === 'map' ? 1000 : PAGE_SIZE,
           city: city || undefined,
           district: district || undefined,
           status: status || undefined,
@@ -74,7 +80,7 @@ const StationPage: React.FC = () => {
     };
     load();
     return () => { mounted = false; };
-  }, [page, city, district, status, search]);
+  }, [page, city, district, status, search, viewMode]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -85,7 +91,28 @@ const StationPage: React.FC = () => {
 
   return (
     <div className="p-6 min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      <h1 className="text-3xl font-extrabold mb-8 text-blue-800 drop-shadow-sm">Danh sách trạm</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-extrabold text-blue-800 drop-shadow-sm">Tìm thấy {total} trạm</h1>
+        {/* View mode toggle buttons */}
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            onClick={() => setViewMode('list')}
+            className="flex items-center gap-2"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Danh sách
+          </Button>
+          <Button
+            variant={viewMode === 'map' ? 'default' : 'outline'}
+            onClick={() => setViewMode('map')}
+            className="flex items-center gap-2"
+          >
+            <MapIcon className="w-4 h-4" />
+            Bản đồ
+          </Button>
+        </div>
+      </div>
       {/* Thanh lọc */}
       <div className="bg-white rounded-lg shadow p-4 mb-6 flex flex-wrap gap-4 items-center justify-between max-w-2xl mx-auto">
         <input
@@ -123,55 +150,66 @@ const StationPage: React.FC = () => {
       {error && <div className="text-red-600 font-semibold">Lỗi: {error}</div>}
       {!loading && !error && (
         <>
-          <div className="flex flex-col gap-8">
-            {stations.map(s => (
-              <StationCard key={s._id} station={s} />
-            ))}
-          </div>
-          {totalPages > 1 && (
-            <div className="flex flex-col items-center mt-10 mb-4 gap-4">
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="min-w-[80px]"
-                  disabled={page === 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Trước
-                </Button>
-                {/* Hiển thị các nút số trang */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(p => {
-                    // Chỉ hiển thị tối đa 7 số trang quanh trang hiện tại
-                    if (totalPages <= 7) return true;
-                    if (page <= 4) return p <= 7;
-                    if (page >= totalPages - 3) return p >= totalPages - 6;
-                    return Math.abs(page - p) <= 3;
-                  })
-                  .map(p => (
-                    <Button
-                      key={p}
-                      variant={p === page ? "default" : "outline"}
-                      size="lg"
-                      className={`min-w-[40px] px-2 ${p === page ? 'font-bold' : ''}`}
-                      onClick={() => setPage(p)}
-                      disabled={p === page}
-                    >
-                      {p}
-                    </Button>
-                  ))}
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="min-w-[80px]"
-                  disabled={page === totalPages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Sau
-                </Button>
+          {viewMode === 'list' ? (
+            <>
+              <div className="flex flex-col gap-8">
+                {stations.map(s => (
+                  <StationCard key={s._id} station={s} />
+                ))}
               </div>
-              <span className="text-base text-gray-700">Trang {page} / {totalPages}</span>
+              {totalPages > 1 && (
+                <div className="flex flex-col items-center mt-10 mb-4 gap-4">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="min-w-[80px]"
+                      disabled={page === 1}
+                      onClick={() => setPage(page - 1)}
+                    >
+                      Trước
+                    </Button>
+                    {/* Hiển thị các nút số trang */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => {
+                        // Chỉ hiển thị tối đa 7 số trang quanh trang hiện tại
+                        if (totalPages <= 7) return true;
+                        if (page <= 4) return p <= 7;
+                        if (page >= totalPages - 3) return p >= totalPages - 6;
+                        return Math.abs(page - p) <= 3;
+                      })
+                      .map(p => (
+                        <Button
+                          key={p}
+                          variant={p === page ? "default" : "outline"}
+                          size="lg"
+                          className={`min-w-[40px] px-2 ${p === page ? 'font-bold' : ''}`}
+                          onClick={() => setPage(p)}
+                          disabled={p === page}
+                        >
+                          {p}
+                        </Button>
+                      ))}
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="min-w-[80px]"
+                      disabled={page === totalPages}
+                      onClick={() => setPage(page + 1)}
+                    >
+                      Sau
+                    </Button>
+                  </div>
+                  <span className="text-base text-gray-700">Trang {page} / {totalPages}</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="mt-6">
+              <StationMap 
+                stations={stations} 
+                searchLocation={district || city || ''}
+              />
             </div>
           )}
         </>

@@ -18,6 +18,8 @@ export interface Station {
   rented_vehicles?: number;
   maintenance_vehicles?: number;
   reserved_vehicles?: number;
+  latitude?: number;
+  longitude?: number;
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
