@@ -32,11 +32,19 @@ export interface BookingStation {
   phone: string;
 }
 
+// User info embedded trong booking (khi được populate)
+export interface BookingUser {
+  _id: string;
+  fullname: string;
+  email: string;
+  phone: string;
+}
+
 // Thông tin chi tiết booking trả về từ API
 export interface Booking {
   _id: string;
   code: string;
-  user_id: string;
+  user_id: string | BookingUser; // có thể là string hoặc object khi được populate
   vehicle_id: BookingVehicle;
   station_id: BookingStation;
   start_date: string;
@@ -68,6 +76,10 @@ export interface Booking {
   createdAt: string;
   updatedAt: string;
   __v: number;
+  // Thông tin khách hàng (có thể có hoặc không tùy vào API response)
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
 }
 
 // Kết quả trả về khi đặt xe thành công
