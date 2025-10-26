@@ -43,6 +43,8 @@ export interface Rental {
   is_active: boolean;
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
+  __v?: number;
+  payments?: Payment[];
 }
 
 export interface VehicleCondition {
@@ -86,4 +88,12 @@ export interface BookingSummary {
   total_price?: number;
 }
 
-export type RentalStatus = 'active' | 'completed' | 'cancelled' | string;
+export interface Payment {
+  _id: string;
+  amount: number;
+  payment_method: string;
+  status: string;
+  payment_type: string;
+}
+
+export type RentalStatus = 'active' | 'completed' | 'cancelled' | 'pending_payment' | string;

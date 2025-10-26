@@ -16,10 +16,12 @@ export const CHATBOT = {
     user: 'Bạn',
   },
   suggestedQuestions: [
-    'Tôi muốn thuê xe điện ở Quận 1',
-    'Giá thuê xe điện là bao nhiêu?',
-    'Có những loại xe nào?',
-    'Quy trình thuê xe như thế nào?',
+    '🚗 Tôi muốn thuê xe điện ở Quận 1',
+    '💰 Giá thuê xe điện là bao nhiêu?',
+    '🔋 Có những loại xe nào?',
+    '📋 Quy trình thuê xe như thế nào?',
+    '📍 Các trạm xe gần tôi ở đâu?',
+    '⚡ Xe có sạc đầy pin không?',
   ],
 };
 

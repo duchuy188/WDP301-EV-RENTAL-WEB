@@ -587,7 +587,8 @@ const Booking: React.FC = () => {
                       const minStep = cameFromVehicleDetail ? 2 : 1;
                       setCurrentStep(Math.max(minStep, currentStep - 1));
                     }}
-                    className="border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200"
+                    disabled={isLoading}
+                    className="border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="mr-2 h-4 w-4" />
                     Quay lại
@@ -600,6 +601,7 @@ const Booking: React.FC = () => {
                     <Button
                       onClick={() => setCurrentStep(Math.min(3, currentStep + 1))}
                       disabled={
+                        isLoading ||
                         (currentStep === 2 && (!bookingDate || !startTime || !endTime || !selectedColor || !selectedStation)) ||
                         (currentStep === 1 && !selectedVehicle)
                       }
