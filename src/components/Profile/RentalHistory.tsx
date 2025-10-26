@@ -431,7 +431,7 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
 
       {/* Detail modal */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi tiết thuê xe</DialogTitle>
           </DialogHeader>
@@ -441,7 +441,7 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
 
       {/* Feedback modal */}
       <Dialog open={!!feedbackOpen} onOpenChange={setFeedbackOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Đánh giá chuyến đi</DialogTitle>
           </DialogHeader>

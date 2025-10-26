@@ -20,6 +20,7 @@ export interface BookingVehicle {
   name: string;
   brand: string;
   model: string;
+  color?: string; // Màu xe
   images?: string[];
 }
 

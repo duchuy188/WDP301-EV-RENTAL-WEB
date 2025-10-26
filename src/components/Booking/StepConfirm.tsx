@@ -14,6 +14,8 @@ type Props = {
   numberOfDays?: number;
   pricePerDay?: number;
   totalPrice?: number;
+  depositPercentage?: number;
+  depositAmount?: number;
   formatPrice: (p: number) => string;
 };
 
@@ -55,6 +57,8 @@ const StepConfirm: React.FC<Props> = ({
   numberOfDays,
   pricePerDay,
   totalPrice,
+  depositPercentage,
+  depositAmount,
   formatPrice,
 }) => {
   return (
@@ -237,6 +241,21 @@ const StepConfirm: React.FC<Props> = ({
                 <span className="font-bold text-2xl text-white">{formatPrice(totalPrice || 0)}</span>
               </div>
             </div>
+
+            {/* Deposit Amount */}
+            {depositPercentage != null && depositPercentage > 0 && (
+              <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg p-5 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                      <Wallet className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="font-bold text-lg text-white">Đặt cọc ({depositPercentage}%):</span>
+                  </div>
+                  <span className="font-bold text-2xl text-white">{formatPrice(depositAmount || 0)}</span>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white dark:bg-gray-700 rounded-lg p-8 text-center">

@@ -229,6 +229,27 @@ const Booking: React.FC = () => {
   const basePrice = calculatePrice();
   const totalPrice = basePrice; // Chỉ tính giá thuê xe, không có phí phụ
 
+  // Lấy % đặt cọc theo màu đã chọn
+  const getDepositPercentage = () => {
+    if (!selectedVehicle) return 0;
+    
+    // Get deposit percentage from selected color if available, otherwise use default vehicle deposit
+    let depositPercentage = selectedVehicle.deposit_percentage || 0;
+    if (selectedVehicleDetail?.available_colors && selectedColor) {
+      const selectedColorOption = selectedVehicleDetail.available_colors.find(
+        color => color.color === selectedColor
+      );
+      if (selectedColorOption && selectedColorOption.deposit_percentage != null) {
+        depositPercentage = selectedColorOption.deposit_percentage;
+      }
+    }
+    
+    return depositPercentage;
+  };
+
+  const depositPercentage = getDepositPercentage();
+  const depositAmount = (totalPrice * depositPercentage) / 100;
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -571,6 +592,8 @@ const Booking: React.FC = () => {
                   numberOfDays={numberOfDays}
                   pricePerDay={pricePerDay}
                   totalPrice={totalPrice}
+                  depositPercentage={depositPercentage}
+                  depositAmount={depositAmount}
                   formatPrice={formatPrice}
                 />
               )}
@@ -659,7 +682,10 @@ const Booking: React.FC = () => {
                 pricePerDay={pricePerDay}
                 basePrice={basePrice}
                 totalPrice={totalPrice}
+                depositPercentage={depositPercentage}
+                depositAmount={depositAmount}
                 formatPrice={formatPrice}
+                hideTimeAndPrice={currentStep === 3}
               />
             </motion.div>
           </div>

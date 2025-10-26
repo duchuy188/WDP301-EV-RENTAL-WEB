@@ -544,7 +544,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       </motion.div>
       {/* Modal for booking detail */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi tiết đặt xe</DialogTitle>
           </DialogHeader>
