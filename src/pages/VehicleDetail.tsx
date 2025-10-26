@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import VehicleImage from '@/components/VehicleImage';
 import { vehiclesAPI } from '@/api/vehiclesAPI';
 import { Vehicle, AvailableColor, Station } from '@/types/vehicles';
+import { getVehicleTypeInVietnamese } from '@/utils/vehicleUtils';
 
 const VehicleDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -250,7 +251,7 @@ const VehicleDetail: React.FC = () => {
               />
               <div className="absolute top-4 left-4">
                 <Badge variant={vehicle.type === 'car' ? 'default' : 'secondary'}>
-                  { vehicle.type === 'scooter' ? 'Xe tay ga' : vehicle.type}
+                  {getVehicleTypeInVietnamese(vehicle.type)}
                 </Badge>
               </div>
             </div>

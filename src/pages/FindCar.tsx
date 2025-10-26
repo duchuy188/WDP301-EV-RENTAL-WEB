@@ -14,12 +14,14 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import VehicleImage from '@/components/VehicleImage';
 import VehicleMap from '@/components/VehicleMap';
 import { vehiclesAPI } from '@/api/vehiclesAPI';
 import { stationAPI } from '@/api/stationAPI';
 import { VehicleListItem, VehiclesResponse } from '@/types/vehicles';
 import { Station } from '@/types/station';
+import { getVehicleTypeInVietnamese } from '@/utils/vehicleUtils';
 
 const FindCar: React.FC = () => {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ const FindCar: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [carType, setCarType] = useState<string>('');
+  const [carTypeDropdownOpen, setCarTypeDropdownOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [selectedStation, setSelectedStation] = useState<string>('');
   const [priceRange, setPriceRange] = useState([0, 500000]);
@@ -174,22 +177,67 @@ const FindCar: React.FC = () => {
             </div>
 
             {/* Car Type */}
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="carType" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Loại xe
               </Label>
-              <Input
-                id="carType"
-                list="carTypeList"
-                placeholder="Tất cả"
-                value={carType}
-                onChange={(e) => setCarType(e.target.value)}
-                className="border-gray-300 focus:border-green-500 focus:ring-green-500"
-              />
-              <datalist id="carTypeList">
-                <option value="scooter">Xe tay ga</option>
-                <option value="motorcycle">Xe mô tô</option>
-              </datalist>
+              <div className="relative">
+                <Input
+                  id="carType"
+                  placeholder="Tất cả"
+                  value={carType ? getVehicleTypeInVietnamese(carType) : ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Reverse lookup: find English key from Vietnamese value
+                    if (value === 'Xe tay ga') setCarType('scooter');
+                    else if (value === 'Xe mô tô') setCarType('motorcycle');
+                    else if (value === 'Xe điện') setCarType('electric');
+                    else if (value === 'Xe đạp điện') setCarType('bike');
+                    else if (value === 'Ô tô') setCarType('car');
+                    else setCarType('');
+                  }}
+                  onFocus={() => setCarTypeDropdownOpen(true)}
+                  className="border-gray-300 focus:border-green-500 focus:ring-green-500"
+                  readOnly
+                />
+                {carTypeDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setCarTypeDropdownOpen(false)}
+                    />
+                    <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+                      <div
+                        className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                        onClick={() => {
+                          setCarType('');
+                          setCarTypeDropdownOpen(false);
+                        }}
+                      >
+                        Tất cả
+                      </div>
+                      <div
+                        className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                        onClick={() => {
+                          setCarType('scooter');
+                          setCarTypeDropdownOpen(false);
+                        }}
+                      >
+                        Xe tay ga
+                      </div>
+                      <div
+                        className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                        onClick={() => {
+                          setCarType('motorcycle');
+                          setCarTypeDropdownOpen(false);
+                        }}
+                      >
+                        Xe mô tô
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Model Filter */}
@@ -344,7 +392,7 @@ const FindCar: React.FC = () => {
                               </div>
                               <div>
                                 <div className="text-xs text-gray-500 uppercase font-medium">Loại</div>
-                                <div className="text-base font-semibold text-gray-900">{vehicle.type}</div>
+                                <div className="text-base font-semibold text-gray-900">{getVehicleTypeInVietnamese(vehicle.type)}</div>
                               </div>
                             </div>
                           )}

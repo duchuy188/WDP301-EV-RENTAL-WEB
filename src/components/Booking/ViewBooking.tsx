@@ -257,6 +257,48 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking }) => {
             </div>
           </div>
         </div>
+
+        {/* Ghi chú và Yêu cầu đặc biệt */}
+        {(booking.special_requests || booking.notes) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+            {booking.special_requests && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-100 dark:border-gray-700 p-4">
+                <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                  <span className="text-orange-500">📝</span>
+                  Yêu cầu đặc biệt
+                </h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{booking.special_requests}</p>
+              </div>
+            )}
+            {booking.notes && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-100 dark:border-gray-700 p-4">
+                <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                  <span className="text-blue-500">📄</span>
+                  Ghi chú
+                </h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{booking.notes}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Lý do hủy (nếu có) */}
+        {booking.status === 'cancelled' && booking.cancellation_reason && (
+          <div className="mt-4">
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg shadow-md border border-red-200 dark:border-red-800 p-4">
+              <h4 className="font-semibold text-sm text-red-900 dark:text-red-300 mb-2 flex items-center gap-2">
+                <span>⚠️</span>
+                Lý do hủy
+              </h4>
+              <p className="text-sm text-red-700 dark:text-red-400 whitespace-pre-wrap">{booking.cancellation_reason}</p>
+              {booking.cancelled_at && (
+                <p className="text-xs text-red-600 dark:text-red-500 mt-2">
+                  Hủy lúc: {booking.cancelled_at}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal ảnh xe */}
