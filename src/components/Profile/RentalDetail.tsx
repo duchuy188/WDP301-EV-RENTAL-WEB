@@ -248,120 +248,152 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Header with Code and Status */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Hash className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <h3 className="font-bold text-base text-gray-900 dark:text-white font-mono">{rental.code}</h3>
+            <Hash className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-bold text-lg text-gray-900 dark:text-white font-mono">{rental.code}</h3>
           </div>
-          <Badge className={`${getStatusColor(rental.status)} text-xs`}>{getStatusText(rental.status)}</Badge>
+          <Badge className={`${getStatusColor(rental.status)} text-sm px-3 py-1`}>{getStatusText(rental.status)}</Badge>
         </div>
       </div>
 
-      {/* Thời gian thuê và Tổng phí */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 bg-green-600 rounded">
-              <Calendar className="h-4 w-4 text-white" />
-            </div>
-            <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">Thời gian thuê</h4>
+      {/* Thông tin chi tiết - Gộp tất cả vào một khung */}
+      <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="p-2 bg-blue-600 rounded">
+            <FileText className="h-5 w-5 text-white" />
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 text-green-600 dark:text-green-400" />
-              <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Bắt đầu: <span className="font-medium text-gray-900 dark:text-white">{formatDate(rental.actual_start_time)}</span></p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 text-green-600 dark:text-green-400" />
-              <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Kết thúc: <span className="font-medium text-gray-900 dark:text-white">{formatDate(rental.actual_end_time)}</span></p>
-              </div>
-            </div>
-          </div>
+          <h4 className="font-semibold text-base text-blue-900 dark:text-blue-100">Thông tin chi tiết</h4>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-purple-600 rounded">
-                <CreditCard className="h-4 w-4 text-white" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Thông tin người thuê, xe, trạm - Cột dọc */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-100 dark:border-blue-900 space-y-3">
+            <div className="flex items-start gap-2">
+              <User className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-0.5">Người thuê</p>
+                <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{typeof rental.user_id === 'string' ? rental.user_id : rental.user_id?.fullname ?? '-'}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{typeof rental.user_id === 'string' ? '' : rental.user_id?.email ?? ''}</p>
               </div>
-              <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">Tổng phí</h4>
+            </div>
+            <div className="flex items-start gap-2">
+              <Car className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-0.5">Xe</p>
+                <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{typeof rental.vehicle_id === 'string' ? rental.vehicle_id : rental.vehicle_id?.name ?? rental.vehicle_id?.license_plate ?? '-'}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{typeof rental.vehicle_id === 'string' ? '' : rental.vehicle_id?.model ?? ''}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-0.5">Trạm thuê xe</p>
+                <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{typeof rental.station_id === 'string' ? rental.station_id : rental.station_id?.name ?? '-'}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{typeof rental.station_id === 'string' ? '' : rental.station_id?.address ?? ''}</p>
+              </div>
             </div>
           </div>
-          <p className="font-bold text-xl text-purple-600 dark:text-purple-400 text-center">
-            {rental.payments && rental.payments.length > 0 
-              ? formatPrice(rental.payments.reduce((sum, p) => sum + (p.amount || 0), 0))
-              : formatPrice(rental.total_fees ?? 0)
-            }
-          </p>
-          {rental.payments && rental.payments.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {rental.payments.map((payment, idx) => {
-                const getPaymentMethodLabel = (method: string) => {
-                  switch (method.toLowerCase()) {
-                    case 'vnpay':
-                      return 'VNPay';
-                    case 'cash':
-                      return 'Tiền mặt';
-                    case 'momo':
-                      return 'MoMo';
-                    case 'bank_transfer':
-                      return 'Chuyển khoản';
-                    default:
-                      return method;
-                  }
-                };
-                
-                return (
-                  <div key={payment._id || idx} className="flex items-center justify-between text-xs bg-white dark:bg-gray-800 rounded p-1.5 border border-purple-200 dark:border-purple-700">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {getPaymentMethodLabel(payment.payment_method)}
-                    </span>
-                    <span className={`font-medium ${
-                      payment.status === 'completed' 
-                        ? 'text-green-600 dark:text-green-400' 
-                        : 'text-orange-600 dark:text-orange-400'
-                    }`}>
-                      {formatPrice(payment.amount)}
-                    </span>
-                  </div>
-                );
-              })}
+
+          {/* Thời gian thuê và Tổng phí - Gộp chung */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-700 space-y-3">
+            {/* Thời gian thuê */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <h5 className="font-semibold text-sm text-green-900 dark:text-green-100">Thời gian thuê</h5>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Bắt đầu:</span>
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{formatDate(rental.actual_start_time)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Kết thúc:</span>
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{formatDate(rental.actual_end_time)}</span>
+                </div>
+              </div>
             </div>
-          )}
+
+            {/* Tổng phí */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <CreditCard className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                <h5 className="font-semibold text-sm text-purple-900 dark:text-purple-100">Tổng phí</h5>
+              </div>
+              <p className="font-bold text-2xl text-purple-600 dark:text-purple-400 text-center mb-2">
+                {rental.payments && rental.payments.length > 0 
+                  ? formatPrice(rental.payments.reduce((sum, p) => sum + (p.amount || 0), 0))
+                  : formatPrice(rental.total_fees ?? 0)
+                }
+              </p>
+              {rental.payments && rental.payments.length > 0 && (
+                <div className="space-y-1.5">
+                  {rental.payments.map((payment, idx) => {
+                    const getPaymentMethodLabel = (method: string) => {
+                      switch (method.toLowerCase()) {
+                        case 'vnpay':
+                          return 'VNPay';
+                        case 'cash':
+                          return 'Tiền mặt';
+                        case 'momo':
+                          return 'MoMo';
+                        case 'bank_transfer':
+                          return 'Chuyển khoản';
+                        default:
+                          return method;
+                      }
+                    };
+                    
+                    return (
+                      <div key={payment._id || idx} className="flex items-center justify-between text-sm bg-purple-50 dark:bg-purple-900/20 rounded px-2 py-1.5 border border-purple-100 dark:border-purple-800">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {getPaymentMethodLabel(payment.payment_method)}
+                        </span>
+                        <span className={`font-medium ${
+                          payment.status === 'completed' 
+                            ? 'text-green-600 dark:text-green-400' 
+                            : 'text-orange-600 dark:text-orange-400'
+                        }`}>
+                          {formatPrice(payment.amount)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Tình trạng xe */}
-      <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/20 rounded-lg p-3 border border-orange-200 dark:border-orange-800">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="p-1.5 bg-orange-600 rounded">
-            <Car className="h-4 w-4 text-white" />
+      <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-2 bg-orange-600 rounded">
+            <Car className="h-5 w-5 text-white" />
           </div>
-          <h4 className="font-semibold text-sm text-orange-900 dark:text-orange-100">Tình trạng xe</h4>
+          <h4 className="font-semibold text-base text-orange-900 dark:text-orange-100">Tình trạng xe</h4>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="bg-white dark:bg-gray-800 rounded p-2 border border-orange-200 dark:border-orange-700">
-            <p className="text-xs font-medium mb-2 text-orange-900 dark:text-orange-100 flex items-center gap-1">
-              <Sparkles className="h-3 w-3" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded p-3 border border-orange-200 dark:border-orange-700">
+            <p className="text-sm font-semibold mb-2 text-orange-900 dark:text-orange-100 flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4" />
               Lúc nhận
             </p>
-            <div className="space-y-1 text-xs">
+            <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <Gauge className="h-3 w-3" />Km:
+                  <Gauge className="h-4 w-4" />Km:
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">{rental.vehicle_condition_before?.mileage ?? '-'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <Battery className="h-3 w-3" />Pin:
+                  <Battery className="h-4 w-4" />Pin:
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">{rental.vehicle_condition_before?.battery_level ?? '-'}%</span>
               </div>
@@ -375,21 +407,21 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded p-2 border border-orange-200 dark:border-orange-700">
-            <p className="text-xs font-medium mb-2 text-orange-900 dark:text-orange-100 flex items-center gap-1">
-              <Sparkles className="h-3 w-3" />
+          <div className="bg-white dark:bg-gray-800 rounded p-3 border border-orange-200 dark:border-orange-700">
+            <p className="text-sm font-semibold mb-2 text-orange-900 dark:text-orange-100 flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4" />
               Lúc trả
             </p>
-            <div className="space-y-1 text-xs">
+            <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <Gauge className="h-3 w-3" />Km:
+                  <Gauge className="h-4 w-4" />Km:
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">{rental.vehicle_condition_after?.mileage ?? '-'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <Battery className="h-3 w-3" />Pin:
+                  <Battery className="h-4 w-4" />Pin:
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">{rental.vehicle_condition_after?.battery_level ?? '-'}%</span>
               </div>
@@ -406,62 +438,26 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
         </div>
       </div>
 
-      {/* Thông tin chi tiết */}
-      <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="p-1.5 bg-blue-600 rounded">
-            <User className="h-4 w-4 text-white" />
-          </div>
-          <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">Thông tin chi tiết</h4>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="flex items-start gap-1.5">
-            <User className="h-3 w-3 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Người thuê</p>
-              <p className="font-medium text-sm text-gray-900 dark:text-white">{typeof rental.user_id === 'string' ? rental.user_id : rental.user_id?.fullname ?? '-'}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{typeof rental.user_id === 'string' ? '' : rental.user_id?.email ?? ''}</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-1.5">
-            <Car className="h-3 w-3 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Xe</p>
-              <p className="font-medium text-sm text-gray-900 dark:text-white">{typeof rental.vehicle_id === 'string' ? rental.vehicle_id : rental.vehicle_id?.name ?? rental.vehicle_id?.license_plate ?? '-'}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{typeof rental.vehicle_id === 'string' ? '' : rental.vehicle_id?.model ?? ''}</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-1.5">
-            <MapPin className="h-3 w-3 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Trạm</p>
-              <p className="font-medium text-sm text-gray-900 dark:text-white">{typeof rental.station_id === 'string' ? rental.station_id : rental.station_id?.name ?? '-'}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{typeof rental.station_id === 'string' ? '' : rental.station_id?.address ?? ''}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Ghi chú */}
       {(rental.staff_notes || rental.customer_notes) && (
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-950/30 dark:to-yellow-900/20 rounded-lg p-3 border border-yellow-200 dark:border-yellow-800">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 bg-yellow-600 rounded">
-              <FileText className="h-4 w-4 text-white" />
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-950/30 dark:to-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 bg-yellow-600 rounded">
+              <FileText className="h-5 w-5 text-white" />
             </div>
-            <h4 className="font-semibold text-sm text-yellow-900 dark:text-yellow-100">Ghi chú</h4>
+            <h4 className="font-semibold text-base text-yellow-900 dark:text-yellow-100">Ghi chú</h4>
           </div>
           <div className="space-y-2">
             {rental.staff_notes && (
-              <div className="bg-white dark:bg-gray-800 rounded p-2 border border-yellow-200 dark:border-yellow-700">
-                <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400 mb-1">Nhân viên</p>
-                <p className="text-xs text-gray-900 dark:text-white">{rental.staff_notes}</p>
+              <div className="bg-white dark:bg-gray-800 rounded p-3 border border-yellow-200 dark:border-yellow-700">
+                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400 mb-1">Nhân viên</p>
+                <p className="text-sm text-gray-900 dark:text-white">{rental.staff_notes}</p>
               </div>
             )}
             {rental.customer_notes && (
-              <div className="bg-white dark:bg-gray-800 rounded p-2 border border-yellow-200 dark:border-yellow-700">
-                <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400 mb-1">Khách hàng</p>
-                <p className="text-xs text-gray-900 dark:text-white">{rental.customer_notes}</p>
+              <div className="bg-white dark:bg-gray-800 rounded p-3 border border-yellow-200 dark:border-yellow-700">
+                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400 mb-1">Khách hàng</p>
+                <p className="text-sm text-gray-900 dark:text-white">{rental.customer_notes}</p>
               </div>
             )}
           </div>

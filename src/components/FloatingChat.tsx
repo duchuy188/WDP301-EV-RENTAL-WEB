@@ -61,6 +61,25 @@ const FloatingChat: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Drag and drop functionality
+  const [position, setPosition] = useState(() => {
+    // Load saved position from localStorage
+    const saved = localStorage.getItem('chatbot-position');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return { bottom: 24, right: 24 };
+      }
+    }
+    return { bottom: 24, right: 24 };
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [hasMoved, setHasMoved] = useState(false);
+  const chatButtonRef = useRef<HTMLDivElement>(null);
+
   // Auto scroll to bottom when new messages arrive.
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -115,66 +134,13 @@ const FloatingChat: React.FC = () => {
       }
     };
 
-    window.addEventListener('openChatWithSession', handleOpenWithSession as EventListener);
+    window.addEventListener('openChatWithSession', handleOpenWithSession as unknown as EventListener);
     return () => {
-      window.removeEventListener('openChatWithSession', handleOpenWithSession as EventListener);
+      window.removeEventListener('openChatWithSession', handleOpenWithSession as unknown as EventListener);
     };
   }, []);
 
-  // Request welcome message when chat is opened (only if no messages).
-  useEffect(() => {
-    if (!isOpen || chatMessages.length > 0) return;
-
-    let mounted = true;
-
-    (async () => {
-      try {
-        setIsTyping(true);
-
-        // Provide a default welcome message
-        const res: ChatbotAPIResponse = await sendMessage({ 
-          message: 'Xin chào! Tôi có thể giúp gì cho bạn?', // Default message
-          session_id: chatContext.sessionId,
-          role: 'user' // Add role to meet API requirements
-        });
-
-        if (!mounted) return;
-
-        const botResponse: ChatMessage = {
-          id: Date.now().toString(),
-          type: 'bot',
-          message: res?.message ?? 'Xin lỗi, hiện không có phản hồi.',
-          timestamp: new Date(),
-          context: res?.context,
-        };
-
-        setChatMessages((prev) => [...prev, botResponse]);
-        setChatContext((prev) => ({
-          ...prev,
-          sessionId: res?.session_id ?? prev.sessionId,
-          conversationId: res?.conversation_id ?? prev.conversationId,
-          topic: res?.context ?? prev.topic,
-        }));
-
-        // Clear error message after session ID is initialized
-        setChatMessages((prev) => prev.filter(msg => msg.message !== 'Session ID is missing. Please refresh the page or try again later.'));
-      } catch (err) {
-        const msg = extractErrorMessage(err) ?? 'Xin lỗi, không thể kết nối tới chatbot.';
-        setChatMessages((prev) => [...prev, {
-          id: Date.now().toString(),
-          type: 'bot',
-          message: msg,
-          timestamp: new Date(),
-        }]);
-      } finally {
-        setIsTyping(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [isOpen]);
+  // No longer auto-send welcome message - let user choose from suggestions instead
 
   // small helper to read axios / fetch error messages
   const extractErrorMessage = (err: any): string | undefined => {
@@ -252,11 +218,6 @@ const FloatingChat: React.FC = () => {
     setChatInput('');
   };
 
-  const toggleChat = () => {
-    setIsOpen(!isOpen);
-    setIsMinimized(false);
-  };
-
   const minimizeChat = () => {
     setIsMinimized(true);
   };
@@ -279,6 +240,100 @@ const FloatingChat: React.FC = () => {
     });
   };
 
+  // Handle drag start for chat button
+  const handleButtonMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!chatButtonRef.current) return;
+    
+    setIsDragging(true);
+    setHasMoved(false);
+    setDragStartPos({ x: e.clientX, y: e.clientY });
+    
+    const rect = chatButtonRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  // Handle drag start for chat header
+  const handleHeaderMouseDown = (e: React.MouseEvent) => {
+    // Prevent dragging when clicking on buttons or interactive elements
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+
+    e.preventDefault();
+    
+    if (!e.currentTarget) return;
+    
+    setIsDragging(true);
+    setHasMoved(false);
+    setDragStartPos({ x: e.clientX, y: e.clientY });
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  // Handle drag move
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      // Check if mouse has moved more than 5px (to distinguish click from drag)
+      const deltaX = Math.abs(e.clientX - dragStartPos.x);
+      const deltaY = Math.abs(e.clientY - dragStartPos.y);
+      
+      if (deltaX > 5 || deltaY > 5) {
+        setHasMoved(true);
+      }
+
+      const width = isOpen ? 320 : 56; // 320 for chat window, 56 for button
+      const height = isOpen ? (isMinimized ? 60 : 400) : 56;
+
+      const newRight = window.innerWidth - e.clientX - dragOffset.x - width;
+      const newBottom = window.innerHeight - e.clientY - dragOffset.y - height;
+
+      // Keep within bounds
+      const boundedRight = Math.max(0, Math.min(newRight, window.innerWidth - width));
+      const boundedBottom = Math.max(0, Math.min(newBottom, window.innerHeight - height));
+
+      const newPosition = { right: boundedRight, bottom: boundedBottom };
+      setPosition(newPosition);
+      
+      // Save to localStorage
+      localStorage.setItem('chatbot-position', JSON.stringify(newPosition));
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      
+      // If it was a click (not dragged), open the chat
+      if (!hasMoved && !isOpen) {
+        setIsOpen(true);
+        setIsMinimized(false);
+      }
+      
+      setHasMoved(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, isOpen, isMinimized, hasMoved, dragStartPos]);
+
   // Return early if the component should not render.
   if (!shouldRender) return null;
 
@@ -288,20 +343,25 @@ const FloatingChat: React.FC = () => {
       <AnimatePresence>
         {!isOpen && (
           <motion.div
+            ref={chatButtonRef}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed z-50 transition-shadow duration-200"
+            style={{ 
+              bottom: `${position.bottom}px`, 
+              right: `${position.right}px`,
+              cursor: isDragging ? 'grabbing' : 'grab',
+              opacity: isDragging ? 0.8 : 1,
+              userSelect: 'none'
+            }}
+            onMouseDown={handleButtonMouseDown}
           >
-            <Button
-              onClick={toggleChat}
-              className="h-14 w-14 rounded-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-green-500/50 transition-all duration-300"
-              size="icon"
-            >
+            <div className="h-14 w-14 rounded-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center">
               <MessageCircle className="h-6 w-6 text-white" />
-            </Button>
+            </div>
             {/* Notification pulse */}
             <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-400 rounded-full animate-pulse"></div>
           </motion.div>
@@ -321,11 +381,20 @@ const FloatingChat: React.FC = () => {
             }}
             exit={{ opacity: 0, y: 100, scale: 0.8 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed bottom-6 right-6 z-50 w-80"
+            className="fixed z-50 w-80 transition-shadow duration-200"
+            style={{ 
+              bottom: `${position.bottom}px`, 
+              right: `${position.right}px`,
+              opacity: isDragging ? 0.8 : 1,
+              userSelect: isDragging ? 'none' : 'auto'
+            }}
           >
             <Card className="shadow-2xl border-0 overflow-hidden backdrop-blur-md">
               {/* Header */}
-              <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4">
+              <CardHeader 
+                className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 cursor-grab active:cursor-grabbing"
+                onMouseDown={handleHeaderMouseDown}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-9 w-9 border-2 border-white/30">
@@ -349,12 +418,13 @@ const FloatingChat: React.FC = () => {
                           size="sm"
                           onClick={createNewChat}
                           className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg transition-all duration-300"
+                          disabled={chatMessages.length === 0}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Tạo cuộc trò chuyện mới</p>
+                        <p>{chatMessages.length === 0 ? 'Đã ở cuộc trò chuyện mới' : 'Xóa & bắt đầu lại'}</p>
                       </TooltipContent>
                     </Tooltip>
                     <Tooltip>
@@ -408,21 +478,37 @@ const FloatingChat: React.FC = () => {
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="space-y-2"
+                            className="space-y-3"
                           >
-                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">Gợi ý câu hỏi:</p>
-                            {CHATBOT.suggestedQuestions.map((question, idx) => (
-                              <motion.button
-                                key={idx}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: idx * 0.1 }}
-                                onClick={() => handleChatSubmit(undefined, question)}
-                                className="w-full text-left p-3 text-sm rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-green-500 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 shadow-sm hover:shadow-md"
-                              >
-                                {question}
-                              </motion.button>
-                            ))}
+                            {/* Welcome message */}
+                            <div className="text-center">
+                              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                                Xin chào! 👋 Tôi có thể giúp gì cho bạn?
+                              </p>
+                            </div>
+                            
+                            {/* Suggested questions in grid layout */}
+                            <div>
+                              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                                Gợi ý:
+                              </p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {CHATBOT.suggestedQuestions.map((question, idx) => (
+                                  <motion.button
+                                    key={idx}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    onClick={() => handleChatSubmit(undefined, question)}
+                                    className="px-2.5 py-2 text-[11px] leading-tight rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-green-400 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 shadow-sm hover:shadow-md text-left group"
+                                  >
+                                    <span className="text-gray-700 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400 line-clamp-2">
+                                      {question}
+                                    </span>
+                                  </motion.button>
+                                ))}
+                              </div>
+                            </div>
                           </motion.div>
                         )}
                         {chatMessages.map((message) => (
