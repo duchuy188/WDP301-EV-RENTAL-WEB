@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { VehicleListItem } from '../types/vehicles';
 import { useNavigate } from 'react-router-dom';
+import { getVehicleTypeInVietnamese } from '../utils/vehicleUtils';
 
 // Fix for default marker icons in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -278,7 +279,7 @@ const VehicleMap: React.FC<VehicleMapProps> = ({ vehicles, searchLocation }) => 
                             {vehicle.price_per_day?.toLocaleString('vi-VN')} đ/ngày
                           </p>
                           <p className="text-xs text-green-600">
-                            {vehicle.type}
+                            {getVehicleTypeInVietnamese(vehicle.type)}
                           </p>
                         </div>
                       </div>

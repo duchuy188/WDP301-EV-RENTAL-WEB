@@ -10,7 +10,12 @@ export const bookingAPI = {
   },
   // Lấy danh sách booking của user (có phân trang)
   getBookings: async (params?: { page?: number; limit?: number }): Promise<BookingListResponse> => {
-    const response = await apiClient.get('/bookings/user', { params });
+    const response = await apiClient.get('/bookings/user', { 
+      params: {
+        ...params,
+        populate: 'user_id' // Yêu cầu backend populate thông tin user
+      }
+    });
     return response.data;
   },
 
@@ -23,7 +28,11 @@ export const bookingAPI = {
 
   // Get detailed booking by id
   getBooking: async (id: string): Promise<any> => {
-    const response = await apiClient.get(`/bookings/${id}`);
+    const response = await apiClient.get(`/bookings/${id}`, {
+      params: {
+        populate: 'user_id' // Yêu cầu backend populate thông tin user
+      }
+    });
     return response.data;
   },
 

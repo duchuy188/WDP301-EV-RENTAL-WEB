@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Battery, MapPin, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { getVehicleTypeInVietnamese } from '@/utils/vehicleUtils';
 
 import type { VehicleListItem as VLI } from '@/types/vehicles';
 
@@ -60,7 +61,7 @@ const VehicleListItem: React.FC<Props> = ({ vehicle, isSelected, onSelect }) => 
         <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
           <div className="text-gray-600 dark:text-gray-300">
             <p>Năm: <span className="font-semibold text-gray-900 dark:text-gray-100">{vehicle.year}</span></p>
-            <p>Loại: <span className="font-semibold text-gray-900 dark:text-gray-100">{vehicle.type}</span></p>
+            <p>Loại: <span className="font-semibold text-gray-900 dark:text-gray-100">{getVehicleTypeInVietnamese(vehicle.type)}</span></p>
           </div>
           <div className="text-gray-600 dark:text-gray-300">
             <p>Màu: <span className="font-semibold text-gray-900 dark:text-gray-100">{vehicle.color}</span></p>
