@@ -259,6 +259,42 @@ const FeedbackHistory: React.FC = () => {
           </div>
         )}
 
+        {/* Staff Info - Show when category is staff */}
+        {feedback.category === 'staff' && feedback.staff_role && (
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">Vai trò nhân viên:</span>
+                <Badge variant="secondary">
+                  {feedback.staff_role === 'pickup' ? 'Nhận xe' : feedback.staff_role === 'return' ? 'Trả xe' : feedback.staff_role}
+                </Badge>
+              </div>
+              {(() => {
+                const rental = feedback.rental_id as RentalInfo;
+                if (rental && typeof rental === 'object') {
+                  const staffName = feedback.staff_role === 'pickup' 
+                    ? (typeof rental.pickup_staff_id === 'object' && 'fullname' in rental.pickup_staff_id 
+                        ? rental.pickup_staff_id.fullname 
+                        : null)
+                    : (typeof rental.return_staff_id === 'object' && 'fullname' in rental.return_staff_id 
+                        ? rental.return_staff_id.fullname 
+                        : null);
+                  
+                  if (staffName) {
+                    return (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">Nhân viên:</span>
+                        <span className="text-sm text-blue-800 dark:text-blue-200">{staffName}</span>
+                      </div>
+                    );
+                  }
+                }
+                return null;
+              })()}
+            </div>
+          </div>
+        )}
+
         {/* Comment/Note */}
         {feedback.comment && (
           <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
