@@ -23,10 +23,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           const userData = JSON.parse(savedUser);
           console.log('ProtectedRoute: Found user in localStorage:', {
             email: userData.email,
+            role: userData.role,
             provider: userData.provider || 'regular',
             hasGoogleId: !!userData.googleId
           });
-          setLocalAuthCheck(true);
+          
+          // Kiểm tra role
+          if (userData.role !== 'EV Renter') {
+            console.warn('ProtectedRoute: User role is not EV Renter, denying access');
+            // Xóa dữ liệu không hợp lệ
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            setLocalAuthCheck(false);
+          } else {
+            setLocalAuthCheck(true);
+          }
         } catch (error) {
           console.error('ProtectedRoute: Invalid localStorage data:', error);
           setLocalAuthCheck(false);
@@ -85,6 +97,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (!isUserAuthenticated) {
     console.log('ProtectedRoute: Authentication failed, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Kiểm tra role từ user context nếu có
+  if (user && user.role !== 'EV Renter') {
+    console.warn('ProtectedRoute: User authenticated but role is not EV Renter, redirecting to login');
+    return <Navigate to="/login" state={{ from: location, message: 'Bạn không có quyền truy cập vào hệ thống này.' }} replace />;
   }
 
   console.log('ProtectedRoute: Authentication successful, allowing access');
