@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from './config';
-import { ContractsApiResponse } from '@/types/contracts';
+import { ContractsApiResponse, ContractsData } from '@/types/contracts';
 
 const API_URL = `${API_BASE_URL}/contracts`;
 
@@ -27,7 +27,7 @@ export const getContracts = async (params?: {
 };
 
 // Get single contract by ID
-export const getContractById = async (id: string): Promise<{ success: boolean; message: string; data: { contract: any } }> => {
+export const getContractById = async (id: string): Promise<{ success: boolean; message: string; data: { contract: ContractsData } }> => {
   const token = localStorage.getItem('token');
   
   const response = await axios.get(`${API_URL}/${id}`, {
