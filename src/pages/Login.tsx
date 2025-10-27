@@ -23,10 +23,15 @@ const Login = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Check for success message from registration
+  // Check for success message from registration or error message from protected route
   useEffect(() => {
     if (location.state?.message) {
-      setSuccessMessage(location.state.message);
+      // Kiểm tra nếu message là thông báo lỗi về quyền truy cập
+      if (location.state.message.includes('quyền truy cập') || location.state.message.includes('không được phép')) {
+        setError(location.state.message);
+      } else {
+        setSuccessMessage(location.state.message);
+      }
       // Clear the state to prevent showing message on refresh
       window.history.replaceState(null, '');
     }

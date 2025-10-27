@@ -20,22 +20,6 @@ interface RegisterData {
   password: string;
 }
 
-interface GoogleCredential {
-  credential?: string;
-  clientId?: string;
-  select_by?: string;
-  profileObj?: {
-    email: string;
-    name: string;
-    imageUrl?: string;
-    googleId?: string;
-  };
-  tokenObj?: {
-    access_token: string;
-    id_token: string;
-  };
-}
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
@@ -53,7 +37,6 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is already logged in on app start
@@ -65,19 +48,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           // Sử dụng dữ liệu đã lưu trước
           const userData = JSON.parse(savedUser);
+          
+          // Kiểm tra role ngay lập tức
+          if (userData.role !== 'EV Renter') {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+          
           setUser(userData);
           
           // Sau đó verify token và cập nhật thông tin mới nhất (không chặn UI)
           try {
             const response = await authAPI.getProfile();
             if (response && response.data) {
-              // Cập nhật thông tin mới nếu có
-              setUser(response.data);
-              localStorage.setItem('user', JSON.stringify(response.data));
+              // Kiểm tra role từ API
+              if (response.data.role !== 'EV Renter') {
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                setUser(null);
+              } else {
+                // Cập nhật thông tin mới nếu có và role hợp lệ
+                setUser(response.data);
+                localStorage.setItem('user', JSON.stringify(response.data));
+              }
             }
           } catch (profileError) {
             // Nếu token không hợp lệ, xóa dữ liệu
-            console.warn('Token verification failed, clearing auth data');
             localStorage.removeItem('user');
             localStorage.removeItem('token');
             localStorage.removeItem('refreshToken');
@@ -85,7 +86,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         } catch (parseError) {
           // Dữ liệu user không hợp lệ, xóa tất cả
-          console.error('Invalid saved user data:', parseError);
           localStorage.removeItem('user');
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
@@ -125,6 +125,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Nếu có user data từ login response, sử dụng luôn
         if (userData) {
+          // Kiểm tra role trước khi set user
+          if (userData.role !== 'EV Renter') {
+            // Xóa token đã lưu
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            throw new Error('Bạn không có quyền truy cập vào hệ thống này. Chỉ tài khoản "EV Renter" mới được phép đăng nhập.');
+          }
           setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
         } else {
@@ -135,13 +142,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             
             const profileResponse = await authAPI.getProfile();
             if (profileResponse && profileResponse.data) {
-              setUser(profileResponse.data);
-              localStorage.setItem('user', JSON.stringify(profileResponse.data));
+              userData = profileResponse.data;
+              // Kiểm tra role
+              if (userData.role !== 'EV Renter') {
+                // Xóa token đã lưu
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                throw new Error('Bạn không có quyền truy cập vào hệ thống này. Chỉ tài khoản "EV Renter" mới được phép đăng nhập.');
+              }
+              setUser(userData);
+              localStorage.setItem('user', JSON.stringify(userData));
             } else {
               throw new Error('Không thể lấy thông tin profile');
             }
-          } catch (profileError) {
-            console.error('Profile fetch error:', profileError);
+          } catch (profileError: any) {
+            // Nếu lỗi là do role, throw lên
+            if (profileError.message && profileError.message.includes('quyền truy cập')) {
+              throw profileError;
+            }
             // Nếu không lấy được profile, tạo user data cơ bản từ thông tin login
             const basicUserData = {
               id: `user_${Date.now()}`, // Tạo ID duy nhất thay vì temp-id
@@ -155,17 +173,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             };
             setUser(basicUserData);
             localStorage.setItem('user', JSON.stringify(basicUserData));
-            console.warn('Using basic user data due to profile fetch error');
           }
         }
         
       } else {
-        console.error('Login failed: No token in response');
         throw new Error('Đăng nhập thất bại - không nhận được token');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
-      console.error('Error response:', error.response?.data);
       
       // Xóa token nếu có lỗi
       localStorage.removeItem('token');
@@ -194,6 +208,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const response = await authAPI.googleLogin(idToken);
       if (response.token && response.user) {
+        // Kiểm tra role trước khi lưu
+        if (response.user.role !== 'EV Renter') {
+          throw new Error('Bạn không có quyền truy cập vào hệ thống này. Chỉ tài khoản "EV Renter" mới được phép đăng nhập.');
+        }
         localStorage.setItem('token', response.token);
         if (response.refreshToken) {
           localStorage.setItem('refreshToken', response.refreshToken);
@@ -215,41 +233,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
-    setError(null);
     try {
       // Ensure payload uses 'fullname' as expected by backend
       const payload = { ...userData, fullname: userData.fullName };
       delete (payload as any).fullName;
       const response = await authAPI.register(payload);
-      if (response.success) {
-        setError(null);
-      } else {
-        setError(response.message || 'Đăng ký thất bại');
+      if (!response.success) {
+        throw new Error(response.message || 'Đăng ký thất bại');
       }
     } catch (error: any) {
-      console.error('Register error:', error);
       let errorMessage = 'Đăng ký thất bại';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = () => {
-    try {
       // Gọi API logout trong background, không chờ kết quả
       // vì việc dọn dẹp local storage là quan trọng nhất
-      authAPI.logout().catch((error) => {
-        console.warn('Logout API call failed, but continuing with local cleanup:', error);
+      authAPI.logout().catch(() => {
       });
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
     
     // Dọn dẹp local storage ngay lập tức để đảm bảo user được logout
     setUser(null);
