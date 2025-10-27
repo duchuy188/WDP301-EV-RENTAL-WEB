@@ -13,9 +13,12 @@ interface FeedbackFormProps {
   onSuccess?: (created: Feedback) => void;
   // optional staff ids related to this rental (pickup and/or return staff)
   staffIds?: string[];
+  // optional staff names for display
+  pickupStaffName?: string;
+  returnStaffName?: string;
 }
 
-const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSuccess, staffIds }) => {
+const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSuccess, staffIds, pickupStaffName, returnStaffName }) => {
   const [type, setType] = useState<'rating' | 'complaint'>('rating');
   const [ratings, setRatings] = useState({
     overall: 5,
@@ -26,6 +29,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
   });
 
   const [complaint, setComplaint] = useState({
+    fullname: '',
     title: '',
     description: '',
     category: '',
@@ -130,7 +134,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
     // reset fields
     setType('rating');
     setRatings({ overall: 5, staff: 5, vehicle: 5, station: 5, checkout: 5 });
-    setComplaint({ title: '', description: '', category: '', staffRole: '' });
+    setComplaint({ fullname: '', title: '', description: '', category: '', staffRole: '' });
     setComment('');
     setSubmitting(false);
     setSubmittedType(null);
@@ -145,6 +149,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
     if (type === 'rating' && ratings.overall === null) return 'Vui lòng đánh giá tổng thể.';
 
     if (type === 'complaint') {
+      if (!complaint.fullname.trim()) return 'Vui lòng nhập họ tên.';
       if (!complaint.title.trim()) return 'Vui lòng nhập tiêu đề.';
       if (!complaint.description.trim()) return 'Vui lòng nhập mô tả.';
       if (!complaint.category) return 'Vui lòng chọn danh mục.';
@@ -177,6 +182,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
       }
 
       if (type === 'complaint') {
+        form.append('fullname', complaint.fullname);
         form.append('title', complaint.title);
         form.append('description', complaint.description);
         form.append('category', complaint.category);
@@ -303,6 +309,17 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
       {type === 'complaint' && (
         <div className="space-y-4">
           <div>
+            <label className="block text-sm font-medium mb-2">Họ tên <span className="text-red-500">*</span></label>
+            <input
+              value={complaint.fullname}
+              onChange={e => setComplaint(p => ({ ...p, fullname: e.target.value }))}
+              placeholder="Nhập họ tên của bạn"
+              disabled={submitting || !!submittedType}
+              className="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2"
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium mb-2">Tiêu đề <span className="text-red-500">*</span></label>
             <input
               value={complaint.title}
@@ -343,20 +360,38 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
           </div>
 
           {complaint.category === 'staff' && (
-            <div>
-              <label className="block text-sm font-medium mb-2">Vai trò nhân viên</label>
-              <Select
-                value={complaint.staffRole}
-                onValueChange={v => setComplaint(p => ({ ...p, staffRole: v }))}
-                disabled={submitting || !!submittedType}
-              >
-                <SelectTrigger className="w-full"><SelectValue placeholder="Chọn vai trò nhân viên" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pickup">Nhận xe</SelectItem>
-                  <SelectItem value="return">Trả xe</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">Vai trò nhân viên</label>
+                <Select
+                  value={complaint.staffRole}
+                  onValueChange={v => setComplaint(p => ({ ...p, staffRole: v }))}
+                  disabled={submitting || !!submittedType}
+                >
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Chọn vai trò nhân viên" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pickup">Nhận xe</SelectItem>
+                    <SelectItem value="return">Trả xe</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Hiển thị tên nhân viên */}
+              {complaint.staffRole && (
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md border border-gray-200 dark:border-gray-700">
+                  <label className="block text-sm font-medium mb-1">Nhân viên</label>
+                  <div className="text-sm text-gray-700 dark:text-gray-300">
+                    {complaint.staffRole === 'pickup' && pickupStaffName ? (
+                      <span>{pickupStaffName}</span>
+                    ) : complaint.staffRole === 'return' && returnStaffName ? (
+                      <span>{returnStaffName}</span>
+                    ) : (
+                      <span className="text-gray-400">Không có thông tin</span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

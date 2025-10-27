@@ -6,6 +6,11 @@ export interface VehicleCondition {
   notes: string;
 }
 
+export interface StaffInfo {
+  _id: string;
+  fullname: string;
+}
+
 export interface RentalInfo {
   vehicle_condition_before: VehicleCondition;
   vehicle_condition_after: VehicleCondition;
@@ -26,8 +31,8 @@ export interface RentalInfo {
   };
   actual_start_time: string;
   actual_end_time: string;
-  pickup_staff_id: string;
-  return_staff_id: string;
+  pickup_staff_id: string | StaffInfo;
+  return_staff_id: string | StaffInfo;
   images_before: string[];
   images_after: string[];
   status: string;

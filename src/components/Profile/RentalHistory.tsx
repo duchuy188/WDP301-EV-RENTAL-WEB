@@ -460,6 +460,27 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                 }
                 return ids.filter(Boolean);
               })()}
+              // pass staff names for display
+              pickupStaffName={(() => {
+                const r = rentals.find(x => x._id === feedbackRentalId);
+                if (r) {
+                  const pick = r.pickup_staff_id;
+                  if (pick && typeof pick === 'object' && 'fullname' in pick) {
+                    return pick.fullname || '';
+                  }
+                }
+                return undefined;
+              })()}
+              returnStaffName={(() => {
+                const r = rentals.find(x => x._id === feedbackRentalId);
+                if (r) {
+                  const ret = r.return_staff_id;
+                  if (ret && typeof ret === 'object' && 'fullname' in ret) {
+                    return ret.fullname || '';
+                  }
+                }
+                return undefined;
+              })()}
               onClose={() => setFeedbackOpen(false)}
               onSuccess={async (created) => {
                 console.log('✅ Feedback created successfully:', created);
