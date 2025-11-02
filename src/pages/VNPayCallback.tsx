@@ -77,6 +77,14 @@ const VNPayCallback: React.FC = () => {
             '';
           setBookingCode(bookingCode);
           toast.success(response.data.message || 'Thanh toán thành công!');
+
+          // 🔥 XÓA KHỎI LOCALSTORAGE sau khi thanh toán thành công
+          console.log('🗑️ Cleaning up pending payment from localStorage');
+          const pendingIds = JSON.parse(localStorage.getItem('pending_booking_ids') || '[]');
+          pendingIds.forEach((id: string) => {
+            localStorage.removeItem(`pending_payment_${id}`);
+          });
+          localStorage.removeItem('pending_booking_ids');
         } else {
           // Backend xác nhận thanh toán thất bại
           if (responseCode === '24') {
@@ -119,7 +127,14 @@ const VNPayCallback: React.FC = () => {
         // Xóa payment state từ sessionStorage
         sessionStorage.removeItem('vnpay_payment_state');
         
+        // Nếu thanh toán thành công, đảm bảo cleanup localStorage
         if (paymentStatus === 'success') {
+          const pendingIds = JSON.parse(localStorage.getItem('pending_booking_ids') || '[]');
+          pendingIds.forEach((id: string) => {
+            localStorage.removeItem(`pending_payment_${id}`);
+          });
+          localStorage.removeItem('pending_booking_ids');
+          
           navigate('/history', { replace: true });
         } else {
           navigate('/find-car', { 

@@ -436,23 +436,46 @@ const Booking: React.FC = () => {
         const vehicleName = data.vehicle?.name || `${selectedVehicle.brand} ${selectedVehicle.model}`;
         const vehicleImage = displayImage;
 
+        // Prepare payment state
+        const paymentState = {
+          paymentUrl: data.holding_fee.payment_url,
+          pendingBookingId: data.pending_booking_id,
+          expiresAt: data.holding_fee.expires_at,
+          bookingData: {
+            vehicleName,
+            vehicleImage,
+            startDate: data.booking_details?.start_date || bookingDate,
+            endDate: data.booking_details?.end_date || endDate || bookingDate,
+            pickupTime: data.booking_details?.pickup_time || startTime,
+            returnTime: data.booking_details?.return_time || endTime,
+            totalPrice: data.booking_details?.total_price || totalPrice,
+            depositAmount: data.booking_details?.deposit_amount || depositAmount,
+          },
+        };
+
+        // 🔥 LƯU VÀO LOCALSTORAGE để user có thể quay lại thanh toán trong 15 phút
+        console.log('💾 Saving pending payment to localStorage:', data.pending_booking_id);
+        const pendingPayment = {
+          ...paymentState,
+          createdAt: new Date().toISOString(),
+        };
+        
+        // Lưu thông tin thanh toán
+        localStorage.setItem(
+          `pending_payment_${data.pending_booking_id}`, 
+          JSON.stringify(pendingPayment)
+        );
+        
+        // Lưu danh sách pending booking IDs
+        const pendingIds = JSON.parse(localStorage.getItem('pending_booking_ids') || '[]');
+        if (!pendingIds.includes(data.pending_booking_id)) {
+          pendingIds.push(data.pending_booking_id);
+          localStorage.setItem('pending_booking_ids', JSON.stringify(pendingIds));
+        }
+
         // Navigate to payment page with all necessary data
         navigate('/payment', {
-          state: {
-            paymentUrl: data.holding_fee.payment_url,
-            pendingBookingId: data.pending_booking_id,
-            expiresAt: data.holding_fee.expires_at,
-            bookingData: {
-              vehicleName,
-              vehicleImage,
-              startDate: data.booking_details?.start_date || bookingDate,
-              endDate: data.booking_details?.end_date || endDate || bookingDate,
-              pickupTime: data.booking_details?.pickup_time || startTime,
-              returnTime: data.booking_details?.return_time || endTime,
-              totalPrice: data.booking_details?.total_price || totalPrice,
-              depositAmount: data.booking_details?.deposit_amount || depositAmount,
-            },
-          },
+          state: paymentState,
         });
       } 
       // Direct booking creation (if backend doesn't require payment)
