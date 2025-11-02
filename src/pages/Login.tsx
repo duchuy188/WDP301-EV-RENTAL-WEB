@@ -110,7 +110,7 @@ const Login = () => {
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             {successMessage && (
-              <Alert>
+              <Alert className="border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400">
                 <AlertDescription>{successMessage}</AlertDescription>
               </Alert>
             )}

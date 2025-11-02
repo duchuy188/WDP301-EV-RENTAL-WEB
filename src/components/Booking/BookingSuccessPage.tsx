@@ -1,18 +1,65 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion, easeInOut } from "framer-motion";
-import { Check, Copy, ArrowRight } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Check, Copy, ArrowRight, Loader2 } from "lucide-react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { formatDateVN } from '@/lib/utils';
 import { Booking as BookingType, BookingResponse } from '@/types/booking';
+import { bookingAPI } from '@/api/bookingAPI';
+import { toast } from '@/utils/toast';
 
 const BookingSuccessPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchedBooking, setFetchedBooking] = useState<BookingType | null>(null);
 
   const state = (location.state || {}) as any;
   const bookingResponse: BookingResponse = state.bookingResponse;
   const selectedVehicle = state.selectedVehicle;
-  const booking: BookingType = bookingResponse?.booking;
+  const bookingFromState: BookingType = bookingResponse?.booking;
+  
+  // Get booking code from query params (for payment callback flow)
+  const bookingCodeFromUrl = searchParams.get('code') || searchParams.get('bookingCode');
+  const holdingFeePaid = searchParams.get('holdingFeePaid') === 'true';
+
+  // Fetch booking details if we have a code in URL but no booking data in state
+  useEffect(() => {
+    const fetchBookingDetails = async () => {
+      if (bookingCodeFromUrl && !bookingFromState) {
+        setIsLoading(true);
+        try {
+          // Try to find booking by code through the bookings list
+          // Note: This is a workaround since we don't have a direct getBookingByCode API
+          const bookingsData = await bookingAPI.getBookings({ limit: 100 });
+          const foundBooking = bookingsData.bookings?.find(
+            (b: BookingType) => b.code === bookingCodeFromUrl
+          );
+          
+          if (foundBooking) {
+            setFetchedBooking(foundBooking);
+            if (holdingFeePaid) {
+              toast.success('🎉 Thanh toán thành công! Booking đã được xác nhận.');
+            }
+          } else {
+            toast.error('Không tìm thấy booking. Vui lòng kiểm tra lịch sử đặt xe.');
+            setTimeout(() => navigate('/history', { replace: true }), 2000);
+          }
+        } catch (error) {
+          console.error('Error fetching booking:', error);
+          toast.error('Không thể tải thông tin booking. Đang chuyển đến lịch sử...');
+          setTimeout(() => navigate('/history', { replace: true }), 2000);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchBookingDetails();
+  }, [bookingCodeFromUrl, bookingFromState, holdingFeePaid, navigate]);
+
+  // Use fetched booking if available, otherwise use booking from state
+  const booking: BookingType = fetchedBooking || bookingFromState;
 
   // Use local formatting helpers (do not accept functions from location.state)
   const formatDateSafe = (s: string) => {
@@ -54,6 +101,18 @@ const BookingSuccessPage: React.FC = () => {
     },
   };
 
+  // Show loading state while fetching booking details
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-green-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Đang tải thông tin đặt xe...</p>
+        </div>
+      </div>
+    );
+  }
+
   // If no booking data provided, show fallback
   if (!booking) {
     return (
@@ -71,9 +130,6 @@ const BookingSuccessPage: React.FC = () => {
       </div>
     );
   }
-
-  // booking.user_id might be a plain string id or populated object depending on API
-  const bookingUser: any = booking.user_id && typeof booking.user_id === 'object' ? booking.user_id : null;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
@@ -117,50 +173,29 @@ const BookingSuccessPage: React.FC = () => {
                 </div>
               </motion.div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <motion.div variants={itemVariants} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                  <h3 className="font-bold text-base text-green-600 dark:text-green-400 mb-3 flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-xs">👤</span>
-                    Thông tin khách hàng
-                  </h3>
-                  <div className="space-y-2">
-                    {[
-                      { label: 'Họ tên', value: bookingUser?.fullname ?? (typeof booking.user_id === 'string' ? booking.user_id : 'N/A') },
-                      { label: 'Email', value: bookingUser?.email ?? 'N/A' },
-                      { label: 'Điện thoại', value: bookingUser?.phone ?? 'N/A' },
-                    ].map((item: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-start gap-2">
-                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{item.label}</span>
-                        <span className="text-xs font-semibold text-gray-900 dark:text-white text-right">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                <motion.div variants={itemVariants} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                  <h3 className="font-bold text-base text-green-600 dark:text-green-400 mb-3 flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-xs">🚗</span>
-                    Chi tiết thuê xe
-                  </h3>
-                  <div className="space-y-2">
-                    {[
-                      {
-                        label: 'Xe',
-                        value: booking.vehicle_id ? `${booking.vehicle_id.brand || ''} ${booking.vehicle_id.model || ''}` : selectedVehicle ? `${selectedVehicle.brand} ${selectedVehicle.model}` : 'N/A',
-                      },
-                      ...(booking.vehicle_id?.color ? [{ label: 'Màu xe', value: booking.vehicle_id.color }] : []),
-                      { label: 'Trạm nhận', value: booking.station_id?.name ?? 'N/A' },
-                      { label: 'Giá/ngày', value: formatPrice(booking.price_per_day ?? 0) },
-                      { label: 'Tổng ngày', value: `${booking.total_days ?? 0} ngày` },
-                    ].map((item: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-start gap-2">
-                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{item.label}</span>
-                        <span className="text-xs font-semibold text-gray-900 dark:text-white text-right">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              </div>
+              <motion.div variants={itemVariants} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                <h3 className="font-bold text-base text-green-600 dark:text-green-400 mb-3 flex items-center gap-2">
+                  <span className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-xs">🚗</span>
+                  Chi tiết thuê xe
+                </h3>
+                <div className="space-y-2">
+                  {[
+                    {
+                      label: 'Xe',
+                      value: booking.vehicle_id ? `${booking.vehicle_id.brand || ''} ${booking.vehicle_id.model || ''}` : selectedVehicle ? `${selectedVehicle.brand} ${selectedVehicle.model}` : 'N/A',
+                    },
+                    ...(booking.vehicle_id?.color ? [{ label: 'Màu xe', value: booking.vehicle_id.color }] : []),
+                    { label: 'Trạm nhận', value: booking.station_id?.name ?? 'N/A' },
+                    { label: 'Giá/ngày', value: formatPrice(booking.price_per_day ?? 0) },
+                    { label: 'Tổng ngày', value: `${booking.total_days ?? 0} ngày` },
+                  ].map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-start gap-2">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{item.label}</span>
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white text-right">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <motion.div variants={itemVariants} className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">

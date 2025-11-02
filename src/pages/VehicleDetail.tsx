@@ -39,7 +39,6 @@ const VehicleDetail: React.FC = () => {
 
   useEffect(() => {
     const fetchVehicle = async () => {
-      console.log('Route id param:', id);
       // If vehicle was passed via navigation state, use it if it already contains full detail (available_colors)
       const stateVehicle = (location && (location.state as any)?.selectedVehicle) as any;
       // determine which id to fetch if needed
@@ -59,18 +58,14 @@ const VehicleDetail: React.FC = () => {
       try {
         setLoading(true);
         const vehicleData = await vehiclesAPI.getVehicleById(fetchId);
-        console.log('Vehicle API response for id=', id, vehicleData);
-        console.log('Available colors from API:', vehicleData?.available_colors);
 
         // Always set the vehicle data first
         setVehicle(vehicleData);
         
         // Set available colors - use empty array if not present
         if (vehicleData && Array.isArray(vehicleData.available_colors)) {
-          console.log('Setting available colors:', vehicleData.available_colors.length, 'colors');
           setAvailableColors(vehicleData.available_colors);
         } else {
-          console.warn('No available_colors in API response, using empty array');
           setAvailableColors([]);
         }
 
@@ -96,11 +91,9 @@ const VehicleDetail: React.FC = () => {
             }
           }
         } catch (e) {
-          console.debug('Could not fetch vehicles list for station fallback', e);
         }
       } catch (err) {
         setError('Không thể tải thông tin xe. Vui lòng thử lại sau.');
-        console.error('Error fetching vehicle:', err);
       } finally {
         setLoading(false);
       }
@@ -216,9 +209,6 @@ const VehicleDetail: React.FC = () => {
   const colorSource: AvailableColor[] = (availableColors && availableColors.length > 0) 
     ? availableColors 
     : (vehicle.available_colors && vehicle.available_colors.length > 0 ? vehicle.available_colors : []);
-  
-  console.log('Color source length:', colorSource.length);
-  console.log('Selected color index:', selectedColorIndex);
   
   const selectedColor = colorSource && colorSource.length > selectedColorIndex ? colorSource[selectedColorIndex] : null;
 

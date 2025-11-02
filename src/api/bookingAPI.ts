@@ -1,6 +1,6 @@
 
 import apiClient from './config';
-import { BookingListResponse, BookingRequest, BookingResponse } from '@/types/booking';
+import { BookingListResponse, BookingRequest, BookingResponse, BookingUpdateRequest } from '@/types/booking';
 
 
 export const bookingAPI = {
@@ -36,5 +36,15 @@ export const bookingAPI = {
     return response.data;
   },
 
+  // Update/Edit a booking by id
+  // Điều kiện: 
+  // - Chỉ cho phép edit booking online đã thanh toán và confirmed
+  // - Phải ở trạng thái 'pending' (chưa confirm)
+  // - CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1)
+  // - Phải edit trước thời gian nhận xe ít nhất 24 giờ
+  updateBooking: async (id: string, data: BookingUpdateRequest): Promise<BookingResponse> => {
+    const response = await apiClient.put(`/bookings/${id}`, data);
+    return response.data;
+  },
 
 };

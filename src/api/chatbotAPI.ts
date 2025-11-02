@@ -20,7 +20,6 @@ export async function getConversationHistory(sessionId: string): Promise<ChatHis
 }
 
 export async function getConversations(limit?: number): Promise<ChatbotAPIResponse> {
-    // Calls GET /chatbot/conversations and optionally includes the `limit` query param.
     const params = limit !== undefined ? { limit } : {};
     const res = await apiClient.get<ChatbotAPIResponse>('/chatbot/conversations', { params });
     return res.data;

@@ -9,7 +9,12 @@ import Home from './pages/Home';
 import FindCar from './pages/FindCar';
 import VehicleDetail from './pages/VehicleDetail';
 import Booking from './pages/Booking';
+import EditBooking from './pages/EditBooking';
 import BookingSuccessPage from './components/Booking/BookingSuccessPage';
+import VNPayPayment from './pages/VNPayPayment';
+import VNPayCallback from './pages/VNPayCallback';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
 import CheckIn from './pages/CheckIn';
 import ReturnCar from './pages/ReturnCar';
 import History from './pages/History';
@@ -43,6 +48,12 @@ function App() {
                 <Route path="find-car" element={<FindCar />} />
                 <Route path="/vehicle/:id" element={<VehicleDetail />} />
                 <Route path="booking" element={<Booking />} />
+                <Route path="booking/edit/:id" element={<EditBooking />} />
+                <Route path="payment" element={<VNPayPayment />} />
+                <Route path="payment/callback" element={<VNPayCallback />} />
+                <Route path="payment-success" element={<PaymentSuccess />} />
+                <Route path="payment-failed" element={<PaymentFailed />} />
+                <Route path="booking-failed" element={<PaymentFailed />} />
                 <Route path="booking-success" element={<BookingSuccessPage />} />
                 <Route path="checkin" element={<CheckIn />} />
                 <Route path="return" element={<ReturnCar />} />

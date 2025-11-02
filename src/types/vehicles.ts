@@ -27,6 +27,7 @@ export interface AvailableColor {
   color: string;
   available_quantity: number;
   image?: string; // For backward compatibility
+  stations?: Station[]; // Stations available for this color
 }
 
 // Interface for individual vehicle detail

@@ -61,23 +61,18 @@ const FeedbackHistory: React.FC = () => {
       if (filterStatus && filterStatus !== 'all') {
         params.status = filterStatus;
       }
-
-      console.log('Fetching feedbacks with params:', params);
+      
       const response = await feedbackAPI.getFeedbacks(Object.keys(params).length > 0 ? params : undefined);
 
       if (response && response.success && response.data) {
         setFeedbacks(response.data.feedbacks || []);
         setTotalPages(response.data.pagination?.pages || 1);
-        console.log('Feedbacks loaded:', response.data.feedbacks?.length || 0);
       } else {
         // No data or unsuccessful response
-        console.warn('No feedback data in response');
         setFeedbacks([]);
         setTotalPages(1);
       }
     } catch (error: any) {
-      console.error('Error fetching feedbacks:', error);
-      console.error('Error response:', error?.response?.data);
       
       // Set empty state on error
       setFeedbacks([]);
@@ -88,7 +83,6 @@ const FeedbackHistory: React.FC = () => {
       if (status && status !== 404 && status !== 400) {
         toast.error('Không thể tải danh sách đánh giá');
       } else if (status === 400) {
-        console.warn('Bad request - might need to check API params format');
       }
     } finally {
       setLoading(false);

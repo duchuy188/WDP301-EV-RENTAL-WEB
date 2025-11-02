@@ -13,6 +13,36 @@ export interface BookingRequest {
   notes?: string;
 }
 
+// Gửi yêu cầu chỉnh sửa booking (edit booking)
+export interface BookingUpdateRequest {
+  start_date: string;      // yyyy-mm-dd
+  end_date: string;        // yyyy-mm-dd
+  station_id: string;
+  model: string;
+  color: string;
+  reason: string;          // Lý do chỉnh sửa
+}
+
+// Alternative vehicle option khi edit booking fail
+export interface AvailableAlternative {
+  model: string;
+  color: string;
+  brand: string;
+  available_count: number;
+  price_per_day: number;
+  estimated_total: number;
+}
+
+// Response khi edit booking fail do không còn xe available
+export interface BookingUpdateFailedResponse {
+  success: false;
+  message: string;
+  station_name: string;
+  dates: string;
+  available_alternatives: AvailableAlternative[];
+  suggestion: string;
+}
+
 // Vehicle info embedded trong booking
 export interface BookingVehicle {
   _id: string;
@@ -72,6 +102,7 @@ export interface Booking {
   qr_expires_at?: string ;
   qr_used_at?: string ;
   created_by?: string ;
+  edit_count?: number; // Số lần đã chỉnh sửa
   is_active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -82,11 +113,75 @@ export interface Booking {
   customer_phone?: string;
 }
 
-// Kết quả trả về khi đặt xe thành công
+// Holding fee info from backend
+export interface HoldingFee {
+  amount: number;
+  status: string;
+  payment_url: string;
+  expires_at: string;
+  expires_in_minutes: number;
+}
+
+// Booking details from pending booking response
+export interface BookingDetails {
+  start_date: string;
+  end_date: string;
+  pickup_time: string;
+  return_time: string;
+  total_days: number;
+  total_price: number;
+  deposit_amount: number;
+}
+
+// Vehicle info in pending booking response
+export interface PendingVehicle {
+  name: string;
+  model: string;
+  color: string;
+  license_plate: string;
+  price_per_day: number;
+}
+
+// Station info in pending booking response
+export interface PendingStation {
+  name: string;
+  address: string;
+}
+
+// Data object trong response của pending booking
+export interface PendingBookingData {
+  pending_booking_id: string;
+  temp_id: string;
+  vehicle: PendingVehicle;
+  station: PendingStation;
+  booking_details: BookingDetails;
+  holding_fee: HoldingFee;
+  next_steps?: string[];
+}
+
+// Kết quả trả về khi đặt xe thành công (với payment URL cho deposit)
 export interface BookingResponse {
+  success?: boolean;
   message: string;
-  booking: Booking;
-  requiresKYC: boolean;
+  booking?: Booking; // Optional vì lúc pending chưa có booking chính thức
+  requiresKYC?: boolean;
+  requiresPayment?: boolean; // Flag để biết có cần thanh toán hay không
+  data?: PendingBookingData; // Data chứa thông tin pending booking và payment URL
+}
+
+// Response từ VNPay callback sau khi thanh toán holding fee thành công
+export interface PaymentCallbackResponse {
+  success: boolean;
+  message: string;
+  booking?: Booking; // Booking đã được tạo sau khi thanh toán thành công
+  data?: {
+    booking?: Booking;
+    payment?: {
+      amount: number;
+      status: string;
+      transaction_id?: string;
+    };
+  };
 }
 
 export interface BookingPagination {

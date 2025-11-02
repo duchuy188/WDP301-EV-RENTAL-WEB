@@ -138,12 +138,12 @@ const Header: React.FC = () => {
                       <span>Hồ sơ</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
+                  {/* <DropdownMenuItem asChild>
                     <Link to="/chat-history" className="cursor-pointer">
                       <MessageSquare className="mr-2 h-4 w-4" />
                       <span>Lịch sử chat</span>
                     </Link>
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                   <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Cài đặt</span>

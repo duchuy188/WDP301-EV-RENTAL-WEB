@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Clock, 
@@ -6,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +19,7 @@ import FeedbackForm from './FeedbackForm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { rentalAPI } from '@/api/rentalsAPI';
+import { bookingAPI } from '@/api/bookingAPI';
 import { Rental } from '@/types/rentals';
 import { toast } from '@/utils/toast';
 
@@ -25,6 +28,7 @@ interface RentalHistoryProps {
 }
 
 const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
+  const navigate = useNavigate();
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -225,6 +229,118 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
     }
   };
 
+  // Handle "Rent Again" - Navigate to booking page with pre-filled information
+  const handleRentAgain = async (rental: Rental) => {
+    // Extract vehicle information
+    const vehicle = typeof rental.vehicle_id === 'string' ? null : rental.vehicle_id;
+    const station = typeof rental.station_id === 'string' ? null : rental.station_id;
+    const booking = typeof rental.booking_id === 'string' ? null : rental.booking_id;
+
+    if (!vehicle) {
+      toast.error('Không thể lấy thông tin xe. Vui lòng thử lại.');
+      return;
+    }
+
+    if (!station) {
+      toast.error('Không thể lấy thông tin trạm. Vui lòng thử lại.');
+      return;
+    }
+
+    // Try to get booking details to extract color, images and other info
+    let vehicleColor = '';
+    let vehicleImages: string[] = [];
+    let bookingDetails: any = booking;
+
+    try {
+      // If booking_id is a string, fetch the booking details
+      if (typeof rental.booking_id === 'string') {
+        toast.info('Đang tải thông tin booking...');
+        const bookingResponse = await bookingAPI.getBooking(rental.booking_id);
+        bookingDetails = bookingResponse?.booking || bookingResponse;
+      }
+
+      // Extract color and images from booking's vehicle_id if available
+      if (bookingDetails?.vehicle_id && typeof bookingDetails.vehicle_id === 'object') {
+        vehicleColor = bookingDetails.vehicle_id.color || '';
+        vehicleImages = bookingDetails.vehicle_id.images || [];
+      }
+    } catch (error) {
+      console.warn('Could not fetch booking details:', error);
+      // Continue without full details
+    }
+
+    // If still no color or images, try to fetch vehicle details
+    if ((!vehicleColor || vehicleColor.trim() === '') || vehicleImages.length === 0) {
+      try {
+        toast.info('Đang tải thông tin xe...');
+        const { vehiclesAPI } = await import('@/api/vehiclesAPI');
+        const vehicleDetail = await vehiclesAPI.getVehicleById(vehicle._id);
+        
+        // Get color if not already set
+        if (!vehicleColor || vehicleColor.trim() === '') {
+          vehicleColor = vehicleDetail.color || '';
+          
+          // Also get the first available color if exists
+          if (!vehicleColor && vehicleDetail.available_colors && vehicleDetail.available_colors.length > 0) {
+            vehicleColor = vehicleDetail.available_colors[0].color;
+          }
+        }
+        
+        // Get images if not already set
+        if (vehicleImages.length === 0) {
+          vehicleImages = vehicleDetail.images || [];
+        }
+      } catch (error) {
+        console.warn('Could not fetch vehicle details:', error);
+        // Continue without color and images
+      }
+    }
+
+    // Prepare vehicle data to pass to booking page
+    const vehicleData = {
+      _id: vehicle._id,
+      brand: vehicle.name?.split(' ')[0] || 'VinFast',
+      model: vehicle.model || vehicle.name || '',
+      name: vehicle.name || vehicle.license_plate || '',
+      license_plate: vehicle.license_plate || '',
+      color: vehicleColor,
+      images: vehicleImages,
+      price_per_day: bookingDetails?.total_price ? Math.round(bookingDetails.total_price / 1) : 500000,
+      deposit_percentage: 20, // Default
+      // Add other required fields with default values
+      year: 2024,
+      type: 'electric',
+      battery_capacity: '',
+      max_range: '',
+      max_speed: '',
+      power: '',
+      available_colors: vehicleColor ? [{ color: vehicleColor, price_per_day: bookingDetails?.price_per_day || 500000 }] : [],
+      station: station,
+      stations: [station],
+    };
+
+    // Navigate to booking page with pre-filled data
+    const navigationState: any = {
+      selectedVehicle: vehicleData,
+      selectedStation: station._id,
+      isRebooking: true,
+      originalBooking: {
+        code: rental.code,
+        start_date: bookingDetails?.start_date,
+        end_date: bookingDetails?.end_date,
+      },
+    };
+
+    // Only add selectedColor if it's not empty
+    if (vehicleColor && vehicleColor.trim() !== '') {
+      navigationState.selectedColor = vehicleColor;
+    }
+
+    navigate('/booking', { state: navigationState });
+
+    toast.success('Đang thuê lại xe - Chỉ cần chọn thời gian mới');
+  };
+
   // Only show allowed statuses in the listing
   const allowedStatuses = new Set(['active', 'pending_payment', 'completed']);
 
@@ -311,14 +427,14 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
             {paginated.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table className="border border-gray-200 rounded-lg min-w-[820px]">
+                  <Table className="border border-gray-200 rounded-lg min-w-[920px]">
                     <TableHeader className="bg-gray-100 dark:bg-gray-800">
                       <TableRow>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[90px]">Mã</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[110px]">Xe</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[200px]">Trạm</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[180px]">Trạm</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Trạng thái</TableHead>
-                        <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300 w-[120px]">Hành động</TableHead>
+                        <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300 w-[220px]">Hành động</TableHead>
                         <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300 w-[130px]">Đánh giá</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -327,12 +443,12 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                         <TableRow key={r._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                           <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[90px] truncate">{r.code ?? r._id}</TableCell>
                           <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[110px] truncate">{typeof r.vehicle_id === 'string' ? r.vehicle_id : r.vehicle_id?.license_plate ?? r.vehicle_id?.name ?? '-'}</TableCell>
-                          <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate">{typeof r.station_id === 'string' ? r.station_id : r.station_id?.name ?? '-'}</TableCell>
+                          <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[180px] truncate">{typeof r.station_id === 'string' ? r.station_id : r.station_id?.name ?? '-'}</TableCell>
                           <TableCell className="px-3 py-2 max-w-[100px]">
                             <Badge className={`${getStatusColor(r.status)} px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap`}>{getStatusText(r.status)}</Badge>
                           </TableCell>
-                          <TableCell className="px-3 py-2 max-w-[120px]">
-                            <div className="flex items-center justify-center">
+                          <TableCell className="px-3 py-2 max-w-[220px]">
+                            <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => { setSelectedRental(r); setDetailOpen(true); }}
                                 className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 text-xs font-semibold whitespace-nowrap border-2 border-green-700 dark:border-green-600"
@@ -340,6 +456,17 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                               >
                                 Xem chi tiết
                               </button>
+                              {/* Show "Rent Again" button only for completed rentals */}
+                              {r.status === 'completed' && (
+                                <button
+                                  onClick={() => handleRentAgain(r)}
+                                  className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 text-xs font-semibold whitespace-nowrap border-2 border-blue-700 dark:border-blue-600 flex items-center gap-1"
+                                  aria-label={`Thuê lại xe ${r.code}`}
+                                >
+                                  <RefreshCw className="h-3 w-3" />
+                                  Thuê lại
+                                </button>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell className="px-3 py-2 max-w-[130px]">
