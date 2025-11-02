@@ -30,6 +30,7 @@ interface ChatMessage {
   timestamp: Date;
   context?: string; // Add context to track conversation flow
   actions?: string[]; // Add actions from API response
+  suggestions?: string[]; // Add suggestions for user to click
 }
 
 interface ChatContext {
@@ -167,6 +168,7 @@ const FloatingChat: React.FC = () => {
               message: messageText,
               timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
               actions: m.metadata?.actions || (urls.length > 0 ? urls : undefined),
+              suggestions: m.metadata?.suggestions,
             };
           });
           
@@ -227,6 +229,39 @@ const FloatingChat: React.FC = () => {
     return text.replace(/(https?:\/\/[^\s]+)/g, '').trim();
   };
 
+  // Extract payment link from message
+  const extractPaymentLink = (text: string): string | null => {
+    const paymentRegex = /(https?:\/\/[^\s]*(?:vnpay|payment)[^\s]*)/i;
+    const match = text.match(paymentRegex);
+    return match ? match[1] : null;
+  };
+
+  // Get action type for suggestion
+  const getActionForSuggestion = (suggestion: string, actions?: string[]): string | null => {
+    if (!actions) return null;
+    
+    const suggestionLower = suggestion.toLowerCase().trim();
+    
+    // Map suggestion text to action
+    if (suggestionLower.includes('thanh toán') || suggestionLower.includes('thanh toan')) {
+      return actions.find(a => a.includes('pay')) || null;
+    }
+    if (suggestionLower.includes('xem') || suggestionLower.includes('chi tiết') || suggestionLower.includes('chi tiet')) {
+      return actions.find(a => a.includes('view') || a.includes('details')) || null;
+    }
+    if (suggestionLower.includes('hủy') || suggestionLower.includes('huy') || suggestionLower.includes('cancel')) {
+      return actions.find(a => a.includes('cancel')) || null;
+    }
+    if (suggestionLower.includes('xác nhận') || suggestionLower.includes('xac nhan') || suggestionLower.includes('confirm')) {
+      return actions.find(a => a.includes('confirm')) || null;
+    }
+    if (suggestionLower.includes('thay đổi') || suggestionLower.includes('thay doi') || suggestionLower.includes('edit')) {
+      return actions.find(a => a.includes('edit')) || null;
+    }
+    
+    return null;
+  };
+
   // All message generation is delegated to the backend API. No local hardcoded replies.
 
   const handleChatSubmit = async (e?: React.FormEvent, suggestedText?: string) => {
@@ -258,7 +293,9 @@ const FloatingChat: React.FC = () => {
       
       // Extract URLs from message or use actions from API
       const urls = extractUrls(botText);
-      const messageActions = res?.actions || (urls.length > 0 ? urls : undefined);
+      // Combine action strings and URLs
+      const actionStrings = res?.actions || [];
+      const messageActions = [...actionStrings, ...urls].filter((v, i, a) => a.indexOf(v) === i); // Remove duplicates
 
       const botResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -266,7 +303,8 @@ const FloatingChat: React.FC = () => {
         message: botText,
         timestamp: new Date(),
         context: res?.context,
-        actions: messageActions
+        actions: messageActions.length > 0 ? messageActions : undefined,
+        suggestions: res?.suggestions
       };
 
       setChatMessages(prev => [...prev, botResponse]);
@@ -656,8 +694,73 @@ const FloatingChat: React.FC = () => {
                               </div>
                             </div>
                             
-                            {/* Render action buttons below the message bubble */}
-                            {message.actions && message.actions.length > 0 && message.type === 'bot' && (
+                            {/* Render suggestion buttons below the message bubble */}
+                            {message.suggestions && message.suggestions.length > 0 && message.type === 'bot' && (
+                              <div className="mt-2 ml-9 space-y-1.5 w-[calc(85%-2.25rem)]">
+                                {message.suggestions.map((suggestion, idx) => {
+                                  const action = getActionForSuggestion(suggestion, message.actions);
+                                  const paymentLink = extractPaymentLink(message.message);
+                                  
+                                  // Special handling for payment action
+                                  if (action === 'pay_holding_fee' && paymentLink) {
+                                    return (
+                                      <Button
+                                        key={idx}
+                                        onClick={() => window.open(paymentLink, '_blank')}
+                                        size="sm"
+                                        className="w-full text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                                      >
+                                        <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                                        💳 {suggestion}
+                                      </Button>
+                                    );
+                                  }
+                                  
+                                  // Special handling for cancel action
+                                  if (action && action.includes('cancel')) {
+                                    return (
+                                      <Button
+                                        key={idx}
+                                        onClick={() => handleChatSubmit(undefined, suggestion)}
+                                        size="sm"
+                                        className="w-full text-xs bg-white dark:bg-gray-700 border-2 border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 dark:hover:border-red-500 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                                      >
+                                        ❌ {suggestion}
+                                      </Button>
+                                    );
+                                  }
+                                  
+                                  // Special handling for confirm action
+                                  if (action && action.includes('confirm')) {
+                                    return (
+                                      <Button
+                                        key={idx}
+                                        onClick={() => handleChatSubmit(undefined, suggestion)}
+                                        size="sm"
+                                        className="w-full text-xs bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                                      >
+                                        ✅ {suggestion}
+                                      </Button>
+                                    );
+                                  }
+                                  
+                                  // Default suggestion button
+                                  return (
+                                    <Button
+                                      key={idx}
+                                      onClick={() => handleChatSubmit(undefined, suggestion)}
+                                      size="sm"
+                                      className="w-full text-xs bg-white dark:bg-gray-700 border-2 border-green-400 dark:border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-500 dark:hover:border-green-500 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                                    >
+                                      {suggestion}
+                                    </Button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            
+                            {/* Render action buttons (URLs) below suggestions - only if no suggestions or no payment in suggestions */}
+                            {message.actions && message.actions.length > 0 && message.type === 'bot' && !message.suggestions && (
                               <div className="mt-2 ml-9 space-y-1.5 w-[calc(85%-2.25rem)]">
                                 {message.actions.map((action, idx) => {
                                   const isUrl = action.startsWith('http://') || action.startsWith('https://');

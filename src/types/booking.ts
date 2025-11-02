@@ -50,7 +50,9 @@ export interface BookingVehicle {
   name: string;
   brand: string;
   model: string;
+  year?: number; // Năm sản xuất
   color?: string; // Màu xe
+  price_per_day?: number; // Giá thuê mỗi ngày
   images?: string[];
 }
 
@@ -60,6 +62,9 @@ export interface BookingStation {
   name: string;
   address: string;
   phone: string;
+  email?: string;
+  opening_time?: string;
+  closing_time?: string;
 }
 
 // User info embedded trong booking (khi được populate)
@@ -70,8 +75,15 @@ export interface BookingUser {
   phone: string;
 }
 
+// User summary info (for cancelled_by, confirmed_by)
+export interface UserSummary {
+  _id: string;
+  fullname: string;
+}
+
 // Thông tin chi tiết booking trả về từ API
 export interface Booking {
+  holding_fee?: BookingHoldingFee; // Thông tin phí giữ chỗ (sau khi thanh toán)
   _id: string;
   code: string;
   user_id: string | BookingUser; // có thể là string hoặc object khi được populate
@@ -93,16 +105,18 @@ export interface Booking {
   final_amount: number;
   special_requests?: string;
   notes?: string;
-  cancellation_reason?: string ;
-  cancelled_at?: string ;
-  cancelled_by?: string ;
-  confirmed_at?: string ;
-  confirmed_by?: string ;
-  qr_code?: string ;
-  qr_expires_at?: string ;
-  qr_used_at?: string ;
-  created_by?: string ;
+  cancellation_reason?: string;
+  cancelled_at?: string | null;
+  cancelled_by?: string | UserSummary | null; // có thể là string, object hoặc null
+  confirmed_at?: string | null;
+  confirmed_by?: string | UserSummary | null; // có thể là string, object hoặc null
+  qr_code?: string;
+  qr_expires_at?: string;
+  qr_used_at?: string | null;
+  created_by?: string;
   edit_count?: number; // Số lần đã chỉnh sửa
+  edit_reason?: string; // Lý do chỉnh sửa lần cuối
+  edit_history?: any[]; // Lịch sử chỉnh sửa
   is_active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -113,13 +127,35 @@ export interface Booking {
   customer_phone?: string;
 }
 
-// Holding fee info from backend
+// Payment info embedded trong holding_fee
+export interface PaymentInfo {
+  _id: string;
+  code: string;
+  amount: number;
+  payment_method: string;
+  status: string;
+  transaction_id: string;
+  vnpay_transaction_no?: string;
+  vnpay_bank_code?: string;
+  createdAt: string;
+}
+
+// Holding fee info from backend (for pending booking)
 export interface HoldingFee {
   amount: number;
   status: string;
   payment_url: string;
   expires_at: string;
   expires_in_minutes: number;
+}
+
+// Holding fee info in booking history (after payment completed)
+export interface BookingHoldingFee {
+  amount: number;
+  status: string;
+  payment_method: string;
+  paid_at: string;
+  payment_id: PaymentInfo;
 }
 
 // Booking details from pending booking response
