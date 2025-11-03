@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { CreditCard, Clock, Shield, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { bookingAPI } from '@/api/bookingAPI';
+import { toast } from 'sonner';
 
 interface PaymentState {
   paymentUrl: string;
@@ -26,6 +28,7 @@ const VNPayPayment: React.FC = () => {
   const navigate = useNavigate();
   const [timeRemaining, setTimeRemaining] = useState<number>(15 * 60); // 15 phút tính bằng giây
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Lấy state từ location hoặc sessionStorage (để tránh mất data khi user back)
   const getPaymentState = (): PaymentState | null => {
@@ -53,9 +56,9 @@ const VNPayPayment: React.FC = () => {
   const state = getPaymentState();
 
   useEffect(() => {
-    // Nếu không có state, redirect về trang booking
+    // Nếu không có state, redirect về trang tìm xe
     if (!state?.paymentUrl) {
-      navigate('/booking', { replace: true });
+      navigate('/find-car', { replace: true });
       return;
     }
 
@@ -139,14 +142,14 @@ const VNPayPayment: React.FC = () => {
       setTimeRemaining((prev) => {
         const newTime = prev - 1;
         
-        // Nếu hết thời gian, redirect về trang booking
+        // Nếu hết thời gian, redirect về trang tìm xe
         if (newTime <= 0) {
           clearInterval(timer);
-          console.warn('⏰ Payment time expired, redirecting to booking...');
+          console.warn('⏰ Payment time expired, redirecting to find-car...');
           setTimeout(() => {
             // Xóa state khỏi sessionStorage
             sessionStorage.removeItem('vnpay_payment_state');
-            navigate('/booking', { 
+            navigate('/find-car', { 
               replace: true,
               state: { 
                 message: 'Thời gian thanh toán đã hết. Vui lòng đặt xe lại.',
@@ -193,10 +196,40 @@ const VNPayPayment: React.FC = () => {
     window.location.href = state.paymentUrl;
   };
 
-  const handleCancel = () => {
-    // Xóa state khỏi sessionStorage khi cancel
-    sessionStorage.removeItem('vnpay_payment_state');
-    navigate('/booking', { replace: true });
+  const handleCancel = async () => {
+    if (!state?.pendingBookingId) return;
+    
+    try {
+      setIsCancelling(true);
+      
+      console.log('🔄 Cancelling pending booking:', state.pendingBookingId);
+      
+      // Gọi API hủy pending booking
+      const response = await bookingAPI.cancelPendingBooking(state.pendingBookingId);
+      
+      // Xóa state khỏi sessionStorage
+      sessionStorage.removeItem('vnpay_payment_state');
+      
+      // Hiển thị thông báo thành công
+      toast.success(response.message || 'Đã hủy đặt xe thành công');
+      
+      // Navigate về trang tìm xe
+      navigate('/find-car', { replace: true });
+    } catch (error: any) {
+      console.error('Error cancelling pending booking:', error);
+      
+      // Hiển thị lỗi
+      const errorMessage = error.response?.data?.message || 'Không thể hủy đặt xe. Vui lòng thử lại.';
+      toast.error(errorMessage);
+      
+      // Nếu lỗi 400/404 (status không hợp lệ hoặc đã hết hạn), vẫn navigate về trang tìm xe
+      if (error.response?.status === 400 || error.response?.status === 404) {
+        sessionStorage.removeItem('vnpay_payment_state');
+        navigate('/find-car', { replace: true });
+      }
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   if (!state) {
@@ -428,11 +461,18 @@ const VNPayPayment: React.FC = () => {
                   
                   <Button
                     onClick={handleCancel}
-                    disabled={isRedirecting}
+                    disabled={isRedirecting || isCancelling}
                     variant="outline"
                     className="w-full"
                   >
-                    Hủy và quay lại
+                    {isCancelling ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Đang hủy...
+                      </>
+                    ) : (
+                      'Hủy và quay lại'
+                    )}
                   </Button>
                 </div>
 

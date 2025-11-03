@@ -1,6 +1,13 @@
 
 import apiClient from './config';
-import { BookingListResponse, BookingRequest, BookingResponse, BookingUpdateRequest } from '@/types/booking';
+import { 
+  BookingListResponse, 
+  BookingRequest, 
+  BookingResponse, 
+  BookingUpdateRequest,
+  CancelPendingBookingResponse,
+  MyPendingBookingsResponse 
+} from '@/types/booking';
 
 
 export const bookingAPI = {
@@ -47,4 +54,17 @@ export const bookingAPI = {
     return response.data;
   },
 
+
+  // Hủy đặt xe chưa thanh toán, chưa hết hạn 15 phút
+  // POST method theo tài liệu API
+  cancelPendingBooking: async (temp_id: string): Promise<CancelPendingBookingResponse> => {
+    const response = await apiClient.post(`/bookings/my-pending/${temp_id}/cancel`);
+    return response.data;
+  },
+
+  // Lấy danh sách pending bookings của user
+  getMyPendingBookings: async (): Promise<MyPendingBookingsResponse> => {
+    const response = await apiClient.get('/bookings/my-pending');
+    return response.data;
+  },
 };

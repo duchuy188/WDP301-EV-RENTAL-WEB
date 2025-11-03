@@ -232,3 +232,78 @@ export interface BookingListResponse {
   bookings: Booking[];
   pagination: BookingPagination;
 }
+
+// Data object trong response khi hủy pending booking
+export interface CancelPendingBookingData {
+  temp_id: string;
+  status: string;
+  cancelled_at: string;
+}
+
+// Response khi hủy pending booking thành công
+export interface CancelPendingBookingResponse {
+  success: boolean;
+  message: string;
+  data: CancelPendingBookingData;
+}
+
+// Vehicle info in my-pending response
+export interface MyPendingVehicle {
+  _id: string;
+  name: string;
+  brand: string;
+  model: string;
+  color: string;
+  license_plate: string;
+  price_per_day: number;
+  image: string[];
+}
+
+// Station info in my-pending response
+export interface MyPendingStation {
+  _id: string;
+  name: string;
+  address: string;
+  phone: string;
+}
+
+// Booking data in my-pending response
+export interface MyPendingBookingData {
+  vehicle: MyPendingVehicle;
+  station: MyPendingStation;
+  start_date: string;
+  end_date: string;
+  pickup_time: string;
+  return_time: string;
+  total_days: number;
+  total_price: number;
+  price_per_day: number;
+}
+
+// Time left info in my-pending response
+export interface TimeLeft {
+  minutes: number;
+  seconds: number;
+  formatted: string;
+  is_urgent: boolean;
+}
+
+// Individual pending booking item
+export interface MyPendingBookingItem {
+  temp_id: string;
+  booking_data: MyPendingBookingData;
+  holding_fee_amount: number;
+  vnpay_url: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+  time_left: TimeLeft;
+}
+
+// Response from GET /api/bookings/my-pending
+export interface MyPendingBookingsResponse {
+  success: boolean;
+  count: number;
+  pending_bookings: MyPendingBookingItem[];
+  message: string;
+}

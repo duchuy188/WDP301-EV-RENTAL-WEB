@@ -439,7 +439,7 @@ const Booking: React.FC = () => {
         // Prepare payment state
         const paymentState = {
           paymentUrl: data.holding_fee.payment_url,
-          pendingBookingId: data.pending_booking_id,
+          pendingBookingId: data.temp_id, // Sử dụng temp_id thay vì pending_booking_id để cancel
           expiresAt: data.holding_fee.expires_at,
           bookingData: {
             vehicleName,
@@ -452,26 +452,6 @@ const Booking: React.FC = () => {
             depositAmount: data.booking_details?.deposit_amount || depositAmount,
           },
         };
-
-        // 🔥 LƯU VÀO LOCALSTORAGE để user có thể quay lại thanh toán trong 15 phút
-        console.log('💾 Saving pending payment to localStorage:', data.pending_booking_id);
-        const pendingPayment = {
-          ...paymentState,
-          createdAt: new Date().toISOString(),
-        };
-        
-        // Lưu thông tin thanh toán
-        localStorage.setItem(
-          `pending_payment_${data.pending_booking_id}`, 
-          JSON.stringify(pendingPayment)
-        );
-        
-        // Lưu danh sách pending booking IDs
-        const pendingIds = JSON.parse(localStorage.getItem('pending_booking_ids') || '[]');
-        if (!pendingIds.includes(data.pending_booking_id)) {
-          pendingIds.push(data.pending_booking_id);
-          localStorage.setItem('pending_booking_ids', JSON.stringify(pendingIds));
-        }
 
         // Navigate to payment page with all necessary data
         navigate('/payment', {
