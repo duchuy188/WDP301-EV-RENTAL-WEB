@@ -12,3 +12,4 @@ export { default as FeedbackHistory } from './FeedbackHistory';
 export { default as ContractHistory } from './ContractHistory';
 export { default as ContractDetail } from './ContractDetail';
 export { default as ContractViewer } from './ContractViewer';
+export { default as EditBookingDialog } from './EditBookingDialog';

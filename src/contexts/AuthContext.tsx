@@ -238,9 +238,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const payload = { ...userData, fullname: userData.fullName };
       delete (payload as any).fullName;
       const response = await authAPI.register(payload);
-      if (!response.success) {
+      
+      // Kiểm tra nếu response có success field và nó là false
+      if (response.success === false) {
         throw new Error(response.message || 'Đăng ký thất bại');
       }
+      
+      // Nếu không có success field hoặc success = true, coi như thành công
+      // Không cần làm gì thêm, chỉ cần return để component navigate đến login
     } catch (error: any) {
       let errorMessage = 'Đăng ký thất bại';
       if (error.response?.data?.message) {

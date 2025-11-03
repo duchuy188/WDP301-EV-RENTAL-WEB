@@ -20,6 +20,7 @@ import DocumentDetailsModal, { DocumentResponse } from './DocumentDetailsModal';
 import DriverLicenseVerification from './DriverLicenseVerification';
 import IdentityCardVerification from './IdentityCardVerification';
 import ImagePreviewDialog from './ImagePreviewDialog';
+import { toast } from '@/utils/toast';
 
 interface DocumentVerificationProps {
   onDocumentUpload?: (type: 'license' | 'identity', side: 'front' | 'back') => void;
@@ -35,15 +36,25 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
   // Gọi lấy trạng thái KYC khi mount lần đầu
   React.useEffect(() => {
     (async () => {
-      const data = await getKYCStatus();
-      setKyc(data);
+      try {
+        const data = await getKYCStatus();
+        setKyc(data);
+      } catch (error) {
+        console.error('Error fetching KYC status:', error);
+        toast.error('Không thể tải trạng thái xác thực giấy tờ. Vui lòng thử lại sau.');
+      }
     })();
   }, []);
 
   // Hàm cập nhật KYC sau khi upload
   const handleKycUpdate = async () => {
-    const kycData = await getKYCStatus();
-    setKyc(kycData);
+    try {
+      const kycData = await getKYCStatus();
+      setKyc(kycData);
+    } catch (error) {
+      console.error('Error updating KYC status:', error);
+      toast.error('Không thể cập nhật trạng thái xác thực. Vui lòng thử lại sau.');
+    }
   };
 
   // Hàm hiển thị modal với response data
@@ -159,6 +170,7 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
                                 showResponseDetails(licenseData, 'Giấy phép lái xe');
                               } catch (error) {
                                 console.error('Error fetching driver license:', error);
+                                toast.error('Không thể tải thông tin giấy phép lái xe. Vui lòng thử lại sau.');
                               }
                             }}
                             className="px-3 py-1 text-sm bg-white border rounded shadow-sm hover:bg-gray-50"
@@ -187,6 +199,7 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
                                 showResponseDetails(identityData, 'Căn cước công dân');
                               } catch (error) {
                                 console.error('Error fetching identity card:', error);
+                                toast.error('Không thể tải thông tin căn cước công dân. Vui lòng thử lại sau.');
                               }
                             }}
                             className="px-3 py-1 text-sm bg-white border rounded shadow-sm hover:bg-gray-50"

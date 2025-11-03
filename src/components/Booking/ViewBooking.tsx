@@ -253,6 +253,55 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking }) => {
                     {formatPrice(booking.total_price)}
                   </p>
                 </div>
+                
+                {/* Phí giữ chỗ (Holding Fee) */}
+                {booking.holding_fee && (
+                  <>
+                    <Separator />
+                    <div className="pt-2">
+                      <h5 className="font-semibold text-xs text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+                        <CreditCard className="h-3.5 w-3.5" />
+                        Phí giữ chỗ
+                      </h5>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-600 dark:text-gray-400">Số tiền:</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{formatPrice(booking.holding_fee.amount)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-600 dark:text-gray-400">Trạng thái:</span>
+                          <Badge className={`text-xs px-2 py-0.5 ${
+                            booking.holding_fee.status === 'paid' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
+                              : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+                          }`}>
+                            {booking.holding_fee.status === 'paid' ? 'Đã thanh toán' : booking.holding_fee.status}
+                          </Badge>
+                        </div>
+                        {booking.holding_fee.payment_method && (
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-600 dark:text-gray-400">Phương thức:</span>
+                            <span className="font-medium text-gray-900 dark:text-white uppercase">{booking.holding_fee.payment_method}</span>
+                          </div>
+                        )}
+                        {booking.holding_fee.paid_at && (
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-600 dark:text-gray-400">Thời gian:</span>
+                            <span className="text-gray-700 dark:text-gray-300">
+                              {new Date(booking.holding_fee.paid_at).toLocaleString('vi-VN')}
+                            </span>
+                          </div>
+                        )}
+                        {booking.holding_fee.payment_id?.transaction_id && (
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-600 dark:text-gray-400">Mã GD:</span>
+                            <span className="font-mono text-gray-700 dark:text-gray-300 text-[10px]">{booking.holding_fee.payment_id.transaction_id}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

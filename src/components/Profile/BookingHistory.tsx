@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Clock, 
@@ -6,6 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  Edit,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +28,7 @@ interface BookingHistoryProps {
 }
 
 const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   // 'all' means no filter (show all)
   const [statusFilter, setStatusFilter] = useState('all');
@@ -43,6 +47,8 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const [cancelingBooking, setCancelingBooking] = useState<Booking | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
+
+  // Note: Edit functionality now uses full page navigation to /booking/edit/:id
 
   // Reset current page when filters change
   useEffect(() => {
@@ -151,6 +157,50 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
     });
   };
 
+  // Helper function to check if booking can be edited
+  const canEditBooking = (booking: Booking): { canEdit: boolean; reason?: string } => {
+    // Điều kiện 1: Phải ở trạng thái 'pending' (chưa confirm)
+    if (booking.status !== 'pending') {
+      return { canEdit: false, reason: 'Chỉ có thể chỉnh sửa đặt xe ở trạng thái "Đang chờ"' };
+    }
+
+    // Điều kiện 2: Chỉ cho phép edit booking online đã thanh toán phí giữ chỗ
+    if (booking.booking_type !== 'online') {
+      return { canEdit: false, reason: 'Chỉ có thể chỉnh sửa đặt xe online' };
+    }
+
+    // Điều kiện 3: CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1)
+    const editCount = booking.edit_count || 0;
+    if (editCount >= 1) {
+      return { canEdit: false, reason: 'Bạn đã sử dụng hết lượt chỉnh sửa (tối đa 1 lần)' };
+    }
+
+    // Điều kiện 4: Phải edit trước thời gian nhận xe ít nhất 24 giờ
+    const startDate = parseBookingDate(booking.start_date);
+    const now = new Date();
+    const hoursDiff = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursDiff < 24) {
+      return { canEdit: false, reason: 'Phải chỉnh sửa trước thời gian nhận xe ít nhất 24 giờ' };
+    }
+
+    return { canEdit: true };
+  };
+
+  // Open edit page (navigate to full edit page instead of dialog)
+  const openEditDialog = (booking: Booking) => {
+    const { canEdit, reason } = canEditBooking(booking);
+    
+    if (!canEdit) {
+      toast.error(reason || 'Không thể chỉnh sửa đặt xe này');
+      return;
+    }
+
+    // Navigate to edit booking page with booking data
+    navigate(`/booking/edit/${booking._id}`, { state: { booking } });
+  };
+
+
   // Cancellation handled via API elsewhere; removed inline cancel action to match UI design
 
   // When opening detail modal, ensure we have full booking detail from API
@@ -173,7 +223,6 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       }
       setSelectedBooking(booking);
     } catch (error) {
-      console.error(error);
       toast.error('Không thể tải chi tiết đặt xe');
       setDetailOpen(false);
     }
@@ -219,7 +268,6 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       setBookings((prev) => prev.map((b) => (b._id === cancelingBooking._id ? { ...b, status: 'cancelled' } : b)));
       toast.success('Đã hủy đặt xe thành công');
     } catch (error) {
-      console.error('Cancel failed', error);
       toast.error('Hủy đặt xe thất bại');
     } finally {
       setCancelLoading(false);
@@ -227,6 +275,56 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       setCancelingBooking(null);
       setCancelReason('');
     }
+  };
+
+  // Handle "Book Again" - Navigate to booking page with pre-filled information
+  const handleBookAgain = (booking: Booking) => {
+    // Prepare vehicle data to pass to booking page
+    const vehicleData = {
+      _id: booking.vehicle_id._id,
+      brand: booking.vehicle_id.brand,
+      model: booking.vehicle_id.model,
+      name: booking.vehicle_id.name,
+      license_plate: booking.vehicle_id.license_plate,
+      color: booking.vehicle_id.color,
+      images: booking.vehicle_id.images || [],
+      price_per_day: booking.price_per_day,
+      deposit_percentage: (booking.deposit_amount / booking.total_price) * 100,
+      // Add other required fields with default values
+      year: 2024,
+      type: 'electric',
+      battery_capacity: '',
+      max_range: '',
+      max_speed: '',
+      power: '',
+      available_colors: booking.vehicle_id.color ? [{ color: booking.vehicle_id.color, price_per_day: booking.price_per_day }] : [],
+      station: booking.station_id,
+      stations: [booking.station_id],
+    };
+
+    // Navigate to booking page with pre-filled data
+    // Only pass selectedColor if it's not empty to avoid Select component error
+    const navigationState: any = {
+      selectedVehicle: vehicleData,
+      selectedStation: booking.station_id._id,
+      isRebooking: true, // Flag to indicate this is a rebooking (lock vehicle/color/station)
+      originalBooking: {
+        code: booking.code,
+        start_date: booking.start_date,
+        end_date: booking.end_date,
+        pickup_time: booking.pickup_time,
+        return_time: booking.return_time,
+      },
+    };
+
+    // Only add selectedColor if it exists and is not empty
+    if (booking.vehicle_id.color && booking.vehicle_id.color.trim() !== '') {
+      navigationState.selectedColor = booking.vehicle_id.color;
+    }
+
+    navigate('/booking', { state: navigationState });
+
+    toast.success('Đang thuê lại xe - Chỉ cần chọn thời gian mới');
   };
 
   // Filter and sort bookings
@@ -420,7 +518,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
             {paginatedBookings.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table className="border border-gray-200 rounded-lg min-w-[750px]">
+                  <Table className="border border-gray-200 rounded-lg min-w-[800px]">
                     <TableHeader className="bg-white dark:bg-gray-800">
                       <TableRow>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[90px]">Mã</TableHead>
@@ -428,7 +526,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[200px]">Trạm</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Thời gian</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Trạng thái</TableHead>
-                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300 w-[150px]">Hành động</TableHead>
+                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300 w-[200px]">Hành động</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -455,11 +553,22 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                                 {getStatusText(booking.status)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="px-3 py-2 text-right max-w-[150px]">
+                            <TableCell className="px-3 py-2 text-right max-w-[200px]">
                               <div className="flex items-center justify-end gap-2">
                                 <Button size="sm" onClick={() => openDetail(booking)} aria-label={`Xem chi tiết ${booking.code}`}>
                                   Xem chi tiết
                                 </Button>
+                                {/* Show Edit button only if booking can be edited */}
+                                {canEditBooking(booking).canEdit && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openEditDialog(booking)}
+                                    aria-label={`Chỉnh sửa ${booking.code}`}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 {/* Show Cancel button only for pending status */}
                                 {booking.status === 'pending' && (
                                   <Button
@@ -473,6 +582,19 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                                     aria-label={`Hủy đặt xe ${booking.code}`}
                                   >
                                     Hủy
+                                  </Button>
+                                )}
+                                {/* Show "Book Again" button only for completed bookings */}
+                                {booking.status === 'completed' && (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => handleBookAgain(booking)}
+                                    aria-label={`Thuê lại xe ${booking.code}`}
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                  >
+                                    <RefreshCw className="h-4 w-4 mr-1" />
+                                    Thuê lại
                                   </Button>
                                 )}
                               </div>
@@ -570,6 +692,8 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit booking is now handled by navigating to /booking/edit/:id page */}
     </div>
   );
 };

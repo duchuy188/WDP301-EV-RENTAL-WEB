@@ -8,7 +8,10 @@ import {
   User, 
   X, 
   Minimize2,
-  Plus
+  Maximize2,
+  Plus,
+  ExternalLink,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +29,8 @@ interface ChatMessage {
   message: string;
   timestamp: Date;
   context?: string; // Add context to track conversation flow
+  actions?: string[]; // Add actions from API response
+  suggestions?: string[]; // Add suggestions for user to click
 }
 
 interface ChatContext {
@@ -48,15 +53,49 @@ const FloatingChat: React.FC = () => {
   // Hooks are now always called consistently.
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    // Load saved messages from localStorage
+    const saved = localStorage.getItem('floating-chat-messages');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Convert timestamp strings back to Date objects
+        return parsed.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [chatInput, setChatInput] = useState('');
-  const [chatContext, setChatContext] = useState<ChatContext>({
-    topic: '',
-    userIntent: '',
-    lastKeywords: [],
-    conversationStep: 0,
-    sessionId: sessionId, // Use sessionId from ChatbotContext
-    conversationId: undefined,
+  const [chatContext, setChatContext] = useState<ChatContext>(() => {
+    // Load saved context from localStorage
+    const saved = localStorage.getItem('floating-chat-context');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return {
+          topic: '',
+          userIntent: '',
+          lastKeywords: [],
+          conversationStep: 0,
+          sessionId: sessionId,
+          conversationId: undefined,
+        };
+      }
+    }
+    return {
+      topic: '',
+      userIntent: '',
+      lastKeywords: [],
+      conversationStep: 0,
+      sessionId: sessionId,
+      conversationId: undefined,
+    };
   });
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -80,6 +119,20 @@ const FloatingChat: React.FC = () => {
   const [hasMoved, setHasMoved] = useState(false);
   const chatButtonRef = useRef<HTMLDivElement>(null);
 
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (chatMessages.length > 0) {
+      localStorage.setItem('floating-chat-messages', JSON.stringify(chatMessages));
+    }
+  }, [chatMessages]);
+
+  // Save context to localStorage whenever it changes
+  useEffect(() => {
+    if (chatContext.sessionId || chatContext.conversationId) {
+      localStorage.setItem('floating-chat-context', JSON.stringify(chatContext));
+    }
+  }, [chatContext]);
+
   // Auto scroll to bottom when new messages arrive.
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -90,6 +143,10 @@ const FloatingChat: React.FC = () => {
     const handleOpenWithSession = async (event: CustomEvent) => {
       const { sessionId: loadSessionId } = event.detail;
       if (!loadSessionId) return;
+
+      // Clear old localStorage data before loading new session
+      localStorage.removeItem('floating-chat-messages');
+      localStorage.removeItem('floating-chat-context');
 
       // Open the chat
       setIsOpen(true);
@@ -102,11 +159,16 @@ const FloatingChat: React.FC = () => {
         if (res?.success && res?.data?.messages) {
           const loadedMessages: ChatMessage[] = res.data.messages.map((m: any) => {
             const role = (m.role || '').toLowerCase();
+            const messageText = m.message || '';
+            const urls = extractUrls(messageText);
+            
             return {
               id: `loaded-${m.timestamp || Date.now()}`,
               type: role === 'user' ? 'user' : 'bot',
-              message: m.message || '',
+              message: messageText,
               timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+              actions: m.metadata?.actions || (urls.length > 0 ? urls : undefined),
+              suggestions: m.metadata?.suggestions,
             };
           });
           
@@ -156,6 +218,50 @@ const FloatingChat: React.FC = () => {
     return undefined;
   };
 
+  // Extract URLs from text
+  const extractUrls = (text: string): string[] => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.match(urlRegex) || [];
+  };
+
+  // Remove URLs from text to display clean message
+  const removeUrls = (text: string): string => {
+    return text.replace(/(https?:\/\/[^\s]+)/g, '').trim();
+  };
+
+  // Extract payment link from message
+  const extractPaymentLink = (text: string): string | null => {
+    const paymentRegex = /(https?:\/\/[^\s]*(?:vnpay|payment)[^\s]*)/i;
+    const match = text.match(paymentRegex);
+    return match ? match[1] : null;
+  };
+
+  // Get action type for suggestion
+  const getActionForSuggestion = (suggestion: string, actions?: string[]): string | null => {
+    if (!actions) return null;
+    
+    const suggestionLower = suggestion.toLowerCase().trim();
+    
+    // Map suggestion text to action
+    if (suggestionLower.includes('thanh toán') || suggestionLower.includes('thanh toan')) {
+      return actions.find(a => a.includes('pay')) || null;
+    }
+    if (suggestionLower.includes('xem') || suggestionLower.includes('chi tiết') || suggestionLower.includes('chi tiet')) {
+      return actions.find(a => a.includes('view') || a.includes('details')) || null;
+    }
+    if (suggestionLower.includes('hủy') || suggestionLower.includes('huy') || suggestionLower.includes('cancel')) {
+      return actions.find(a => a.includes('cancel')) || null;
+    }
+    if (suggestionLower.includes('xác nhận') || suggestionLower.includes('xac nhan') || suggestionLower.includes('confirm')) {
+      return actions.find(a => a.includes('confirm')) || null;
+    }
+    if (suggestionLower.includes('thay đổi') || suggestionLower.includes('thay doi') || suggestionLower.includes('edit')) {
+      return actions.find(a => a.includes('edit')) || null;
+    }
+    
+    return null;
+  };
+
   // All message generation is delegated to the backend API. No local hardcoded replies.
 
   const handleChatSubmit = async (e?: React.FormEvent, suggestedText?: string) => {
@@ -184,13 +290,21 @@ const FloatingChat: React.FC = () => {
       const res: ChatbotAPIResponse = await sendMessage(payload);
 
       const botText = res?.message ?? 'Xin lỗi, tôi chưa hiểu. Bạn có thể nói lại?';
+      
+      // Extract URLs from message or use actions from API
+      const urls = extractUrls(botText);
+      // Combine action strings and URLs
+      const actionStrings = res?.actions || [];
+      const messageActions = [...actionStrings, ...urls].filter((v, i, a) => a.indexOf(v) === i); // Remove duplicates
 
       const botResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
         message: botText,
         timestamp: new Date(),
-        context: res?.context
+        context: res?.context,
+        actions: messageActions.length > 0 ? messageActions : undefined,
+        suggestions: res?.suggestions
       };
 
       setChatMessages(prev => [...prev, botResponse]);
@@ -218,8 +332,8 @@ const FloatingChat: React.FC = () => {
     setChatInput('');
   };
 
-  const minimizeChat = () => {
-    setIsMinimized(true);
+  const toggleMinimizeChat = () => {
+    setIsMinimized(prev => !prev);
   };
 
   const closeChat = () => {
@@ -238,6 +352,9 @@ const FloatingChat: React.FC = () => {
       sessionId: undefined,
       conversationId: undefined,
     });
+    // Clear localStorage
+    localStorage.removeItem('floating-chat-messages');
+    localStorage.removeItem('floating-chat-context');
   };
 
   // Handle drag start for chat button
@@ -263,6 +380,12 @@ const FloatingChat: React.FC = () => {
     // Prevent dragging when clicking on buttons or interactive elements
     const target = e.target as HTMLElement;
     if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+
+    // If minimized, clicking on header will expand instead of drag
+    if (isMinimized) {
+      setIsMinimized(false);
       return;
     }
 
@@ -314,10 +437,15 @@ const FloatingChat: React.FC = () => {
     const handleMouseUp = () => {
       setIsDragging(false);
       
-      // If it was a click (not dragged), open the chat
+      // If it was a click (not dragged), open the chat and reset position to right
       if (!hasMoved && !isOpen) {
         setIsOpen(true);
         setIsMinimized(false);
+        
+        // Reset position to default (right side)
+        const defaultPosition = { bottom: 24, right: 24 };
+        setPosition(defaultPosition);
+        localStorage.setItem('chatbot-position', JSON.stringify(defaultPosition));
       }
       
       setHasMoved(false);
@@ -392,7 +520,9 @@ const FloatingChat: React.FC = () => {
             <Card className="shadow-2xl border-0 overflow-hidden backdrop-blur-md">
               {/* Header */}
               <CardHeader 
-                className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 cursor-grab active:cursor-grabbing"
+                className={`bg-gradient-to-r from-green-500 to-green-600 text-white p-4 ${
+                  isMinimized ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
+                }`}
                 onMouseDown={handleHeaderMouseDown}
               >
                 <div className="flex items-center justify-between">
@@ -432,14 +562,18 @@ const FloatingChat: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={minimizeChat}
+                          onClick={toggleMinimizeChat}
                           className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg transition-all duration-300"
                         >
-                          <Minimize2 className="h-4 w-4" />
+                          {isMinimized ? (
+                            <Maximize2 className="h-4 w-4" />
+                          ) : (
+                            <Minimize2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Thu nhỏ</p>
+                        <p>{isMinimized ? 'Phóng to' : 'Thu nhỏ'}</p>
                       </TooltipContent>
                     </Tooltip>
                     <Tooltip>
@@ -517,7 +651,7 @@ const FloatingChat: React.FC = () => {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3 }}
-                            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex flex-col ${message.type === 'user' ? 'items-end' : 'items-start'}`}
                           >
                             <div className={`flex items-start space-x-2 max-w-[85%] ${
                               message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
@@ -541,7 +675,12 @@ const FloatingChat: React.FC = () => {
                                   ? 'bg-gradient-to-br from-green-600 to-green-700 text-white rounded-br-sm' 
                                   : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-bl-sm'
                               }`}>
-                                <div className="text-[13px] leading-relaxed whitespace-pre-line">{message.message}</div>
+                                <div className="text-[13px] leading-relaxed whitespace-pre-line">
+                                  {message.actions && message.actions.length > 0 
+                                    ? removeUrls(message.message)
+                                    : message.message}
+                                </div>
+                                
                                 <p className={`text-[10px] mt-1.5 ${
                                   message.type === 'user' 
                                     ? 'text-green-100' 
@@ -554,6 +693,109 @@ const FloatingChat: React.FC = () => {
                                 </p>
                               </div>
                             </div>
+                            
+                            {/* Render suggestion buttons below the message bubble */}
+                            {message.suggestions && message.suggestions.length > 0 && message.type === 'bot' && (
+                              <div className="mt-2 ml-9 space-y-1.5 w-[calc(85%-2.25rem)]">
+                                {message.suggestions.map((suggestion, idx) => {
+                                  const action = getActionForSuggestion(suggestion, message.actions);
+                                  const paymentLink = extractPaymentLink(message.message);
+                                  
+                                  // Special handling for payment action
+                                  if (action === 'pay_holding_fee' && paymentLink) {
+                                    return (
+                                      <Button
+                                        key={idx}
+                                        onClick={() => window.open(paymentLink, '_blank')}
+                                        size="sm"
+                                        className="w-full text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                                      >
+                                        <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                                        💳 {suggestion}
+                                      </Button>
+                                    );
+                                  }
+                                  
+                                  // Special handling for cancel action
+                                  if (action && action.includes('cancel')) {
+                                    return (
+                                      <Button
+                                        key={idx}
+                                        onClick={() => handleChatSubmit(undefined, suggestion)}
+                                        size="sm"
+                                        className="w-full text-xs bg-white dark:bg-gray-700 border-2 border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 dark:hover:border-red-500 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                                      >
+                                        ❌ {suggestion}
+                                      </Button>
+                                    );
+                                  }
+                                  
+                                  // Special handling for confirm action
+                                  if (action && action.includes('confirm')) {
+                                    return (
+                                      <Button
+                                        key={idx}
+                                        onClick={() => handleChatSubmit(undefined, suggestion)}
+                                        size="sm"
+                                        className="w-full text-xs bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                                      >
+                                        ✅ {suggestion}
+                                      </Button>
+                                    );
+                                  }
+                                  
+                                  // Default suggestion button
+                                  return (
+                                    <Button
+                                      key={idx}
+                                      onClick={() => handleChatSubmit(undefined, suggestion)}
+                                      size="sm"
+                                      className="w-full text-xs bg-white dark:bg-gray-700 border-2 border-green-400 dark:border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-500 dark:hover:border-green-500 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                                    >
+                                      {suggestion}
+                                    </Button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            
+                            {/* Render action buttons (URLs) below suggestions - only if no suggestions or no payment in suggestions */}
+                            {message.actions && message.actions.length > 0 && message.type === 'bot' && !message.suggestions && (
+                              <div className="mt-2 ml-9 space-y-1.5 w-[calc(85%-2.25rem)]">
+                                {message.actions.map((action, idx) => {
+                                  const isUrl = action.startsWith('http://') || action.startsWith('https://');
+                                  if (!isUrl) return null;
+                                  
+                                  // Kiểm tra xem có phải payment link không
+                                  const isPaymentLink = action.includes('payment') || action.includes('vnpay');
+                                  
+                                  return (
+                                    <Button
+                                      key={idx}
+                                      onClick={() => window.open(action, '_blank')}
+                                      size="sm"
+                                      className={`w-full text-xs shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] ${
+                                        isPaymentLink
+                                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
+                                          : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
+                                      }`}
+                                    >
+                                      {isPaymentLink ? (
+                                        <>
+                                          <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                                          💳 Thanh toán ngay
+                                        </>
+                                      ) : (
+                                        <>
+                                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                                          Mở liên kết
+                                        </>
+                                      )}
+                                    </Button>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </motion.div>
                         ))}
                         {isTyping && (

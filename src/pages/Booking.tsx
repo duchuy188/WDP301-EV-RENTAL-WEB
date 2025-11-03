@@ -47,6 +47,10 @@ const Booking: React.FC = () => {
   // Track if user came from VehicleDetail page (skip step 1)
   const [cameFromVehicleDetail, setCameFromVehicleDetail] = useState(false);
 
+  // Track if this is a rebooking (rent again) - lock vehicle/color/station
+  const [isRebooking, setIsRebooking] = useState(false);
+  const [originalBookingInfo, setOriginalBookingInfo] = useState<any>(null);
+
   const steps = [
     { number: 1, title: 'Chọn xe', description: 'Chọn xe phù hợp' },
     { number: 2, title: 'Chọn thời gian', description: 'Thời gian đặt xe' },
@@ -62,8 +66,21 @@ const Booking: React.FC = () => {
         const vehiclesArr = Array.isArray(response?.vehicles) ? response.vehicles : [];
         setVehicles(vehiclesArr);
 
-        // Check if vehicle data was passed from VehicleDetail page
-  const stateData = location.state as { selectedVehicle?: Vehicle; selectedColor?: any; selectedStation?: string } | null;
+        // Check if vehicle data was passed from VehicleDetail page or from rebooking
+  const stateData = location.state as { 
+    selectedVehicle?: Vehicle; 
+    selectedColor?: any; 
+    selectedStation?: string;
+    isRebooking?: boolean;
+    originalBooking?: any;
+  } | null;
+        
+        // Check if this is a rebooking
+        if (stateData?.isRebooking) {
+          setIsRebooking(true);
+          setOriginalBookingInfo(stateData.originalBooking);
+        }
+
         if (stateData?.selectedVehicle) {
           // Convert Vehicle type to VehicleListItem type for consistency
           const vehicleFromDetail = stateData.selectedVehicle;
@@ -97,14 +114,23 @@ const Booking: React.FC = () => {
           setSelectedVehicleDetail(vehicleFromDetail);
           
           // Set selected color if provided, otherwise use first available color
+          // Never set selectedColor to empty string to avoid Select component error
           if (stateData.selectedColor) {
             // stateData.selectedColor might be an object or a simple string
             const sc = stateData.selectedColor as any;
-            setSelectedColor(typeof sc === 'string' ? sc : (sc?.color || vehicleFromDetail.color || ''));
+            const colorValue = typeof sc === 'string' ? sc : (sc?.color || vehicleFromDetail.color || '');
+            if (colorValue && typeof colorValue === 'string' && colorValue.trim() !== '') {
+              setSelectedColor(colorValue);
+            }
           } else if (Array.isArray(vehicleFromDetail.available_colors) && vehicleFromDetail.available_colors.length > 0) {
-            setSelectedColor(vehicleFromDetail.available_colors[0]?.color || vehicleFromDetail.color || '');
-          } else {
-            setSelectedColor(vehicleFromDetail.color || '');
+            const firstColor = vehicleFromDetail.available_colors[0]?.color;
+            if (firstColor && firstColor.trim() !== '') {
+              setSelectedColor(firstColor);
+            } else if (vehicleFromDetail.color && vehicleFromDetail.color.trim() !== '') {
+              setSelectedColor(vehicleFromDetail.color);
+            }
+          } else if (vehicleFromDetail.color && vehicleFromDetail.color.trim() !== '') {
+            setSelectedColor(vehicleFromDetail.color);
           }
           
           // Set default station: use station from navigation state if provided, otherwise prefer the first from stations array, else fallback to vehicle.station
@@ -154,16 +180,30 @@ const Booking: React.FC = () => {
   }, []);
 
   // Load vehicle detail when a vehicle is selected
-  const loadVehicleDetail = async (vehicleId: string) => {
+  const loadVehicleDetail = async (vehicleId: string, skipColorReset: boolean = false) => {
+    // Validate vehicleId
+    if (!vehicleId || vehicleId.trim() === '') {
+      toast.error("Không có thông tin xe để tải");
+      return;
+    }
+    
     try {
       const vehicleDetail = await vehiclesAPI.getVehicleById(vehicleId);
       setSelectedVehicleDetail(vehicleDetail);
       
-      // Set default color to the first available color
-      if (Array.isArray(vehicleDetail.available_colors) && vehicleDetail.available_colors.length > 0) {
-        setSelectedColor(vehicleDetail.available_colors[0]?.color || vehicleDetail.color || '');
-      } else {
-        setSelectedColor(vehicleDetail.color || '');
+      // Set default color to the first available color (only if not skipping color reset)
+      // Never set selectedColor to empty string to avoid Select component error
+      if (!skipColorReset) {
+        if (Array.isArray(vehicleDetail.available_colors) && vehicleDetail.available_colors.length > 0) {
+          const firstColor = vehicleDetail.available_colors[0]?.color;
+          if (firstColor && firstColor.trim() !== '') {
+            setSelectedColor(firstColor);
+          } else if (vehicleDetail.color && vehicleDetail.color.trim() !== '') {
+            setSelectedColor(vehicleDetail.color);
+          }
+        } else if (vehicleDetail.color && vehicleDetail.color.trim() !== '') {
+          setSelectedColor(vehicleDetail.color);
+        }
       }
       
       // Set default station
@@ -176,9 +216,35 @@ const Booking: React.FC = () => {
       } else if (vehicleDetail.station) {
         setSelectedStation((vehicleDetail.station as any)?._id || '');
       }
-    } catch (error) {
-      console.error('Error loading vehicle detail:', error);
-      toast.error("Không thể tải chi tiết xe");
+    } catch (error: any) {
+      
+      // More specific error messages
+      if (error?.response?.status === 404) {
+        toast.error("Không tìm thấy thông tin xe này");
+      } else if (error?.response?.status === 500) {
+        toast.error("Lỗi server khi tải thông tin xe. Vui lòng thử lại sau.");
+      } else {
+        toast.error("Không thể tải chi tiết xe");
+      }
+    }
+  };
+
+  // Handler for when color changes - load vehicle detail for the selected color
+  const handleColorChange = async (colorSampleVehicleId: string) => {
+    // Validate sample_vehicle_id
+    if (!colorSampleVehicleId || colorSampleVehicleId.trim() === '') {
+      return;
+    }
+    
+    try {
+      // Load vehicle detail for this color's sample_vehicle_id
+      // Skip color reset since we're already in the process of changing color
+      await loadVehicleDetail(colorSampleVehicleId, true);
+    } catch (error: any) {
+      // Only show toast if it's a real error, not just missing data
+      if (error?.response?.status !== 404) {
+        toast.error("Không thể tải thông tin trạm cho màu này");
+      }
     }
   };
 
@@ -361,36 +427,80 @@ const Booking: React.FC = () => {
         notes: notes || "", // Ghi chú từ form
       };
 
-      // Debug: Log booking data before sending
-      console.log('📤 Sending booking data:', bookingData);
-      console.log('🕐 Times being sent - pickup:', startTime, 'return:', endTime);
 
       const response = await bookingAPI.postBooking(bookingData);
 
-      // Debug: log the raw response for troubleshooting
-      console.log('postBooking response:', response);
+      if (response.requiresPayment && response.data?.holding_fee?.payment_url) {
+        
+        const { data } = response;
+        const vehicleName = data.vehicle?.name || `${selectedVehicle.brand} ${selectedVehicle.model}`;
+        const vehicleImage = displayImage;
 
-      // Defensive: ensure response has booking
-      if (!response || !response.booking) {
-        console.error('Unexpected booking response:', response);
-        toast.error('Đặt xe thành công nhưng máy chủ trả về dữ liệu không hợp lệ. Vui lòng kiểm tra lịch sử đặt xe.');
-      } else {
+        // Prepare payment state
+        const paymentState = {
+          paymentUrl: data.holding_fee.payment_url,
+          pendingBookingId: data.temp_id, // Sử dụng temp_id thay vì pending_booking_id để cancel
+          expiresAt: data.holding_fee.expires_at,
+          bookingData: {
+            vehicleName,
+            vehicleImage,
+            startDate: data.booking_details?.start_date || bookingDate,
+            endDate: data.booking_details?.end_date || endDate || bookingDate,
+            pickupTime: data.booking_details?.pickup_time || startTime,
+            returnTime: data.booking_details?.return_time || endTime,
+            totalPrice: data.booking_details?.total_price || totalPrice,
+            depositAmount: data.booking_details?.deposit_amount || depositAmount,
+          },
+        };
+
+        // Navigate to payment page with all necessary data
+        navigate('/payment', {
+          state: paymentState,
+        });
+      } 
+      // Direct booking creation (if backend doesn't require payment)
+      else if (response.booking) {
         toast.success(`🎉 Tạo booking thành công! Mã booking: ${response.booking.code || 'N/A'}`);
 
-          // Navigate to the success page. Do NOT pass functions in location.state because
-          // history.pushState performs a structured clone which fails for functions.
-          navigate('/booking-success', {
-            state: {
-              bookingResponse: response,
-              selectedVehicle,
-            },
-          });
+        // Navigate to the success page
+        navigate('/booking-success', {
+          state: {
+            bookingResponse: response,
+            selectedVehicle,
+          },
+        });
+      } 
+      // Unexpected response
+      else {
+        toast.error('Đặt xe thành công nhưng máy chủ trả về dữ liệu không hợp lệ. Vui lòng kiểm tra lịch sử đặt xe.');
       }
     } catch (error: any) {
-      console.error('Error during postBooking:', error);
+      
+      const status = error?.response?.status;
       const serverMessage = error?.response?.data?.message || error?.message;
-      // If validation or server error, surface it
-      toast.error(serverMessage || 'Có lỗi xảy ra khi đặt xe');
+      
+      // Handle different error status codes
+      if (status === 409) {
+        // Conflict - Xe vừa được đặt bởi người khác
+        toast.error('⚠️ Xe vừa được đặt bởi người khác. Vui lòng chọn xe khác hoặc thời gian khác.');
+        
+        // Auto redirect to find-car sau 2 giây
+        setTimeout(() => {
+          navigate('/find-car');
+        }, 2000);
+      } else if (status === 400) {
+        // Validation error - hiển thị message từ server
+        toast.error(`❌ ${serverMessage || 'Thông tin đặt xe không hợp lệ'}`);
+      } else if (status === 401 || status === 403) {
+        // Unauthorized / Forbidden
+        toast.error('🔒 Vui lòng đăng nhập lại để tiếp tục');
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
+      } else {
+        // Other errors
+        toast.error(serverMessage || 'Có lỗi xảy ra khi đặt xe. Vui lòng thử lại.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -491,6 +601,35 @@ const Booking: React.FC = () => {
           </motion.div>
         )}
 
+        {/* Rebooking Notice */}
+        {isRebooking && originalBookingInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-xl p-4 shadow-md">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-blue-500 dark:bg-blue-600 flex items-center justify-center">
+                    <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-base font-bold text-blue-900 dark:text-blue-100 mb-1">
+                    🔄 Đang thuê lại xe (Mã booking: {originalBookingInfo.code})
+                  </p>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    Thông tin xe, màu sắc và trạm giữ nguyên như booking trước. Bạn chỉ cần chọn thời gian thuê xe mới.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
@@ -576,6 +715,8 @@ const Booking: React.FC = () => {
                   setSpecialRequests={setSpecialRequests}
                   notes={notes}
                   setNotes={setNotes}
+                  isRebooking={isRebooking}
+                  onColorChangeLoadVehicle={handleColorChange}
                 />
               )}
 
@@ -655,7 +796,7 @@ const Booking: React.FC = () => {
                       ) : (
                         <>
                           <Check className="mr-2 h-4 w-4" />
-                          Tạo booking
+                          Thanh toán & Xác nhận
                         </>
                       )}
                     </Button>

@@ -1,7 +1,9 @@
 import React, { createContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Sparkles, History, ArrowLeft, Paperclip, Image as ImageIcon, Mic, Send } from 'lucide-react';
+import { Zap, Sparkles, History, ArrowLeft, Paperclip, Image as ImageIcon, Mic, Send, MessageCircle, CreditCard, ExternalLink } from 'lucide-react';
 import { sendMessage, conversations, getConversationHistory } from '@/api/chatbotAPI';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 import { toast } from '@/utils/toast';
 import { ChatMessage } from '@/types/chatbot';
 import { CHATBOT } from '@/config/chatbot';
@@ -103,6 +105,8 @@ const ChatbotPage: React.FC = () => {
             id: `h-${ts}`,
             role,
             content: m.message,
+            suggestions: m.metadata?.suggestions,
+            actions: m.metadata?.actions,
           };
         }),
       ];
@@ -148,16 +152,13 @@ const ChatbotPage: React.FC = () => {
         id: `a-${Date.now()}`,
         role: 'assistant',
         content: assistantText,
+        suggestions: res.suggestions,
+        actions: res.actions,
       };
       addMessage(assistantMsg);
 
       if (res.session_id) setSessionId(res.session_id);
       if (res.conversation_id) setConversationId(res.conversation_id);
-
-      if (res.suggestions && res.suggestions.length) {
-        const suggText = CHATBOT.suggestionPrefix + res.suggestions.join(' · ');
-        addMessage({ id: `s-${Date.now()}`, role: 'system', content: suggText });
-      }
     } catch (err: any) {
       console.error(err);
       toast.error(CHATBOT.toastErrorTitle, err?.message ?? CHATBOT.toastErrorMessage);
@@ -169,6 +170,39 @@ const ChatbotPage: React.FC = () => {
 
   const handleSuggestedQuestion = (question: string) => {
     handleSend(question);
+  };
+
+  // Extract payment link from message
+  const extractPaymentLink = (text: string): string | null => {
+    const paymentRegex = /(https?:\/\/[^\s]*(?:vnpay|payment)[^\s]*)/i;
+    const match = text.match(paymentRegex);
+    return match ? match[1] : null;
+  };
+
+  // Get action type for suggestion
+  const getActionForSuggestion = (suggestion: string, actions?: string[]): string | null => {
+    if (!actions) return null;
+    
+    const suggestionLower = suggestion.toLowerCase().trim();
+    
+    // Map suggestion text to action
+    if (suggestionLower.includes('thanh toán') || suggestionLower.includes('thanh toan')) {
+      return actions.find(a => a.includes('pay')) || null;
+    }
+    if (suggestionLower.includes('xem') || suggestionLower.includes('chi tiết') || suggestionLower.includes('chi tiet')) {
+      return actions.find(a => a.includes('view') || a.includes('details')) || null;
+    }
+    if (suggestionLower.includes('hủy') || suggestionLower.includes('huy') || suggestionLower.includes('cancel')) {
+      return actions.find(a => a.includes('cancel')) || null;
+    }
+    if (suggestionLower.includes('xác nhận') || suggestionLower.includes('xac nhan') || suggestionLower.includes('confirm')) {
+      return actions.find(a => a.includes('confirm')) || null;
+    }
+    if (suggestionLower.includes('thay đổi') || suggestionLower.includes('thay doi') || suggestionLower.includes('edit')) {
+      return actions.find(a => a.includes('edit')) || null;
+    }
+    
+    return null;
   };
 
   return (
@@ -267,36 +301,116 @@ const ChatbotPage: React.FC = () => {
                   {messages.map((m, idx) => (
                     <div 
                       key={m.id} 
-                      className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}
+                      className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} flex-col animate-in fade-in slide-in-from-bottom-4 duration-500`}
                       style={{ animationDelay: `${idx * 50}ms` }}
                     >
-                      <div
-                        className={`relative max-w-[80%] px-5 py-4 rounded-2xl whitespace-pre-wrap shadow-md hover:shadow-lg transition-all duration-300
-                      ${
-                        m.role === 'user'
-                          ? 'bg-gradient-to-br from-green-600 to-green-700 text-white rounded-br-sm'
-                          : m.role === 'assistant'
-                          ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-sm backdrop-blur-sm'
-                          : 'bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg'
-                      }`}
-                      >
-                        {m.role === 'assistant' && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                              <Sparkles className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                      <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
+                        <div
+                          className={`relative max-w-[80%] px-5 py-4 rounded-2xl whitespace-pre-wrap shadow-md hover:shadow-lg transition-all duration-300
+                        ${
+                          m.role === 'user'
+                            ? 'bg-gradient-to-br from-green-600 to-green-700 text-white rounded-br-sm'
+                            : m.role === 'assistant'
+                            ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-sm backdrop-blur-sm'
+                            : 'bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg'
+                        }`}
+                        >
+                          {m.role === 'assistant' && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                <Sparkles className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                              </div>
+                              <span className="text-xs text-green-600 dark:text-green-500 font-semibold">
+                                {CHATBOT.roleLabels.assistant}
+                              </span>
                             </div>
-                            <span className="text-xs text-green-600 dark:text-green-500 font-semibold">
-                              {CHATBOT.roleLabels.assistant}
+                          )}
+                          {m.role === 'user' && (
+                            <span className="absolute -top-6 right-0 text-xs text-green-700 dark:text-green-400 font-semibold">
+                              {CHATBOT.roleLabels.user}
                             </span>
-                          </div>
-                        )}
-                        {m.role === 'user' && (
-                          <span className="absolute -top-6 right-0 text-xs text-green-700 dark:text-green-400 font-semibold">
-                            {CHATBOT.roleLabels.user}
-                          </span>
-                        )}
-                        <div className="text-[15px] leading-relaxed">{m.content}</div>
+                          )}
+                          <div className="text-[15px] leading-relaxed">{m.content}</div>
+                        </div>
                       </div>
+
+                      {/* Render suggestion buttons below bot message */}
+                      {m.role === 'assistant' && m.suggestions && m.suggestions.length > 0 && (
+                        <div className="flex justify-start w-full mt-3">
+                          <div className="max-w-[80%] space-y-2">
+                            {m.suggestions.map((suggestion, suggIdx) => {
+                              const action = getActionForSuggestion(suggestion, m.actions);
+                              const paymentLink = extractPaymentLink(m.content);
+                              
+                              // Special handling for payment action
+                              if (action === 'pay_holding_fee' && paymentLink) {
+                                return (
+                                  <motion.div
+                                    key={suggIdx}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: suggIdx * 0.1 }}
+                                  >
+                                    <Button
+                                      onClick={() => window.open(paymentLink, '_blank')}
+                                      className="w-full text-left px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] text-sm font-medium"
+                                    >
+                                      <CreditCard className="h-4 w-4 mr-2 inline" />
+                                      💳 {suggestion}
+                                    </Button>
+                                  </motion.div>
+                                );
+                              }
+                              
+                              // Special handling for cancel action
+                              if (action && action.includes('cancel')) {
+                                return (
+                                  <motion.button
+                                    key={suggIdx}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: suggIdx * 0.1 }}
+                                    onClick={() => handleSend(suggestion)}
+                                    className="w-full text-left px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border-2 border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 dark:hover:border-red-500 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] text-sm font-medium"
+                                  >
+                                    ❌ {suggestion}
+                                  </motion.button>
+                                );
+                              }
+                              
+                              // Special handling for confirm action
+                              if (action && action.includes('confirm')) {
+                                return (
+                                  <motion.button
+                                    key={suggIdx}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: suggIdx * 0.1 }}
+                                    onClick={() => handleSend(suggestion)}
+                                    className="w-full text-left px-4 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] text-sm font-medium"
+                                  >
+                                    ✅ {suggestion}
+                                  </motion.button>
+                                );
+                              }
+                              
+                              // Default suggestion button
+                              return (
+                                <motion.button
+                                  key={suggIdx}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: suggIdx * 0.1 }}
+                                  onClick={() => handleSend(suggestion)}
+                                  className="w-full text-left px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border-2 border-green-400 dark:border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-500 dark:hover:border-green-500 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] text-sm font-medium"
+                                >
+                                  {suggestion}
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {loading && (
