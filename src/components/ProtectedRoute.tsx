@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { clearAllStorage } from '@/utils/clearStorage';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -32,9 +33,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           if (userData.role !== 'EV Renter') {
             console.warn('ProtectedRoute: User role is not EV Renter, denying access');
             // Xóa dữ liệu không hợp lệ
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
+            clearAllStorage();
             setLocalAuthCheck(false);
           } else {
             setLocalAuthCheck(true);

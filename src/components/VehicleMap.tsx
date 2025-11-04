@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { VehicleListItem } from '../types/vehicles';
 import { useNavigate } from 'react-router-dom';
 import { getVehicleTypeInVietnamese } from '../utils/vehicleUtils';
+import { geocodeAddress } from '../utils/geocodingService';
 
 // Fix for default marker icons in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -57,33 +58,30 @@ const MapViewController: React.FC<{
         index === self.findIndex((l) => l.lat === location.lat && l.lng === location.lng)
       );
 
-      // If there's a search location, try to geocode it
+      // If there's a search location, try to geocode it using Mapbox
       if (searchLocation && searchLocation.trim()) {
         try {
           const query = `${searchLocation}, Vietnam`;
-          const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
           
-          const response = await fetch(geocodeUrl, {
-            headers: {
-              'User-Agent': 'EV-Rental-Web-App'
-            }
+          // Use Mapbox Geocoding API for more accurate results
+          const result = await geocodeAddress(query, {
+            country: 'vn',
+            types: ['district', 'place', 'locality'],
+            // Proximity to Ho Chi Minh City for better results
+            proximity: [106.6297, 10.8231]
           });
-          const data = await response.json();
           
-          if (data && data.length > 0) {
-            const { lat, lon, boundingbox } = data[0];
-            
-            if (boundingbox && boundingbox.length === 4) {
+          if (result) {
+            // If we have bounding box, use it for better view
+            if (result.bbox && result.bbox.length === 4) {
               const bounds = L.latLngBounds(
-                [parseFloat(boundingbox[0]), parseFloat(boundingbox[2])],
-                [parseFloat(boundingbox[1]), parseFloat(boundingbox[3])]
+                [result.bbox[1], result.bbox[0]], // [minLat, minLng]
+                [result.bbox[3], result.bbox[2]]  // [maxLat, maxLng]
               );
               map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
             } else {
-              map.setView([parseFloat(lat), parseFloat(lon)], 13);
+              map.setView([result.latitude, result.longitude], 13);
             }
-            
-            console.log('Geocoded location:', query, '→', lat, lon);
           } else if (uniqueLocations.length > 0) {
             // Fallback to fitting station markers
             const bounds = L.latLngBounds(
