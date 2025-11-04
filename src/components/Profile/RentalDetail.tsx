@@ -935,6 +935,33 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
                       <p className="text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded p-3 border border-yellow-200 dark:border-yellow-700 break-all overflow-wrap-anywhere whitespace-normal">{feedback.comment}</p>
                     </div>
                   )}
+                  
+                  {/* Images - Hình ảnh đánh giá */}
+                  {feedback.images && feedback.images.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
+                      <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-2">
+                        Hình ảnh đánh giá ({feedback.images.length} ảnh)
+                      </p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {feedback.images.map((img, idx) => (
+                          <button 
+                            key={idx} 
+                            onClick={() => { setSelectedImage(img); setImageViewerOpen(true); }}
+                            className="relative group overflow-hidden rounded border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all"
+                          >
+                            <img 
+                              src={img} 
+                              alt={`Rating ${idx + 1}`} 
+                              className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-200"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                              <Eye className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
