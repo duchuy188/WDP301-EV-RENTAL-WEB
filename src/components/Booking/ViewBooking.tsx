@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Car, Calendar, Clock, CreditCard, MapPin, Phone, Hash, Image as ImageIcon } from 'lucide-react';
+import { Bike, Calendar, Clock, CreditCard, MapPin, Phone, Hash, Image as ImageIcon, Edit } from 'lucide-react';
 import { Booking } from '@/types/booking';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,12 @@ import { Separator } from '@/components/ui/separator';
 
 interface ViewBookingProps {
   booking: Booking;
+  onEdit?: () => void;
+  canEdit?: boolean;
+  editDisabledReason?: string;
 }
 
-const ViewBooking: React.FC<ViewBookingProps> = ({ booking }) => {
+const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = false, editDisabledReason }) => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
 
   // Debug: Log booking data received
@@ -114,9 +117,23 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking }) => {
                 <h3 className="font-bold text-xl text-white font-mono">{booking.code}</h3>
               </div>
             </div>
-            <Badge className={`${getStatusColor(booking.status)} text-sm px-3 py-1.5 font-semibold`}>
-              {getStatusText(booking.status)}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge className={`${getStatusColor(booking.status)} text-sm px-3 py-1.5 font-semibold`}>
+                {getStatusText(booking.status)}
+              </Badge>
+              {onEdit && (
+                <Button
+                  onClick={onEdit}
+                  disabled={!canEdit}
+                  title={!canEdit ? editDisabledReason : 'Chỉnh sửa đặt xe'}
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 hover:border-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  size="sm"
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Chỉnh sửa
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -127,7 +144,7 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking }) => {
             <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <Car className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <Bike className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Xe</h4>
               </div>

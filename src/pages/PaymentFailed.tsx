@@ -18,26 +18,6 @@ const PaymentFailed: React.FC = () => {
   const message = searchParams.get('message') || '';
   const bookingId = searchParams.get('bookingId') || searchParams.get('booking_id');
 
-  useEffect(() => {
-    // Countdown timer
-    const countdownTimer = setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearInterval(countdownTimer);
-  }, []);
-
-  useEffect(() => {
-    // Auto redirect khi countdown đạt 0
-    if (countdown <= 0) {
-      const redirectTimer = setTimeout(() => {
-        navigate('/find-car', { replace: true });
-      }, 100);
-      
-      return () => clearTimeout(redirectTimer);
-    }
-  }, [countdown, navigate]);
-
   const getReasonMessage = (reasonCode: string): string => {
     const reasons: Record<string, string> = {
       'invalid_order': 'Đơn hàng không hợp lệ',
@@ -55,6 +35,48 @@ const PaymentFailed: React.FC = () => {
     
     return reasons[reasonCode] || message || 'Giao dịch không thành công';
   };
+
+  useEffect(() => {
+    // 📢 Gửi thông báo đến FloatingChat khi trang load
+    // Chỉ gửi nếu chưa được gửi từ VNPayCallback (kiểm tra bằng sessionStorage)
+    const notificationSent = sessionStorage.getItem('payment_notification_sent');
+    
+    if (!notificationSent) {
+      const failureType = reason === 'cancelled' ? 'cancelled' : 'failed';
+      window.dispatchEvent(new CustomEvent('paymentNotification', {
+        detail: {
+          type: failureType,
+          message: getReasonMessage(reason),
+        }
+      }));
+      
+      // Đánh dấu đã gửi notification
+      sessionStorage.setItem('payment_notification_sent', 'true');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reason, message]);
+
+  useEffect(() => {
+    // Countdown timer
+    const countdownTimer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(countdownTimer);
+  }, []);
+
+  useEffect(() => {
+    // Auto redirect khi countdown đạt 0
+    if (countdown <= 0) {
+      const redirectTimer = setTimeout(() => {
+        // Xóa flag notification trước khi redirect
+        sessionStorage.removeItem('payment_notification_sent');
+        navigate('/find-car', { replace: true });
+      }, 100);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [countdown, navigate]);
 
   const getReasonIcon = () => {
     if (reason === 'cancelled') {

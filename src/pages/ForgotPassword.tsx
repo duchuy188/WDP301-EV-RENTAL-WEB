@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, CheckCircle, Loader2, Car } from 'lucide-react';
+import { Mail, CheckCircle, Loader2, Bike } from 'lucide-react';
 import { authAPI } from '@/api/authAPI';
 import { toast } from '@/utils/toast';
 
@@ -229,7 +229,7 @@ const ForgotPassword = () => {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 p-12 text-white">
         <div className="w-full max-w-lg mx-auto flex flex-col justify-center items-center">
           <div className="mb-8 transform transition-all duration-500 ease-in-out">
-            <Car className="w-24 h-24 mb-4 mx-auto animate-bounce" />
+            <Bike className="w-24 h-24 mb-4 mx-auto animate-bounce" />
             <h1 className="text-4xl font-bold mb-4 text-center transition-all duration-1000 ease-in-out">
               EV Rental
             </h1>

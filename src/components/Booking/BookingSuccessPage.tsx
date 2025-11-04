@@ -40,6 +40,23 @@ const BookingSuccessPage: React.FC = () => {
             setFetchedBooking(foundBooking);
             if (holdingFeePaid) {
               toast.success('🎉 Thanh toán thành công! Booking đã được xác nhận.');
+              
+              // 📢 Gửi thông báo đến FloatingChat
+              // Chỉ gửi nếu chưa được gửi từ VNPayCallback (kiểm tra bằng sessionStorage)
+              const notificationSent = sessionStorage.getItem('payment_notification_sent');
+              
+              if (!notificationSent) {
+                window.dispatchEvent(new CustomEvent('paymentNotification', {
+                  detail: {
+                    type: 'success',
+                    bookingCode: bookingCodeFromUrl,
+                    message: 'Booking đã được xác nhận. Xe đã được giữ chỗ cho bạn.',
+                  }
+                }));
+                
+                // Đánh dấu đã gửi notification
+                sessionStorage.setItem('payment_notification_sent', 'true');
+              }
             }
           } else {
             toast.error('Không tìm thấy booking. Vui lòng kiểm tra lịch sử đặt xe.');

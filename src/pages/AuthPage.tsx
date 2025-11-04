@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock, User, Car, Zap, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Bike, Zap, ArrowLeft } from 'lucide-react';
 import GoogleLoginButton from '@/components/GoogleLoginButton';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -66,6 +66,15 @@ const AuthPage = () => {
   useEffect(() => {
     if (location.state?.message) {
       setSuccessMessage(location.state.message);
+      
+      // Tự động điền email và mật khẩu từ trang đăng ký
+      if (location.state.email && location.state.password) {
+        setLoginData({
+          email: location.state.email,
+          password: location.state.password
+        });
+      }
+      
       // Clear the state to prevent showing message on refresh
       window.history.replaceState(null, '');
     }
@@ -115,7 +124,9 @@ const AuthPage = () => {
 
     try {
       await login(loginData.email, loginData.password);
-      navigate('/');
+      // Chuyển hướng về trang trước đó nếu có, nếu không thì về trang chủ
+      const from = (location.state as any)?.from || '/';
+      navigate(from);
       } catch (err: any) {
         setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
     } finally {
@@ -160,9 +171,13 @@ const AuthPage = () => {
         email: registerData.email,
         password: registerData.password
       });
-      // Navigate to login page with success message
+      // Navigate to login page with success message, email and password
       navigate('/login', { 
-        state: { message: 'Đăng ký thành công! Vui lòng đăng nhập.' }
+        state: { 
+          message: 'Đăng ký thành công! Vui lòng đăng nhập.',
+          email: registerData.email,
+          password: registerData.password
+        }
       });
       } catch (err: any) {
         setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
@@ -191,9 +206,10 @@ const AuthPage = () => {
       // Show success message briefly
       setSuccessMessage('Đăng nhập Google thành công!');
       
-      // Navigate to home page after a short delay
+      // Chuyển hướng về trang trước đó nếu có, nếu không thì về trang chủ
+      const from = (location.state as any)?.from || '/';
       setTimeout(() => {
-        navigate('/');
+        navigate(from);
       }, 1500);
       
     } catch (err: any) {
@@ -246,7 +262,7 @@ const AuthPage = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700"></div>
           <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white h-full">
             <div className="mb-8 transform transition-all duration-500 ease-in-out">
-              <Car className="w-24 h-24 mb-4 mx-auto animate-bounce" />
+              <Bike className="w-24 h-24 mb-4 mx-auto animate-bounce" />
               <h1 className="text-4xl font-bold mb-4 text-center transition-all duration-1000 ease-in-out">
                 EV Rental
               </h1>
@@ -262,7 +278,7 @@ const AuthPage = () => {
                 <p className="text-sm opacity-80">100% sạch, không khí thải</p>
               </div>
               <div className="text-center transform transition-all duration-500 hover:scale-105">
-                <Car className="w-8 h-8 mx-auto mb-2" />
+                <Bike className="w-8 h-8 mx-auto mb-2" />
                 <h3 className="font-semibold">Đa dạng xe</h3>
                 <p className="text-sm opacity-80">Nhiều loại xe điện hiện đại</p>
               </div>
@@ -270,13 +286,13 @@ const AuthPage = () => {
             
             {/* Back to Home button */}
             <div className="flex justify-center mt-8">
-              <button
-                onClick={() => navigate('/')}
+              <Link
+                to="/"
                 className="group flex items-center space-x-3 px-6 py-3 bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 rounded-xl border border-white/30 shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 hover:-translate-y-1"
               >
                 <ArrowLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" />
                 <span className="text-sm font-semibold">Quay lại trang chủ</span>
-              </button>
+              </Link>
             </div>
           </div>
           

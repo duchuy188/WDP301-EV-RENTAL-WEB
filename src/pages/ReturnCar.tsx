@@ -8,7 +8,7 @@ import {
   Upload,
   X,
   CreditCard,
-  Car
+  Bike
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,7 +151,7 @@ const ReturnCar: React.FC = () => {
                   animate={{ opacity: 1 }}
                   className="text-center py-16"
                 >
-                  <Car className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <Bike className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                     Không có xe nào đang thuê
                   </h3>
