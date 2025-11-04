@@ -202,6 +202,44 @@ const FloatingChat: React.FC = () => {
     };
   }, []);
 
+  // Listen for payment notification event
+  useEffect(() => {
+    const handlePaymentNotification = (event: CustomEvent) => {
+      const { type, bookingCode, message, amount } = event.detail;
+      
+      let notificationMessage = '';
+      if (type === 'success') {
+        notificationMessage = `🎉 Thanh toán thành công! Mã đặt xe: ${bookingCode}. ${message || 'Bạn sẽ nhận được email xác nhận trong vài phút.'}`;
+      } else if (type === 'failed') {
+        notificationMessage = `❌ Thanh toán thất bại. ${message || 'Vui lòng thử lại.'}`;
+      } else if (type === 'cancelled') {
+        notificationMessage = `ℹ️ Bạn đã hủy thanh toán. ${message || ''}`;
+      } else {
+        notificationMessage = message || 'Có thông báo mới về thanh toán.';
+      }
+
+      const botMessage: ChatMessage = {
+        id: `payment-notif-${Date.now()}`,
+        type: 'bot',
+        message: notificationMessage,
+        timestamp: new Date(),
+      };
+
+      setChatMessages(prev => [...prev, botMessage]);
+      
+      // Auto open chat if it's closed
+      if (!isOpen) {
+        setIsOpen(true);
+        setIsMinimized(false);
+      }
+    };
+
+    window.addEventListener('paymentNotification', handlePaymentNotification as unknown as EventListener);
+    return () => {
+      window.removeEventListener('paymentNotification', handlePaymentNotification as unknown as EventListener);
+    };
+  }, [isOpen]);
+
   // No longer auto-send welcome message - let user choose from suggestions instead
 
   // small helper to read axios / fetch error messages
@@ -417,8 +455,8 @@ const FloatingChat: React.FC = () => {
         setHasMoved(true);
       }
 
-      const width = isOpen ? 320 : 56; // 320 for chat window, 56 for button
-      const height = isOpen ? (isMinimized ? 60 : 400) : 56;
+      const width = isOpen ? 400 : 56; // 400 for chat window, 56 for button
+      const height = isOpen ? (isMinimized ? 60 : 500) : 56;
 
       const newRight = window.innerWidth - e.clientX - dragOffset.x - width;
       const newBottom = window.innerHeight - e.clientY - dragOffset.y - height;
@@ -505,11 +543,11 @@ const FloatingChat: React.FC = () => {
               opacity: 1, 
               y: 0, 
               scale: 1,
-              height: isMinimized ? 60 : 400 
+              height: isMinimized ? 60 : 500 
             }}
             exit={{ opacity: 0, y: 100, scale: 0.8 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed z-50 w-80 transition-shadow duration-200"
+            className="fixed z-50 w-[400px] transition-shadow duration-200"
             style={{ 
               bottom: `${position.bottom}px`, 
               right: `${position.right}px`,
@@ -606,7 +644,7 @@ const FloatingChat: React.FC = () => {
                   >
                     <CardContent className="p-0">
                       {/* Messages */}
-                      <div className="h-64 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+                      <div className="h-[380px] overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
                         {/* Suggested Questions - Show only when no messages */}
                         {chatMessages.length === 0 && !isTyping && (
                           <motion.div
@@ -634,9 +672,9 @@ const FloatingChat: React.FC = () => {
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: idx * 0.05 }}
                                     onClick={() => handleChatSubmit(undefined, question)}
-                                    className="px-2.5 py-2 text-[11px] leading-tight rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-green-400 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 shadow-sm hover:shadow-md text-left group"
+                                    className="px-3 py-3 text-xs leading-relaxed rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-green-400 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 shadow-sm hover:shadow-md text-left group min-h-[60px] flex items-center"
                                   >
-                                    <span className="text-gray-700 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400 line-clamp-2">
+                                    <span className="text-gray-700 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400">
                                       {question}
                                     </span>
                                   </motion.button>

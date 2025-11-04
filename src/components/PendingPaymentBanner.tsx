@@ -6,13 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { bookingAPI } from '@/api/bookingAPI';
 import { MyPendingBookingItem } from '@/types/booking';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PendingPaymentBanner: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [pendingPayments, setPendingPayments] = useState<MyPendingBookingItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadPendingPayments = async () => {
+    // Chỉ load khi user đã đăng nhập
+    if (!isAuthenticated) {
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await bookingAPI.getMyPendingBookings();
@@ -29,12 +36,17 @@ const PendingPaymentBanner: React.FC = () => {
   };
 
   useEffect(() => {
+    // Chỉ load khi user đã đăng nhập
+    if (!isAuthenticated) {
+      return;
+    }
+
     loadPendingPayments();
 
     // Refresh mỗi 30 giây để cập nhật thời gian
     const interval = setInterval(loadPendingPayments, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]);
 
   const handleContinuePayment = (payment: MyPendingBookingItem) => {
     console.log('🔄 Continuing payment for:', payment.temp_id);

@@ -85,14 +85,49 @@ const VNPayCallback: React.FC = () => {
             localStorage.removeItem(`pending_payment_${id}`);
           });
           localStorage.removeItem('pending_booking_ids');
+
+          // 📢 Gửi thông báo đến FloatingChat
+          window.dispatchEvent(new CustomEvent('paymentNotification', {
+            detail: {
+              type: 'success',
+              bookingCode: bookingCode,
+              message: response.data.message || '',
+              amount: amount
+            }
+          }));
+          
+          // Đánh dấu đã gửi notification để tránh gửi lại ở các trang khác
+          sessionStorage.setItem('payment_notification_sent', 'true');
         } else {
           // Backend xác nhận thanh toán thất bại
           if (responseCode === '24') {
             setPaymentStatus('cancelled');
             toast.info('Bạn đã hủy thanh toán.');
+            
+            // 📢 Gửi thông báo hủy đến FloatingChat
+            window.dispatchEvent(new CustomEvent('paymentNotification', {
+              detail: {
+                type: 'cancelled',
+                message: response.data.message || 'Bạn đã hủy thanh toán.'
+              }
+            }));
+            
+            // Đánh dấu đã gửi notification
+            sessionStorage.setItem('payment_notification_sent', 'true');
           } else {
             setPaymentStatus('failed');
             toast.error(response.data.message || 'Thanh toán thất bại. Vui lòng thử lại.');
+            
+            // 📢 Gửi thông báo thất bại đến FloatingChat
+            window.dispatchEvent(new CustomEvent('paymentNotification', {
+              detail: {
+                type: 'failed',
+                message: response.data.message || 'Thanh toán thất bại. Vui lòng thử lại.'
+              }
+            }));
+            
+            // Đánh dấu đã gửi notification
+            sessionStorage.setItem('payment_notification_sent', 'true');
           }
         }
       } catch (error: any) {
@@ -105,12 +140,47 @@ const VNPayCallback: React.FC = () => {
           setPaymentStatus('success');
           setBookingCode(txnRef || '');
           toast.warning('Thanh toán thành công nhưng không thể xác thực với server. Vui lòng kiểm tra lịch sử.');
+          
+          // 📢 Gửi thông báo đến FloatingChat
+          window.dispatchEvent(new CustomEvent('paymentNotification', {
+            detail: {
+              type: 'success',
+              bookingCode: txnRef || '',
+              message: 'Thanh toán thành công nhưng không thể xác thực với server. Vui lòng kiểm tra lịch sử.',
+              amount: amount
+            }
+          }));
+          
+          // Đánh dấu đã gửi notification
+          sessionStorage.setItem('payment_notification_sent', 'true');
         } else if (responseCode === '24') {
           setPaymentStatus('cancelled');
           toast.info('Bạn đã hủy thanh toán.');
+          
+          // 📢 Gửi thông báo hủy đến FloatingChat
+          window.dispatchEvent(new CustomEvent('paymentNotification', {
+            detail: {
+              type: 'cancelled',
+              message: 'Bạn đã hủy thanh toán.'
+            }
+          }));
+          
+          // Đánh dấu đã gửi notification
+          sessionStorage.setItem('payment_notification_sent', 'true');
         } else {
           setPaymentStatus('failed');
           toast.error(error.response?.data?.message || 'Lỗi xác thực thanh toán.');
+          
+          // 📢 Gửi thông báo thất bại đến FloatingChat
+          window.dispatchEvent(new CustomEvent('paymentNotification', {
+            detail: {
+              type: 'failed',
+              message: error.response?.data?.message || 'Lỗi xác thực thanh toán.'
+            }
+          }));
+          
+          // Đánh dấu đã gửi notification
+          sessionStorage.setItem('payment_notification_sent', 'true');
         }
       } finally {
         setIsProcessing(false);
@@ -135,8 +205,18 @@ const VNPayCallback: React.FC = () => {
           });
           localStorage.removeItem('pending_booking_ids');
           
+          // Xóa flag notification sau 1 giây để tránh gửi lại ở trang tiếp theo
+          setTimeout(() => {
+            sessionStorage.removeItem('payment_notification_sent');
+          }, 1000);
+          
           navigate('/history', { replace: true });
         } else {
+          // Xóa flag notification sau 1 giây
+          setTimeout(() => {
+            sessionStorage.removeItem('payment_notification_sent');
+          }, 1000);
+          
           navigate('/find-car', { 
             replace: true,
             state: { 

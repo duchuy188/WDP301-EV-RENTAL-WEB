@@ -72,13 +72,22 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       return;
     }
 
-    // Check if start_date is at least 24 hours from now
+    // Check if start_date is at least 24 hours from now - Kết hợp cả giờ nhận xe
     const startDate = new Date(formData.start_date);
+    
+    // Thêm pickup_time vào startDate để tính chính xác thời gian nhận xe
+    if (booking?.pickup_time) {
+      const [hours, minutes] = booking.pickup_time.split(':').map(s => parseInt(s, 10));
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        startDate.setHours(hours, minutes, 0, 0);
+      }
+    }
+    
     const now = new Date();
     const hoursDiff = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
     
     if (hoursDiff < 24) {
-      toast.error('Ngày bắt đầu phải ít nhất 24 giờ kể từ bây giờ');
+      toast.error('Thời gian nhận xe phải ít nhất 24 giờ kể từ bây giờ');
       return;
     }
 

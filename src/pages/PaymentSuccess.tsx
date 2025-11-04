@@ -19,6 +19,26 @@ const PaymentSuccess: React.FC = () => {
   const transactionId = searchParams.get('transactionId') || searchParams.get('transaction_id');
 
   useEffect(() => {
+    // 📢 Gửi thông báo đến FloatingChat khi trang load
+    // Chỉ gửi nếu chưa được gửi từ VNPayCallback (kiểm tra bằng sessionStorage)
+    const notificationSent = sessionStorage.getItem('payment_notification_sent');
+    
+    if (bookingCode && bookingCode !== 'N/A' && !notificationSent) {
+      window.dispatchEvent(new CustomEvent('paymentNotification', {
+        detail: {
+          type: 'success',
+          bookingCode: bookingCode,
+          message: 'Đặt xe của bạn đã được xác nhận. Bạn sẽ nhận được email xác nhận kèm mã QR code trong vài phút.',
+          amount: amount
+        }
+      }));
+      
+      // Đánh dấu đã gửi notification
+      sessionStorage.setItem('payment_notification_sent', 'true');
+    }
+  }, [bookingCode, amount]);
+
+  useEffect(() => {
     // Countdown timer
     const countdownTimer = setInterval(() => {
       setCountdown((prev) => prev - 1);
@@ -31,6 +51,8 @@ const PaymentSuccess: React.FC = () => {
     // Auto redirect khi countdown đạt 0
     if (countdown <= 0) {
       const redirectTimer = setTimeout(() => {
+        // Xóa flag notification trước khi redirect
+        sessionStorage.removeItem('payment_notification_sent');
         navigate('/history', { replace: true });
       }, 100);
       

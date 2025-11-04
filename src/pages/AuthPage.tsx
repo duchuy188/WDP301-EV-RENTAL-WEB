@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -270,13 +270,13 @@ const AuthPage = () => {
             
             {/* Back to Home button */}
             <div className="flex justify-center mt-8">
-              <button
-                onClick={() => navigate('/')}
+              <Link
+                to="/"
                 className="group flex items-center space-x-3 px-6 py-3 bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 rounded-xl border border-white/30 shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 hover:-translate-y-1"
               >
                 <ArrowLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" />
                 <span className="text-sm font-semibold">Quay lại trang chủ</span>
-              </button>
+              </Link>
             </div>
           </div>
           

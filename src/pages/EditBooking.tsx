@@ -73,7 +73,7 @@ const EditBooking: React.FC = () => {
         ]);
 
         if (stationsResponse?.stations) {
-          setStations(stationsResponse.stations);
+          setStations(stationsResponse.stations as Station[]);
         }
 
         if (vehiclesResponse?.vehicles) {
@@ -102,15 +102,15 @@ const EditBooking: React.FC = () => {
           setSelectedModel(bookingData.vehicle_id.model);
           setSelectedColor(bookingData.vehicle_id.color || '');
           
-          // Create vehicle object for sidebar display
+          // Create vehicle object for sidebar display  
           const vehicleFromBooking: VehicleListItemType = {
             brand: bookingData.vehicle_id.brand,
-            model: bookingData.vehicle_id.model,
+            model: bookingData.vehicle_id.model,  
             year: 0,
             type: 'Xe máy điện',
             color: bookingData.vehicle_id.color || '',
-            battery_capacity: bookingData.vehicle_id.battery_capacity || 0,
-            max_range: bookingData.vehicle_id.max_range || 0,
+            battery_capacity: 0,
+            max_range: 0,
             max_speed: 0,
             power: 0,
             price_per_day: bookingData.price_per_day || 0,
@@ -119,6 +119,9 @@ const EditBooking: React.FC = () => {
             sample_image: bookingData.vehicle_id.images?.[0] || '',
             sample_vehicle_id: bookingData.vehicle_id._id,
             stations: [],
+            total_available_quantity: 0,
+            all_vehicle_ids: [],
+            color_images: [],
           };
           setSelectedVehicle(vehicleFromBooking);
         }
@@ -165,7 +168,7 @@ const EditBooking: React.FC = () => {
 
           console.log('✅ Filtered vehicles:', filteredVehicles);
 
-          // Group filtered vehicles by model and color
+          // Group filtered vehicles by model and color - LƯU LẠI THÔNG TIN ẢNH
           const grouped = filteredVehicles.reduce((acc: any, vehicle: any) => {
             const key = `${vehicle.model}-${vehicle.color || 'default'}`;
             if (!acc[key]) {
@@ -175,6 +178,16 @@ const EditBooking: React.FC = () => {
                 brand: vehicle.brand,
                 available_count: 1,
                 price_per_day: vehicle.price_per_day || 0,
+                // Lưu lại thông tin ảnh và các thông tin khác
+                sample_image: vehicle.sample_image || vehicle.images?.[0] || '',
+                battery_capacity: vehicle.battery_capacity || 0,
+                max_range: vehicle.max_range || 0,
+                max_speed: vehicle.max_speed || 0,
+                power: vehicle.power || 0,
+                deposit_percentage: vehicle.deposit_percentage || 0,
+                sample_vehicle_id: vehicle.sample_vehicle_id || vehicle._id || '',
+                year: vehicle.year || 0,
+                type: vehicle.type || 'Xe máy điện',
               };
             } else {
               acc[key].available_count += 1;
@@ -197,6 +210,39 @@ const EditBooking: React.FC = () => {
 
     fetchVehicles();
   }, [selectedStation]);
+
+  // Update selectedVehicle when model/color changes (CẬP NHẬT ẢNH KHI CHỌN XE MỚI)
+  useEffect(() => {
+    if (selectedModel && selectedColor && vehicles.length > 0) {
+      const vehicleData = vehicles.find(v => v.model === selectedModel && v.color === selectedColor);
+      
+      if (vehicleData) {
+        const updatedVehicle: VehicleListItemType = {
+          brand: vehicleData.brand,
+          model: vehicleData.model,
+          year: vehicleData.year || 0,
+          type: vehicleData.type || 'Xe máy điện',
+          color: vehicleData.color,
+          battery_capacity: vehicleData.battery_capacity || 0,
+          max_range: vehicleData.max_range || 0,
+          max_speed: vehicleData.max_speed || 0,
+          power: vehicleData.power || 0,
+          price_per_day: vehicleData.price_per_day || 0,
+          deposit_percentage: vehicleData.deposit_percentage || 0,
+          available_quantity: vehicleData.available_count || 1,
+          sample_image: vehicleData.sample_image || '',
+          sample_vehicle_id: vehicleData.sample_vehicle_id || '',
+          stations: [],
+          total_available_quantity: 0,
+          all_vehicle_ids: [],
+          color_images: [],
+        };
+        
+        console.log('🔄 Updated selectedVehicle with image:', updatedVehicle.sample_image);
+        setSelectedVehicle(updatedVehicle);
+      }
+    }
+  }, [selectedModel, selectedColor, vehicles]);
 
   // Calculate price
   const calculateDays = () => {
@@ -268,13 +314,22 @@ const EditBooking: React.FC = () => {
         return;
       }
 
-      // Check 24h rule
+      // Check 24h rule - Kết hợp cả ngày và giờ nhận xe
       const startDate = new Date(bookingDate);
+      
+      // Thêm pickup_time vào startDate để tính chính xác thời gian nhận xe
+      if (booking?.pickup_time) {
+        const [hours, minutes] = booking.pickup_time.split(':').map(s => parseInt(s, 10));
+        if (!isNaN(hours) && !isNaN(minutes)) {
+          startDate.setHours(hours, minutes, 0, 0);
+        }
+      }
+      
       const now = new Date();
       const hoursDiff = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
       
       if (hoursDiff < 24) {
-        toast.error('Ngày bắt đầu phải ít nhất 24 giờ kể từ bây giờ');
+        toast.error('Thời gian nhận xe phải ít nhất 24 giờ kể từ bây giờ');
         return;
       }
 
@@ -311,7 +366,7 @@ const EditBooking: React.FC = () => {
       await bookingAPI.updateBooking(booking._id, updateData);
       
       toast.success('Chỉnh sửa đặt xe thành công!');
-      navigate('/history');
+      navigate('/profile', { state: { activeTab: 'booking-history' } });
     } catch (error: any) {
       console.error('Edit booking failed:', error);
       
@@ -335,23 +390,31 @@ const EditBooking: React.FC = () => {
   };
 
   const updateVehicleFromAlternative = (alt: AvailableAlternative) => {
+    // Tìm ảnh từ vehicles list nếu có
+    const vehicleData = vehicles.find(v => v.model === alt.model && v.color === alt.color);
+    
     const vehicleFromAlt: VehicleListItemType = {
       brand: alt.brand,
       model: alt.model,
-      year: 0,
-      type: 'Xe máy điện',
+      year: vehicleData?.year || 0,
+      type: vehicleData?.type || 'Xe máy điện',
       color: alt.color,
-      battery_capacity: 0,
-      max_range: 0,
-      max_speed: 0,
-      power: 0,
+      battery_capacity: vehicleData?.battery_capacity || 0,
+      max_range: vehicleData?.max_range || 0,
+      max_speed: vehicleData?.max_speed || 0,
+      power: vehicleData?.power || 0,
       price_per_day: alt.price_per_day,
-      deposit_percentage: 0,
+      deposit_percentage: vehicleData?.deposit_percentage || 0,
       available_quantity: alt.available_count,
-      sample_image: '',
-      sample_vehicle_id: '',
+      sample_image: vehicleData?.sample_image || '',
+      sample_vehicle_id: vehicleData?.sample_vehicle_id || '',
       stations: [],
+      total_available_quantity: 0,
+      all_vehicle_ids: [],
+      color_images: [],
     };
+    
+    console.log('🔄 Updated alternative vehicle with image:', vehicleFromAlt.sample_image);
     setSelectedVehicle(vehicleFromAlt);
     setSelectedModel(alt.model);
     setSelectedColor(alt.color);

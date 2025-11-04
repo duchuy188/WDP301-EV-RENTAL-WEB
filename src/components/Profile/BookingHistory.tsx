@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
-  Edit,
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -159,31 +158,56 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
 
   // Helper function to check if booking can be edited
   const canEditBooking = (booking: Booking): { canEdit: boolean; reason?: string } => {
+    console.log('🔍 Checking edit booking:', booking.code);
+    
     // Điều kiện 1: Phải ở trạng thái 'pending' (chưa confirm)
+    console.log('  Status:', booking.status);
     if (booking.status !== 'pending') {
+      console.log('  ❌ Status không phải pending');
       return { canEdit: false, reason: 'Chỉ có thể chỉnh sửa đặt xe ở trạng thái "Đang chờ"' };
     }
 
     // Điều kiện 2: Chỉ cho phép edit booking online đã thanh toán phí giữ chỗ
+    console.log('  Booking type:', booking.booking_type);
     if (booking.booking_type !== 'online') {
+      console.log('  ❌ Không phải booking online');
       return { canEdit: false, reason: 'Chỉ có thể chỉnh sửa đặt xe online' };
     }
 
     // Điều kiện 3: CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1)
     const editCount = booking.edit_count || 0;
+    console.log('  Edit count:', editCount);
     if (editCount >= 1) {
+      console.log('  ❌ Đã edit 1 lần rồi');
       return { canEdit: false, reason: 'Bạn đã sử dụng hết lượt chỉnh sửa (tối đa 1 lần)' };
     }
 
     // Điều kiện 4: Phải edit trước thời gian nhận xe ít nhất 24 giờ
+    // Kết hợp cả start_date và pickup_time để tính chính xác
     const startDate = parseBookingDate(booking.start_date);
+    console.log('  Start date (parsed):', startDate);
+    console.log('  Pickup time:', booking.pickup_time);
+    
+    // Thêm pickup_time vào startDate để có thời gian chính xác
+    if (booking.pickup_time) {
+      const [hours, minutes] = booking.pickup_time.split(':').map(s => parseInt(s, 10));
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        startDate.setHours(hours, minutes, 0, 0);
+        console.log('  Start date with time:', startDate);
+      }
+    }
+    
     const now = new Date();
     const hoursDiff = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    console.log('  Now:', now);
+    console.log('  Hours diff:', hoursDiff.toFixed(2), 'giờ');
     
     if (hoursDiff < 24) {
+      console.log('  ❌ Còn dưới 24 giờ');
       return { canEdit: false, reason: 'Phải chỉnh sửa trước thời gian nhận xe ít nhất 24 giờ' };
     }
 
+    console.log('  ✅ CÓ THỂ EDIT');
     return { canEdit: true };
   };
 
@@ -558,17 +582,6 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                                 <Button size="sm" onClick={() => openDetail(booking)} aria-label={`Xem chi tiết ${booking.code}`}>
                                   Xem chi tiết
                                 </Button>
-                                {/* Show Edit button only if booking can be edited */}
-                                {canEditBooking(booking).canEdit && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => openEditDialog(booking)}
-                                    aria-label={`Chỉnh sửa ${booking.code}`}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                )}
                                 {/* Show Cancel button only for pending status */}
                                 {booking.status === 'pending' && (
                                   <Button
@@ -670,7 +683,17 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           <DialogHeader>
             <DialogTitle>Chi tiết đặt xe</DialogTitle>
           </DialogHeader>
-          {selectedBooking && <ViewBooking booking={selectedBooking} />}
+          {selectedBooking && (
+            <ViewBooking 
+              booking={selectedBooking} 
+              onEdit={() => {
+                setDetailOpen(false);
+                openEditDialog(selectedBooking);
+              }}
+              canEdit={canEditBooking(selectedBooking).canEdit}
+              editDisabledReason={canEditBooking(selectedBooking).reason}
+            />
+          )}
         </DialogContent>  
       </Dialog>
       {/* Cancel confirmation dialog */}
