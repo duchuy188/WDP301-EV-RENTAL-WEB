@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Clock, 
-  Car, 
+  Bike, 
   ChevronLeft,
   ChevronRight,
   CreditCard,
@@ -390,7 +390,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Car className="h-5 w-5" />
+              <Bike className="h-5 w-5" />
               Lịch sử đặt xe
             </CardTitle>
           </CardHeader>
@@ -416,7 +416,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           <Card>
             <CardContent className="p-6">
               <div className="text-center">
-                <Car className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                <Bike className="h-12 w-12 text-blue-500 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   Chào mừng đến với dịch vụ đặt xe!
                 </h3>
@@ -444,7 +444,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
             <CardContent className="p-4">
               <div className="flex items-center">
                 <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <Car className="h-5 w-5 text-green-600" />
+                  <Bike className="h-5 w-5 text-green-600" />
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng chuyến</p>
@@ -508,7 +508,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="flex items-center gap-2">
-                <Car className="h-5 w-5 text-blue-600" />
+                <Bike className="h-5 w-5 text-blue-600" />
                 <span className="text-lg font-bold text-gray-900 dark:text-white">Lịch sử đặt xe</span>
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-2">
@@ -653,7 +653,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
               </>
             ) : (
               <div className="text-center py-8">
-                <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <Bike className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 {!hasBookingHistory && insights.length > 0 ? (
                   <div className="space-y-2">
                     {insights.map((insight, index) => (

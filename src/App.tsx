@@ -3,6 +3,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import Layout from './components/Layout/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
 import Home from './pages/Home';
@@ -47,21 +48,21 @@ function App() {
                 <Route index element={<Home />} />
                 <Route path="find-car" element={<FindCar />} />
                 <Route path="/vehicle/:id" element={<VehicleDetail />} />
-                <Route path="booking" element={<Booking />} />
-                <Route path="booking/edit/:id" element={<EditBooking />} />
-                <Route path="payment" element={<VNPayPayment />} />
+                <Route path="booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
+                <Route path="booking/edit/:id" element={<ProtectedRoute><EditBooking /></ProtectedRoute>} />
+                <Route path="payment" element={<ProtectedRoute><VNPayPayment /></ProtectedRoute>} />
                 <Route path="payment/callback" element={<VNPayCallback />} />
-                <Route path="payment-success" element={<PaymentSuccess />} />
-                <Route path="payment-failed" element={<PaymentFailed />} />
-                <Route path="booking-failed" element={<PaymentFailed />} />
-                <Route path="booking-success" element={<BookingSuccessPage />} />
-                <Route path="checkin" element={<CheckIn />} />
-                <Route path="return" element={<ReturnCar />} />
-                <Route path="history" element={<History />} />
-                <Route path="profile" element={<Profile />} />
+                <Route path="payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+                <Route path="payment-failed" element={<ProtectedRoute><PaymentFailed /></ProtectedRoute>} />
+                <Route path="booking-failed" element={<ProtectedRoute><PaymentFailed /></ProtectedRoute>} />
+                <Route path="booking-success" element={<ProtectedRoute><BookingSuccessPage /></ProtectedRoute>} />
+                <Route path="checkin" element={<ProtectedRoute><CheckIn /></ProtectedRoute>} />
+                <Route path="return" element={<ProtectedRoute><ReturnCar /></ProtectedRoute>} />
+                <Route path="history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+                <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="support" element={<Support />} />
                 <Route path="chatbot" element={<ChatbotPage />} />
-                <Route path="chat-history" element={<ChatHistoryPage />} />
+                <Route path="chat-history" element={<ProtectedRoute><ChatHistoryPage /></ProtectedRoute>} />
                 <Route path="stations" element={<StationPage />} />
                 <Route path="station/:id" element={<StationDetail />} />
               </Route>

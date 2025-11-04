@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, MapPin, Car, FileText, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, MapPin, Bike, FileText, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -152,7 +152,7 @@ const StepEditBooking: React.FC<Props> = ({
       {/* Vehicle Selection */}
       <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-750 rounded-xl border-2 border-purple-200 dark:border-gray-700 p-6 shadow-md">
         <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-gray-800 dark:text-gray-100">
-          <Car className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          <Bike className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           Chọn xe tại trạm đã chọn
         </h3>
         {vehicles.length > 0 ? (
@@ -173,7 +173,7 @@ const StepEditBooking: React.FC<Props> = ({
           </div>
         ) : vehicles.length === 0 ? (
           <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-lg">
-            <Car className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <Bike className="h-12 w-12 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-600 dark:text-gray-400">
               {selectedStation ? 'Trạm này chưa có xe' : 'Vui lòng chọn trạm trước'}
             </p>

@@ -32,6 +32,15 @@ const Login = () => {
       } else {
         setSuccessMessage(location.state.message);
       }
+      
+      // Tự động điền email và mật khẩu từ trang đăng ký
+      if (location.state.email && location.state.password) {
+        setFormData({
+          email: location.state.email,
+          password: location.state.password
+        });
+      }
+      
       // Clear the state to prevent showing message on refresh
       window.history.replaceState(null, '');
     }

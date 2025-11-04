@@ -19,11 +19,13 @@ import VehicleImage from '@/components/VehicleImage';
 import { vehiclesAPI } from '@/api/vehiclesAPI';
 import { Vehicle, AvailableColor, Station } from '@/types/vehicles';
 import { getVehicleTypeInVietnamese } from '@/utils/vehicleUtils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const VehicleDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,6 +156,18 @@ const VehicleDetail: React.FC = () => {
 
 
   const handleBookNow = () => {
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    if (!isAuthenticated) {
+      // Chuyển hướng đến trang đăng nhập và lưu lại trang hiện tại
+      navigate('/login', {
+        state: {
+          from: location.pathname,
+          message: 'Vui lòng đăng nhập để đặt xe'
+        }
+      });
+      return;
+    }
+
     // Prepare a vehicle object enriched with the normalized station list and the current available colors
     const vehicleToPass = vehicle ? {
       ...vehicle,

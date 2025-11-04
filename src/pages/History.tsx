@@ -1,19 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, Car, BarChart3, TrendingUp, MapPin, Bike, AlertCircle, Award, Navigation } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Clock, Bike, BarChart3, TrendingUp, MapPin, AlertCircle, Award, Navigation, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { mockUser } from '@/data/mockData';
 import { authAPI } from '@/api/personaAPI';
 import { UserStatsData } from '@/types/perssonal';
 import { formatDateVN, formatDateTimeVN } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/utils/toast';
 
 const History: React.FC = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [userStats, setUserStats] = useState<UserStatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Kiểm tra đăng nhập
+    if (!isAuthenticated) {
+      toast.warning("Yêu cầu đăng nhập", "Bạn phải đăng nhập để xem thống kê");
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -28,7 +38,7 @@ const History: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -114,6 +124,55 @@ const History: React.FC = () => {
   // Use createdAt from auth user, fallback to last_rental_date or mockUser
   const memberSince = authUser?.createdAt || userStats?.overview.last_rental_date || mockUser.memberSince;
 
+  // Hiển thị thông báo yêu cầu đăng nhập nếu chưa đăng nhập
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50/30 via-white to-green-50/20 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="text-center"
+            >
+              <Card className="border-green-100 dark:border-green-900/20 shadow-xl max-w-md mx-auto">
+                <CardContent className="p-8">
+                  <div className="mb-6">
+                    <div className="mx-auto w-20 h-20 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-full flex items-center justify-center mb-4">
+                      <Lock className="h-10 w-10 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                      Yêu cầu đăng nhập
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Bạn phải đăng nhập để xem thống kê cá nhân
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      onClick={() => navigate('/login')}
+                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    >
+                      Đăng nhập ngay
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/')}
+                      variant="outline"
+                      className="w-full border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                    >
+                      Về trang chủ
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/30 via-white to-green-50/20 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -134,7 +193,7 @@ const History: React.FC = () => {
             <div className="relative">
               <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-green-600"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <Car className="h-10 w-10 text-green-600 animate-pulse" />
+                <Bike className="h-10 w-10 text-green-600 animate-pulse" />
               </div>
             </div>
           </div>
@@ -147,7 +206,7 @@ const History: React.FC = () => {
                   <CardContent className="p-6">
                     <div className="flex items-center">
                       <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl">
-                        <Car className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        <Bike className="h-6 w-6 text-green-600 dark:text-green-400" />
                       </div>
                       <div className="ml-4">
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng đặt xe</p>

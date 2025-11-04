@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   Calendar, 
-  Car, 
+  Bike, 
   User, 
   MapPin, 
   FileText, 
@@ -224,7 +224,7 @@ const ContractDetail: React.FC<Props> = ({ contract }) => {
           {/* Xe */}
           <div className="bg-white dark:bg-gray-800 rounded p-2 border border-blue-200 dark:border-blue-700">
             <div className="flex items-start gap-1.5">
-              <Car className="h-3 w-3 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <Bike className="h-3 w-3 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-gray-600 dark:text-gray-400">Xe</p>
                 <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{contract.vehicle.name}</p>

@@ -7,7 +7,7 @@ import {
   Download,
   Eye,
   Calendar,
-  Car,
+  Bike,
   MapPin,
   Hash,
   ExternalLink,
@@ -257,7 +257,7 @@ const ContractHistory: React.FC<ContractHistoryProps> = ({ className }) => {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Car className="h-4 w-4 text-blue-600" />
+                              <Bike className="h-4 w-4 text-blue-600" />
                               <div>
                                 <p className="font-medium">{contract.vehicle.name}</p>
                                 <p className="text-xs text-gray-500">{contract.vehicle.license_plate}</p>
@@ -335,7 +335,7 @@ const ContractHistory: React.FC<ContractHistoryProps> = ({ className }) => {
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2">
-                            <Car className="h-4 w-4 text-blue-600" />
+                            <Bike className="h-4 w-4 text-blue-600" />
                             <span className="font-medium">{contract.vehicle.name}</span>
                             <span className="text-gray-500">({contract.vehicle.license_plate})</span>
                           </div>

@@ -40,6 +40,18 @@ const Header: React.FC = () => {
     navigate('/');
   };
 
+  const handleNavClick = (path: string, label: string, e: React.MouseEvent) => {
+    // Kiểm tra nếu là trang thống kê và chưa đăng nhập
+    if (path === '/history' && !isAuthenticated) {
+      e.preventDefault();
+      toast.warning("Yêu cầu đăng nhập", "Bạn phải đăng nhập để xem thống kê");
+      navigate('/login');
+      return;
+    }
+    // Đóng mobile menu nếu đang mở
+    setIsMobileMenuOpen(false);
+  };
+
   const navItems = [
     { path: '/', label: 'Trang chủ' },
     // { path: '/stations', label: 'Trạm' },
@@ -73,6 +85,7 @@ const Header: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={(e) => handleNavClick(item.path, item.label, e)}
                 className={`text-sm font-medium transition-colors hover:text-green-600 ${
                   location.pathname === item.path
                     ? 'text-green-600'
@@ -191,12 +204,12 @@ const Header: React.FC = () => {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={(e) => handleNavClick(item.path, item.label, e)}
                   className={`text-base font-medium transition-colors hover:text-green-600 px-2 py-2 rounded-md ${
                     location.pathname === item.path
                       ? 'text-green-600 bg-green-50 dark:bg-green-900/20'
                       : 'text-gray-700 dark:text-gray-300'
                   }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.label}
                 </Link>
