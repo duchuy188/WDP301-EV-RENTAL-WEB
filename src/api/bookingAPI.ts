@@ -45,7 +45,6 @@ export const bookingAPI = {
 
   // Update/Edit a booking by id
   // Điều kiện: 
-  // - Chỉ cho phép edit booking online đã thanh toán và confirmed
   // - Phải ở trạng thái 'pending' (chưa confirm)
   // - CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1)
   // - Phải edit trước thời gian nhận xe ít nhất 24 giờ

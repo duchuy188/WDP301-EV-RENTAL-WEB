@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
-  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,14 +166,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       return { canEdit: false, reason: 'Chỉ có thể chỉnh sửa đặt xe ở trạng thái "Đang chờ"' };
     }
 
-    // Điều kiện 2: Chỉ cho phép edit booking online đã thanh toán phí giữ chỗ
-    console.log('  Booking type:', booking.booking_type);
-    if (booking.booking_type !== 'online') {
-      console.log('  ❌ Không phải booking online');
-      return { canEdit: false, reason: 'Chỉ có thể chỉnh sửa đặt xe online' };
-    }
-
-    // Điều kiện 3: CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1)
+    // Điều kiện 2: CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1)
     const editCount = booking.edit_count || 0;
     console.log('  Edit count:', editCount);
     if (editCount >= 1) {
@@ -182,7 +174,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       return { canEdit: false, reason: 'Bạn đã sử dụng hết lượt chỉnh sửa (tối đa 1 lần)' };
     }
 
-    // Điều kiện 4: Phải edit trước thời gian nhận xe ít nhất 24 giờ
+    // Điều kiện 3: Phải edit trước thời gian nhận xe ít nhất 24 giờ
     // Kết hợp cả start_date và pickup_time để tính chính xác
     const startDate = parseBookingDate(booking.start_date);
     console.log('  Start date (parsed):', startDate);
