@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
-  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,14 +166,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       return { canEdit: false, reason: 'Chỉ có thể chỉnh sửa đặt xe ở trạng thái "Đang chờ"' };
     }
 
-    // Điều kiện 2: Chỉ cho phép edit booking online đã thanh toán phí giữ chỗ
-    console.log('  Booking type:', booking.booking_type);
-    if (booking.booking_type !== 'online') {
-      console.log('  ❌ Không phải booking online');
-      return { canEdit: false, reason: 'Chỉ có thể chỉnh sửa đặt xe online' };
-    }
-
-    // Điều kiện 3: CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1)
+    // Điều kiện 2: CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1)
     const editCount = booking.edit_count || 0;
     console.log('  Edit count:', editCount);
     if (editCount >= 1) {
@@ -182,7 +174,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       return { canEdit: false, reason: 'Bạn đã sử dụng hết lượt chỉnh sửa (tối đa 1 lần)' };
     }
 
-    // Điều kiện 4: Phải edit trước thời gian nhận xe ít nhất 24 giờ
+    // Điều kiện 3: Phải edit trước thời gian nhận xe ít nhất 24 giờ
     // Kết hợp cả start_date và pickup_time để tính chính xác
     const startDate = parseBookingDate(booking.start_date);
     console.log('  Start date (parsed):', startDate);
@@ -542,42 +534,42 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
             {paginatedBookings.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table className="border border-gray-200 rounded-lg min-w-[800px]">
+                  <Table className="border border-gray-200 rounded-lg">
                     <TableHeader className="bg-white dark:bg-gray-800">
                       <TableRow>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[90px]">Mã</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[110px]">Xe</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[200px]">Trạm</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Thời gian</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Trạng thái</TableHead>
-                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300 w-[200px]">Hành động</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Mã</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Xe</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Trạm</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Thời gian</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
+                        <TableHead className="px-3 py-2 text-right text-gray-600 dark:text-gray-300">Hành động</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedBookings.map((booking: Booking) => {
                         return (
                           <TableRow key={booking._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[90px] truncate">
+                            <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium truncate">
                               {booking.code ?? booking._id}
                             </TableCell>
-                            <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[110px] truncate">
+                            <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium truncate">
                               {booking.vehicle_id?.license_plate ?? booking.vehicle_id?.name ?? '-'}
                             </TableCell>
-                            <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate">
+                            <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 truncate">
                               {booking.station_id?.name ?? '-'}
                             </TableCell>
-                            <TableCell className="px-3 py-2 max-w-[100px]">
+                            <TableCell className="px-3 py-2">
                               <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                 <div className="font-medium">{formatTime(booking.createdAt)}</div>
                                 <div className="text-xs">{formatDate(booking.createdAt)}</div>
                               </div>
                             </TableCell>
-                            <TableCell className="px-3 py-2 max-w-[100px]">
+                            <TableCell className="px-3 py-2">
                               <Badge className={`${getStatusColor(booking.status)} px-2 py-1 rounded-md text-sm whitespace-nowrap`}> 
                                 {getStatusText(booking.status)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="px-3 py-2 text-right max-w-[200px]">
+                            <TableCell className="px-3 py-2 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <Button size="sm" onClick={() => openDetail(booking)} aria-label={`Xem chi tiết ${booking.code}`}>
                                   Xem chi tiết
@@ -595,19 +587,6 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
                                     aria-label={`Hủy đặt xe ${booking.code}`}
                                   >
                                     Hủy
-                                  </Button>
-                                )}
-                                {/* Show "Book Again" button only for completed bookings */}
-                                {booking.status === 'completed' && (
-                                  <Button
-                                    size="sm"
-                                    variant="default"
-                                    onClick={() => handleBookAgain(booking)}
-                                    aria-label={`Thuê lại xe ${booking.code}`}
-                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                  >
-                                    <RefreshCw className="h-4 w-4 mr-1" />
-                                    Thuê lại
                                   </Button>
                                 )}
                               </div>
@@ -692,6 +671,11 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
               }}
               canEdit={canEditBooking(selectedBooking).canEdit}
               editDisabledReason={canEditBooking(selectedBooking).reason}
+              onRebook={() => {
+                setDetailOpen(false);
+                handleBookAgain(selectedBooking);
+              }}
+              canRebook={selectedBooking.status === 'completed'}
             />
           )}
         </DialogContent>  

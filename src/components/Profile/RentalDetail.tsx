@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Bike, User, MapPin, CreditCard, FileText, Clock, Gauge, Battery, Sparkles, Hash, Download, Eye, Star, AlertCircle, UserCog, Image as ImageIcon, DollarSign } from 'lucide-react';
+import { Calendar, Bike, MapPin, CreditCard, FileText, Clock, Gauge, Battery, Sparkles, Hash, Download, Eye, Star, AlertCircle, UserCog, Image as ImageIcon, DollarSign, RefreshCw } from 'lucide-react';
 import { Rental } from '@/types/rentals';
 import { Contract } from '@/types/contracts';
 import { Feedback } from '@/types/feedback';
@@ -14,6 +14,7 @@ import { toast } from '@/utils/toast';
 
 interface Props {
   rental: Rental;
+  onRebook?: () => void;
 }
 
 const parseBookingDate = (dateString?: string | null) => {
@@ -88,7 +89,7 @@ const getStatusText = (status: string) => {
   }
 };
 
-const RentalDetail: React.FC<Props> = ({ rental }) => {
+const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [loadingContract, setLoadingContract] = useState(true);
@@ -283,16 +284,29 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
               <h3 className="font-bold text-xl text-white font-mono">{rental.code}</h3>
             </div>
           </div>
-          <Badge className={`${getStatusColor(rental.status)} text-sm px-3 py-1.5 font-semibold`}>
-            {getStatusText(rental.status)}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={`${getStatusColor(rental.status)} text-sm px-3 py-1.5 font-semibold`}>
+              {getStatusText(rental.status)}
+            </Badge>
+            {onRebook && rental.status === 'completed' && (
+              <Button
+                onClick={onRebook}
+                className="bg-white hover:bg-white/90 text-green-600 border-white hover:border-green-100"
+                size="sm"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Thuê lại
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Grid layout 3 cột với card hiện đại */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Card 1: Thông tin người thuê & xe */}
+        {/* Card 1: Thông tin xe */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700">
+          {/* Người thuê section - Hidden
           <div className="p-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -322,6 +336,7 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
               )}
             </div>
           </div>
+          */}
           
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
@@ -426,35 +441,44 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
 
         {/* Card 3: Chi phí & Thanh toán */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700">
-          <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <DollarSign className="h-4 w-4 text-red-600 dark:text-red-400" />
+          {/* Chỉ hiển thị chi phí phát sinh nếu có phát sinh */}
+          {((rental.late_fee ?? 0) > 0 || (rental.damage_fee ?? 0) > 0 || (rental.other_fees ?? 0) > 0 || (rental.total_fees ?? 0) > 0) && (
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-1.5 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <DollarSign className="h-4 w-4 text-red-600 dark:text-red-400" />
+                </div>
+                <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Chi phí phát sinh</h4>
               </div>
-              <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Chi phí phát sinh</h4>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Phí trễ hạn:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{formatPrice(rental.late_fee ?? 0)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Phí hư hỏng:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{formatPrice(rental.damage_fee ?? 0)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Phí khác:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{formatPrice(rental.other_fees ?? 0)}</span>
-              </div>
-              <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-sm text-gray-700 dark:text-gray-300">Tổng phí phát sinh:</span>
-                  <span className="font-bold text-base text-red-600 dark:text-red-400">{formatPrice(rental.total_fees ?? 0)}</span>
+              
+              <div className="space-y-2">
+                {(rental.late_fee ?? 0) > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Phí trễ hạn:</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{formatPrice(rental.late_fee ?? 0)}</span>
+                  </div>
+                )}
+                {(rental.damage_fee ?? 0) > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Phí hư hỏng:</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{formatPrice(rental.damage_fee ?? 0)}</span>
+                  </div>
+                )}
+                {(rental.other_fees ?? 0) > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Phí khác:</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{formatPrice(rental.other_fees ?? 0)}</span>
+                  </div>
+                )}
+                <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-sm text-gray-700 dark:text-gray-300">Tổng phí phát sinh:</span>
+                    <span className="font-bold text-base text-red-600 dark:text-red-400">{formatPrice(rental.total_fees ?? 0)}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
           
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
@@ -908,7 +932,34 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
                   {feedback.comment && (
                     <div className="mt-4 pt-4 border-t-2 border-yellow-300 dark:border-yellow-700">
                       <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-400 mb-2">Nhận xét của bạn:</p>
-                      <p className="text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded p-3 border border-yellow-200 dark:border-yellow-700">{feedback.comment}</p>
+                      <p className="text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded p-3 border border-yellow-200 dark:border-yellow-700 break-all overflow-wrap-anywhere whitespace-normal">{feedback.comment}</p>
+                    </div>
+                  )}
+                  
+                  {/* Images - Hình ảnh đánh giá */}
+                  {feedback.images && feedback.images.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
+                      <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-2">
+                        Hình ảnh đánh giá ({feedback.images.length} ảnh)
+                      </p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {feedback.images.map((img, idx) => (
+                          <button 
+                            key={idx} 
+                            onClick={() => { setSelectedImage(img); setImageViewerOpen(true); }}
+                            className="relative group overflow-hidden rounded border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all"
+                          >
+                            <img 
+                              src={img} 
+                              alt={`Rating ${idx + 1}`} 
+                              className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-200"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                              <Eye className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -925,23 +976,74 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
                   {feedback.description && (
                     <div>
                       <p className="text-sm font-semibold text-red-800 dark:text-red-400 mb-1">Mô tả chi tiết</p>
-                      <p className="text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded p-3 border border-red-200 dark:border-red-700">{feedback.description}</p>
+                      <p className="text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded p-3 border border-red-200 dark:border-red-700 break-words whitespace-pre-wrap">{feedback.description}</p>
                     </div>
                   )}
-                  {feedback.category && (
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Danh mục</span>
-                      <Badge variant="outline" className="text-sm">{getCategoryText(feedback.category)}</Badge>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    {feedback.category && (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Danh mục</span>
+                        <Badge variant="outline" className="text-sm w-fit">{getCategoryText(feedback.category)}</Badge>
+                      </div>
+                    )}
+                    {feedback.status && (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Trạng thái</span>
+                        <Badge className={`w-fit ${feedback.status === 'resolved' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'}`}>
+                          {feedback.status === 'resolved' ? 'Đã giải quyết' : 'Đang xử lý'}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Staff Info - Nhân viên bị khiếu nại */}
+                  {feedback.staff_id && typeof feedback.staff_id === 'object' && (
+                    <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-700">
+                      <p className="text-xs font-medium text-orange-700 dark:text-orange-400 mb-2">Nhân viên liên quan</p>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {(feedback.staff_id as any).fullname || '-'}
+                        </p>
+                        {(feedback.staff_id as any).email && (
+                          <p className="text-xs text-gray-600 dark:text-gray-400">{(feedback.staff_id as any).email}</p>
+                        )}
+                        {feedback.staff_role && (
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {feedback.staff_role === 'pickup' ? 'Nhân viên giao xe' : feedback.staff_role === 'return' ? 'Nhân viên nhận xe' : feedback.staff_role}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   )}
-                  {feedback.status && (
-                    <div className="flex items-center justify-between py-2 border-t border-red-200 dark:border-red-700">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Trạng thái</span>
-                      <Badge className={feedback.status === 'resolved' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'}>
-                        {feedback.status === 'resolved' ? 'Đã giải quyết' : 'Đang xử lý'}
-                      </Badge>
+
+                  {/* Images - Hình ảnh khiếu nại */}
+                  {feedback.images && feedback.images.length > 0 && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
+                      <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-2">
+                        Hình ảnh khiếu nại ({feedback.images.length} ảnh)
+                      </p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {feedback.images.map((img, idx) => (
+                          <button 
+                            key={idx} 
+                            onClick={() => { setSelectedImage(img); setImageViewerOpen(true); }}
+                            className="relative group overflow-hidden rounded border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all"
+                          >
+                            <img 
+                              src={img} 
+                              alt={`Complaint ${idx + 1}`} 
+                              className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-200"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                              <Eye className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
+
                   {feedback.comment && (
                     <div className="mt-4 pt-4 border-t-2 border-red-300 dark:border-red-700">
                       <p className="text-sm font-semibold text-red-800 dark:text-red-400 mb-2">Bình luận:</p>
@@ -951,7 +1053,15 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
                   {feedback.response && (
                     <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded border-2 border-green-300 dark:border-green-700">
                       <p className="text-sm font-semibold text-green-800 dark:text-green-400 mb-2">Phản hồi từ hệ thống:</p>
-                      <p className="text-sm text-gray-900 dark:text-white">{feedback.response}</p>
+                      <p className="text-sm text-gray-900 dark:text-white break-words whitespace-pre-wrap">{feedback.response}</p>
+                    </div>
+                  )}
+
+                  {/* Created Date */}
+                  {feedback.createdAt && (
+                    <div className="pt-3 border-t border-red-200 dark:border-red-700 flex items-center justify-between">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Ngày tạo khiếu nại:</span>
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{formatDate(feedback.createdAt)}</span>
                     </div>
                   )}
                 </div>

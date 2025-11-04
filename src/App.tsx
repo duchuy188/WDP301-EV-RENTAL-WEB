@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { Toaster } from '@/components/ui/toaster';
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -34,9 +35,10 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <div className="min-h-screen bg-background text-foreground">
-            <Routes>
+        <NotificationProvider>
+          <Router>
+            <div className="min-h-screen bg-background text-foreground">
+              <Routes>
             {/* Authentication routes */}
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/login" element={<AuthPage />} />
@@ -66,10 +68,11 @@ function App() {
                 <Route path="stations" element={<StationPage />} />
                 <Route path="station/:id" element={<StationDetail />} />
               </Route>
-            </Routes>
-            <Toaster />
-          </div>
-        </Router>
+              </Routes>
+              <Toaster />
+            </div>
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   );

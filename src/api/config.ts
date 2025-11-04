@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { clearAllStorage } from '@/utils/clearStorage';
 
 // API base URL from environment variables
 export const API_BASE_URL = import.meta.env.VITE_REACT_APP_BASE_URL;
@@ -41,9 +42,9 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - clear local auth data
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      // Token expired or invalid - clear ALL auth data
+      clearAllStorage();
+      
       // Only redirect if we're not already on the login page to avoid an unnecessary reload/flash
       try {
         if (typeof window !== 'undefined' && window.location && window.location.pathname !== '/login') {

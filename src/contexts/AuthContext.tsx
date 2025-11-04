@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { profile } from '@/types/auth';
 import { authAPI } from '@/api/authAPI';
+import { clearAllStorage, clearAuthData } from '@/utils/clearStorage';
 
 interface AuthContextType {
   user: profile | null;
@@ -51,9 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           // Kiểm tra role ngay lập tức
           if (userData.role !== 'EV Renter') {
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
+            clearAllStorage();
             setUser(null);
             setIsLoading(false);
             return;
@@ -67,9 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (response && response.data) {
               // Kiểm tra role từ API
               if (response.data.role !== 'EV Renter') {
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
+                clearAllStorage();
                 setUser(null);
               } else {
                 // Cập nhật thông tin mới nếu có và role hợp lệ
@@ -79,16 +76,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           } catch (profileError) {
             // Nếu token không hợp lệ, xóa dữ liệu
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
+            clearAllStorage();
             setUser(null);
           }
         } catch (parseError) {
           // Dữ liệu user không hợp lệ, xóa tất cả
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
+          clearAllStorage();
         }
       }
       setIsLoading(false);
@@ -128,8 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Kiểm tra role trước khi set user
           if (userData.role !== 'EV Renter') {
             // Xóa token đã lưu
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
+            clearAuthData();
             throw new Error('Bạn không có quyền truy cập vào hệ thống này. Chỉ tài khoản "EV Renter" mới được phép đăng nhập.');
           }
           setUser(userData);
@@ -146,8 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               // Kiểm tra role
               if (userData.role !== 'EV Renter') {
                 // Xóa token đã lưu
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
+                clearAuthData();
                 throw new Error('Bạn không có quyền truy cập vào hệ thống này. Chỉ tài khoản "EV Renter" mới được phép đăng nhập.');
               }
               setUser(userData);
@@ -182,9 +173,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       
       // Xóa token nếu có lỗi
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+      clearAuthData();
       
       throw new Error(error.response?.data?.message || error.message || 'Đăng nhập thất bại');
     } finally {
@@ -222,9 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Không nhận được token từ server');
       }
     } catch (error: any) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+      clearAuthData();
       throw new Error(error.message || 'Đăng nhập Google thất bại');
     } finally {
       setIsLoading(false);
@@ -265,11 +252,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       authAPI.logout().catch(() => {
       });
     
-    // Dọn dẹp local storage ngay lập tức để đảm bảo user được logout
+    // Dọn dẹp TẤT CẢ dữ liệu ngay lập tức để đảm bảo user được logout hoàn toàn
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    clearAllStorage();
   };
 
   const value: AuthContextType = {

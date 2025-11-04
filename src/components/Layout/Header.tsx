@@ -25,6 +25,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/utils/toast';
+import NotificationDropdown from '@/components/NotificationDropdown';
 
 
 const Header: React.FC = () => {
@@ -114,12 +115,7 @@ const Header: React.FC = () => {
             </Button>
 
             {/* Notifications */}
-            {isAuthenticated && (
-              <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-                <Bell className="h-4 w-4" />
-                <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></div>
-              </Button>
-            )}
+            {isAuthenticated && <NotificationDropdown />}
 
             {/* User Menu or Login Button */}
             {isAuthenticated ? (

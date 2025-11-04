@@ -59,7 +59,7 @@ export interface Feedback {
   _id: string;
   rental_id: RentalInfo | string;
   user_id?: UserInfo | string;
-  staff_id?: string | null;
+  staff_id?: UserInfo | string | null;
   staff_ids?: string[];
   type: string; // e.g., "rating" or "complaint"
   overall_rating?: number;

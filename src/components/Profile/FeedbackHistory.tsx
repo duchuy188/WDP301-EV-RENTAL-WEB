@@ -10,7 +10,10 @@ import {
   MapPin,
   Calendar,
   Filter,
-  Search
+  Search,
+  Eye,
+  ImageIcon,
+  Download
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +41,8 @@ const FeedbackHistory: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
 
   useEffect(() => {
     fetchFeedbacks();
@@ -206,6 +211,33 @@ const FeedbackHistory: React.FC = () => {
             <p className="text-sm text-blue-800 dark:text-blue-200">{feedback.comment}</p>
           </div>
         )}
+        
+        {/* Images - Hình ảnh đánh giá */}
+        {feedback.images && feedback.images.length > 0 && (
+          <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+            <p className="text-xs font-medium text-purple-700 dark:text-purple-400 mb-2">
+              Hình ảnh đánh giá ({feedback.images.length} ảnh)
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {feedback.images.map((img, idx) => (
+                <button 
+                  key={idx} 
+                  onClick={() => { setSelectedImage(img); setImageViewerOpen(true); }}
+                  className="relative group overflow-hidden rounded border-2 border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 transition-all"
+                >
+                  <img 
+                    src={img} 
+                    alt={`Rating ${idx + 1}`} 
+                    className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-200"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                    <Eye className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -310,6 +342,38 @@ const FeedbackHistory: React.FC = () => {
               <div className="flex-1">
                 <p className="text-sm font-semibold text-green-900 dark:text-green-100 mb-1">Phản hồi từ hệ thống:</p>
                 <p className="text-sm text-green-800 dark:text-green-200 leading-relaxed">{feedback.response}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Images - Hình ảnh khiếu nại */}
+        {feedback.images && feedback.images.length > 0 && (
+          <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+            <div className="flex items-start gap-2">
+              <ImageIcon className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                  Hình ảnh khiếu nại ({feedback.images.length} ảnh)
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {feedback.images.map((img, idx) => (
+                    <button 
+                      key={idx} 
+                      onClick={() => { setSelectedImage(img); setImageViewerOpen(true); }}
+                      className="relative group overflow-hidden rounded border-2 border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 transition-all"
+                    >
+                      <img 
+                        src={img} 
+                        alt={`Complaint ${idx + 1}`} 
+                        className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-200"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                        <Eye className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -598,6 +662,35 @@ const FeedbackHistory: React.FC = () => {
 
       {/* Detail Dialog */}
       {renderDetailDialog()}
+      
+      {/* Image Viewer Dialog */}
+      <Dialog open={imageViewerOpen} onOpenChange={setImageViewerOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-cyan-600" />
+              Xem ảnh
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-lg p-4">
+            <img 
+              src={selectedImage} 
+              alt="Full size" 
+              className="max-w-full max-h-[70vh] object-contain rounded"
+            />
+          </div>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(selectedImage, '_blank')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Tải ảnh
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
