@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bike, Calendar, Clock, CreditCard, MapPin, Phone, Hash, Image as ImageIcon, Edit } from 'lucide-react';
+import { Bike, Calendar, Clock, CreditCard, MapPin, Phone, Hash, Image as ImageIcon, Edit, RefreshCw } from 'lucide-react';
 import { Booking } from '@/types/booking';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,11 @@ interface ViewBookingProps {
   onEdit?: () => void;
   canEdit?: boolean;
   editDisabledReason?: string;
+  onRebook?: () => void;
+  canRebook?: boolean;
 }
 
-const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = false, editDisabledReason }) => {
+const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = false, editDisabledReason, onRebook, canRebook = false }) => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
 
   // Debug: Log booking data received
@@ -131,6 +133,16 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = fa
                 >
                   <Edit className="h-4 w-4 mr-1" />
                   Chỉnh sửa
+                </Button>
+              )}
+              {onRebook && canRebook && (
+                <Button
+                  onClick={onRebook}
+                  className="bg-white hover:bg-white/90 text-blue-600 border-white hover:border-blue-100"
+                  size="sm"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Thuê lại
                 </Button>
               )}
             </div>

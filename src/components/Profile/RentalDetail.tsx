@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Bike, User, MapPin, CreditCard, FileText, Clock, Gauge, Battery, Sparkles, Hash, Download, Eye, Star, AlertCircle, UserCog, Image as ImageIcon, DollarSign } from 'lucide-react';
+import { Calendar, Bike, User, MapPin, CreditCard, FileText, Clock, Gauge, Battery, Sparkles, Hash, Download, Eye, Star, AlertCircle, UserCog, Image as ImageIcon, DollarSign, RefreshCw } from 'lucide-react';
 import { Rental } from '@/types/rentals';
 import { Contract } from '@/types/contracts';
 import { Feedback } from '@/types/feedback';
@@ -14,6 +14,7 @@ import { toast } from '@/utils/toast';
 
 interface Props {
   rental: Rental;
+  onRebook?: () => void;
 }
 
 const parseBookingDate = (dateString?: string | null) => {
@@ -88,7 +89,7 @@ const getStatusText = (status: string) => {
   }
 };
 
-const RentalDetail: React.FC<Props> = ({ rental }) => {
+const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [loadingContract, setLoadingContract] = useState(true);
@@ -283,9 +284,21 @@ const RentalDetail: React.FC<Props> = ({ rental }) => {
               <h3 className="font-bold text-xl text-white font-mono">{rental.code}</h3>
             </div>
           </div>
-          <Badge className={`${getStatusColor(rental.status)} text-sm px-3 py-1.5 font-semibold`}>
-            {getStatusText(rental.status)}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={`${getStatusColor(rental.status)} text-sm px-3 py-1.5 font-semibold`}>
+              {getStatusText(rental.status)}
+            </Badge>
+            {onRebook && rental.status === 'completed' && (
+              <Button
+                onClick={onRebook}
+                className="bg-white hover:bg-white/90 text-green-600 border-white hover:border-green-100"
+                size="sm"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Thuê lại
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

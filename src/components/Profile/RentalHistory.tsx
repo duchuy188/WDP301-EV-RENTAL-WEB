@@ -427,50 +427,37 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
             {paginated.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table className="border border-gray-200 rounded-lg min-w-[920px]">
+                  <Table className="border border-gray-200 rounded-lg">
                     <TableHeader className="bg-gray-100 dark:bg-gray-800">
                       <TableRow>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[90px]">Mã</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[110px]">Xe</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[180px]">Trạm</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300 w-[100px]">Trạng thái</TableHead>
-                        <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300 w-[220px]">Hành động</TableHead>
-                        <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300 w-[130px]">Đánh giá</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Mã</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Xe</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Trạm</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
+                        <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">Hành động</TableHead>
+                        <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">Đánh giá</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginated.map((r) => (
                         <TableRow key={r._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[90px] truncate">{r.code ?? r._id}</TableCell>
-                          <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium max-w-[110px] truncate">{typeof r.vehicle_id === 'string' ? r.vehicle_id : r.vehicle_id?.license_plate ?? r.vehicle_id?.name ?? '-'}</TableCell>
-                          <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[180px] truncate">{typeof r.station_id === 'string' ? r.station_id : r.station_id?.name ?? '-'}</TableCell>
-                          <TableCell className="px-3 py-2 max-w-[100px]">
+                          <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium truncate">{r.code ?? r._id}</TableCell>
+                          <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium truncate">{typeof r.vehicle_id === 'string' ? r.vehicle_id : r.vehicle_id?.license_plate ?? r.vehicle_id?.name ?? '-'}</TableCell>
+                          <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400 truncate">{typeof r.station_id === 'string' ? r.station_id : r.station_id?.name ?? '-'}</TableCell>
+                          <TableCell className="px-3 py-2">
                             <Badge className={`${getStatusColor(r.status)} px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap`}>{getStatusText(r.status)}</Badge>
                           </TableCell>
-                          <TableCell className="px-3 py-2 max-w-[220px]">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => { setSelectedRental(r); setDetailOpen(true); }}
-                                className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 text-xs font-semibold whitespace-nowrap border-2 border-green-700 dark:border-green-600"
-                                aria-label={`Xem chi tiết ${r.code}`}
-                              >
-                                Xem chi tiết
-                              </button>
-                              {/* Show "Rent Again" button only for completed rentals */}
-                              {r.status === 'completed' && (
-                                <button
-                                  onClick={() => handleRentAgain(r)}
-                                  className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 text-xs font-semibold whitespace-nowrap border-2 border-blue-700 dark:border-blue-600 flex items-center gap-1"
-                                  aria-label={`Thuê lại xe ${r.code}`}
-                                >
-                                  <RefreshCw className="h-3 w-3" />
-                                  Thuê lại
-                                </button>
-                              )}
-                            </div>
+                          <TableCell className="px-3 py-2 text-center">
+                            <button
+                              onClick={() => { setSelectedRental(r); setDetailOpen(true); }}
+                              className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 text-xs font-semibold whitespace-nowrap border-2 border-green-700 dark:border-green-600"
+                              aria-label={`Xem chi tiết ${r.code}`}
+                            >
+                              Xem chi tiết
+                            </button>
                           </TableCell>
-                          <TableCell className="px-3 py-2 max-w-[130px]">
-                            <div className="flex items-center justify-center">
+                          <TableCell className="px-3 py-2 text-center">
+                            <div className="flex items-center justify-center min-w-[120px]">
                               { (() => {
                                 const isRated = ratedRentalIds.includes(r._id);
                                 const isCompleted = r.status === 'completed';
@@ -562,7 +549,15 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
           <DialogHeader>
             <DialogTitle>Chi tiết thuê xe</DialogTitle>
           </DialogHeader>
-          {selectedRental ? <RentalDetail rental={selectedRental} /> : null}
+          {selectedRental ? (
+            <RentalDetail 
+              rental={selectedRental} 
+              onRebook={() => {
+                setDetailOpen(false);
+                handleRentAgain(selectedRental);
+              }}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
 

@@ -260,7 +260,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
                 key={t}
                 type="button"
                 className={`px-4 py-2 rounded transition-colors ${
-                  type === t ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  type === t ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
                 onClick={() => handleTypeChange(t)}
                 disabled={submitting}
@@ -418,7 +418,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
           multiple
           onChange={e => handleFiles(e.target.files)}
           disabled={previews.length >= 5 || submitting || !!submittedType}
-          className="block w-full text-sm text-gray-500 cursor-pointer file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          className="block w-full text-sm text-gray-500 cursor-pointer file:py-2 file:px-4 file:rounded file:border-0 file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
         />
         {previews.length > 0 && (
           <div className="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-2">
