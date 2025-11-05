@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Bike, BarChart3, TrendingUp, MapPin, AlertCircle, Award, Navigation, Lock } from 'lucide-react';
+import { Calendar, Clock, BarChart3, TrendingUp, MapPin, AlertCircle, Award, Navigation, Lock } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { mockUser } from '@/data/mockData';
@@ -193,7 +194,7 @@ const History: React.FC = () => {
             <div className="relative">
               <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-green-600"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <Bike className="h-10 w-10 text-green-600 animate-pulse" />
+                <FaMotorcycle className="h-10 w-10 text-green-600 animate-pulse" />
               </div>
             </div>
           </div>
@@ -206,7 +207,7 @@ const History: React.FC = () => {
                   <CardContent className="p-6">
                     <div className="flex items-center">
                       <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl">
-                        <Bike className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        <FaMotorcycle className="h-6 w-6 text-green-600 dark:text-green-400" />
                       </div>
                       <div className="ml-4">
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng đặt xe</p>
@@ -455,7 +456,7 @@ const History: React.FC = () => {
                 <Card className="border-green-100 dark:border-green-900/20 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Bike className="h-5 w-5 text-green-600" />
+                      <FaMotorcycle className="h-5 w-5 text-green-600" />
                       Loại xe ưa thích
                     </CardTitle>
                   </CardHeader>
@@ -471,7 +472,7 @@ const History: React.FC = () => {
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                                    <Bike className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                    <FaMotorcycle className="h-5 w-5 text-green-600 dark:text-green-400" />
                                   </div>
                                   <span className="font-medium text-gray-900 dark:text-white capitalize">
                                     {item.vehicle_type === 'scooter' ? 'Xe ga' : 
@@ -497,7 +498,7 @@ const History: React.FC = () => {
                         })
                       ) : (
                         <div className="text-center py-8 text-gray-500">
-                          <Bike className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                          <FaMotorcycle className="h-12 w-12 mx-auto mb-2 opacity-30" />
                           <p>Chưa có dữ liệu</p>
                         </div>
                       )}

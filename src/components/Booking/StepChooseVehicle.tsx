@@ -1,5 +1,6 @@
 import React from 'react';
-import { Loader2, Bike, Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import VehicleListItem from './VehicleListItem';
 import type { VehicleListItem as VehicleListItemType } from '@/types/vehicles';
 
@@ -17,7 +18,7 @@ const StepChooseVehicle: React.FC<Props> = ({ vehicles, isLoadingVehicles, selec
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-          <Bike className="h-5 w-5 text-white" />
+          <FaMotorcycle className="h-5 w-5 text-white" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Chọn xe</h2>

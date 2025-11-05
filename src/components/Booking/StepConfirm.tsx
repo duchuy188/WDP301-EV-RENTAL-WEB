@@ -2,7 +2,8 @@ import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Bike, Calendar, Clock, Palette, FileText, MessageSquare, Calculator, Wallet, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, Palette, FileText, MessageSquare, Calculator, Wallet, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { AvailableAlternative } from '@/types/booking';
 
 type Props = {
@@ -101,7 +102,7 @@ const StepConfirm: React.FC<Props> = ({
       {/* Thông tin đặt xe */}
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750 rounded-xl border-2 border-blue-200 dark:border-gray-700 p-6 shadow-md">
         <h3 className="font-bold text-lg mb-5 flex items-center gap-2 text-gray-800 dark:text-gray-100">
-          <Bike className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <FaMotorcycle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           Thông tin đặt xe
         </h3>
         <div className="space-y-4">
@@ -110,7 +111,7 @@ const StepConfirm: React.FC<Props> = ({
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                  <Bike className="h-5 w-5 text-white" />
+                  <FaMotorcycle className="h-5 w-5 text-white" />
                 </div>
                 <div>
                   <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Xe:</span>

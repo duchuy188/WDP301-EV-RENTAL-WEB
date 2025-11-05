@@ -6,7 +6,6 @@ import {
   AlertCircle, 
   CheckCircle, 
   Clock, 
-  Bike,
   MapPin,
   Calendar,
   Filter,
@@ -15,6 +14,7 @@ import {
   ImageIcon,
   Download
 } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -145,7 +145,7 @@ const FeedbackHistory: React.FC = () => {
       <div className="space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="flex items-start gap-2">
-            <Bike className="w-4 h-4 text-gray-500 mt-1 flex-shrink-0" />
+            <FaMotorcycle className="w-4 h-4 text-gray-500 mt-1 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {rentalInfo.vehicle_id.brand} {rentalInfo.vehicle_id.model}
@@ -433,7 +433,7 @@ const FeedbackHistory: React.FC = () => {
             {/* Rental Info */}
             <div>
               <h3 className="font-semibold text-base text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <Bike className="w-5 h-5 text-green-600" />
+                <FaMotorcycle className="w-5 h-5 text-green-600" />
                 Thông tin chuyến thuê
               </h3>
               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">

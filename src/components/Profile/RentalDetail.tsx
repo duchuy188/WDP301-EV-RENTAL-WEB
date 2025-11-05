@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Bike, MapPin, CreditCard, FileText, Clock, Gauge, Battery, Sparkles, Hash, Download, Eye, Star, AlertCircle, UserCog, Image as ImageIcon, DollarSign, RefreshCw } from 'lucide-react';
+import { Calendar, MapPin, CreditCard, FileText, Clock, Gauge, Battery, Sparkles, Hash, Download, Eye, Star, AlertCircle, UserCog, Image as ImageIcon, DollarSign, RefreshCw } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Rental } from '@/types/rentals';
 import { Contract } from '@/types/contracts';
 import { Feedback } from '@/types/feedback';
@@ -341,7 +342,7 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <Bike className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <FaMotorcycle className="h-4 w-4 text-green-600 dark:text-green-400" />
               </div>
               <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Xe</h4>
             </div>
@@ -549,7 +550,7 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
         <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-orange-600 rounded">
-              <Bike className="h-5 w-5 text-white" />
+              <FaMotorcycle className="h-5 w-5 text-white" />
             </div>
             <h4 className="font-semibold text-base text-orange-900 dark:text-orange-100">Tình trạng xe</h4>
           </div>

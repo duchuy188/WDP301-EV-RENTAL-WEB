@@ -4,11 +4,11 @@ import { motion } from 'framer-motion';
 import { 
   Search, 
   Filter, 
-  Bike, 
   Grid3X3,
   Map,
   Loader2
 } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -122,7 +122,7 @@ const FindCar: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 flex items-center justify-center">
         <div className="text-center">
-          <Bike className="h-16 w-16 text-red-400 mx-auto mb-4" />
+          <FaMotorcycle className="h-16 w-16 text-red-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             Có lỗi xảy ra
           </h3>
@@ -458,7 +458,7 @@ const FindCar: React.FC = () => {
                 animate={{ opacity: 1 }}
                 className="col-span-full flex flex-col items-center justify-center py-16"
               >
-                <Bike className="h-16 w-16 text-gray-400 mb-4" />
+                <FaMotorcycle className="h-16 w-16 text-gray-400 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   Không tìm thấy xe phù hợp
                 </h3>
