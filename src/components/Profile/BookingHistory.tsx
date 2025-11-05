@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Clock, 
-  Bike, 
   ChevronLeft,
   ChevronRight,
-  CreditCard,
 } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { bookingAPI } from '@/api/bookingAPI';
 import { UserStatsData } from '@/types/perssonal';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Booking } from '@/types/booking';
 import { toast } from '@/utils/toast';
 
@@ -366,14 +365,8 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
-  // Statistics from bookings (fallback if userStats not provided)
-  const totalTrips = userStats?.overview.total_rentals ?? bookings.length;
-  const totalSpent = userStats?.overview.total_spent ?? bookings.reduce((s, b) => s + (b.total_price ?? 0), 0);
-  // Count trips that are currently active/on-going. Backend may use 'active' or 'confirmed' for ongoing trips.
-  const activeTrips = bookings.filter((booking: Booking) => booking.status === 'active' || booking.status === 'confirmed').length;
-  
   // Check if user has any booking history
-  const hasBookingHistory = totalTrips > 0 || bookings.length > 0;
+  const hasBookingHistory = bookings.length > 0;
   const insights = userStats?.insights || [];
 
   if (loading) {
@@ -382,13 +375,13 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Bike className="h-5 w-5" />
+              <FaMotorcycle className="h-5 w-5" />
               Lịch sử đặt xe
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <LoadingSpinner size="md" />
             </div>
           </CardContent>
         </Card>
@@ -408,7 +401,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           <Card>
             <CardContent className="p-6">
               <div className="text-center">
-                <Bike className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                <FaMotorcycle className="h-12 w-12 text-blue-500 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   Chào mừng đến với dịch vụ đặt xe!
                 </h3>
@@ -425,71 +418,6 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         </motion.div>
       )}
 
-      {/* Statistics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <Bike className="h-5 w-5 text-green-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng chuyến</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{totalTrips}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng chi tiêu</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {formatPrice(totalSpent)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                  <Clock className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đang thuê</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{activeTrips}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
       {/* Booking History Table */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -500,7 +428,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="flex items-center gap-2">
-                <Bike className="h-5 w-5 text-blue-600" />
+                <FaMotorcycle className="h-5 w-5 text-blue-600" />
                 <span className="text-lg font-bold text-gray-900 dark:text-white">Lịch sử đặt xe</span>
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-2">
@@ -632,7 +560,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
               </>
             ) : (
               <div className="text-center py-8">
-                <Bike className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <FaMotorcycle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 {!hasBookingHistory && insights.length > 0 ? (
                   <div className="space-y-2">
                     {insights.map((insight, index) => (

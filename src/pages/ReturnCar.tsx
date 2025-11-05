@@ -7,9 +7,9 @@ import {
   Star,
   Upload,
   X,
-  CreditCard,
-  Bike
+  CreditCard
 } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -151,7 +151,7 @@ const ReturnCar: React.FC = () => {
                   animate={{ opacity: 1 }}
                   className="text-center py-16"
                 >
-                  <Bike className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <FaMotorcycle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                     Không có xe nào đang thuê
                   </h3>

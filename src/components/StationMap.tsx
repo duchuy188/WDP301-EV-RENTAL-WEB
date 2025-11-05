@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Station } from '../types/station';
 import { geocodeAddress } from '../utils/geocodingService';
+import { getStationCoordinates } from '../utils/districtCoordinates';
 
 // Fix for default marker icons in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -33,165 +34,218 @@ const inactiveIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+// Custom icon for user location (blue)
+const userLocationIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
 interface StationMapProps {
   stations: Station[];
-  searchLocation?: string; // District or city name to search for
+  searchLocation?: string;
+}
+
+interface UserLocation {
+  latitude: number;
+  longitude: number;
+}
+
+// Calculate distance between two coordinates using Haversine formula
+function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  return distance;
 }
 
 // Component to handle geocoding and zooming to location
-const MapViewController: React.FC<{ 
-  stations: Station[];
+const MapViewController: React.FC<{
+  stations: (Station & { distance?: number })[];
   searchLocation?: string;
-}> = ({ stations, searchLocation }) => {
+  userLocation: UserLocation | null;
+}> = ({ stations, searchLocation, userLocation }) => {
   const map = useMap();
 
   useEffect(() => {
     const handleMapView = async () => {
       const validStations = stations.filter(s => s.latitude && s.longitude);
-      
+      const locationsToFit: Array<[number, number]> = [];
+
+      // Add user location if available
+      if (userLocation) {
+        locationsToFit.push([userLocation.latitude, userLocation.longitude]);
+      }
+
+      // Add station locations
+      validStations.forEach(s => {
+        if (s.latitude && s.longitude) {
+          locationsToFit.push([s.latitude, s.longitude]);
+        }
+      });
+
       // If there's a search location, try to geocode it using Mapbox
       if (searchLocation && searchLocation.trim()) {
         try {
-          // Build search query with Vietnam context
           const query = `${searchLocation}, Vietnam`;
-          
-          // Use Mapbox Geocoding API for more accurate results
           const result = await geocodeAddress(query, {
             country: 'vn',
             types: ['district', 'place', 'locality'],
-            // Proximity to Ho Chi Minh City for better results
             proximity: [106.6297, 10.8231]
           });
-          
+
           if (result) {
-            // If we have bounding box, use it for better view
             if (result.bbox && result.bbox.length === 4) {
               const bounds = L.latLngBounds(
-                [result.bbox[1], result.bbox[0]], // [minLat, minLng]
-                [result.bbox[3], result.bbox[2]]  // [maxLat, maxLng]
+                [result.bbox[1], result.bbox[0]],
+                [result.bbox[3], result.bbox[2]]
               );
               map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
             } else {
-              // Otherwise just center on the location
               map.setView([result.latitude, result.longitude], 13);
             }
-          } else {
-            // Fallback to fitting markers if geocoding fails
-            if (validStations.length > 0) {
-              const bounds = L.latLngBounds(
-                validStations.map(s => [s.latitude!, s.longitude!])
-              );
-              map.fitBounds(bounds, { padding: [50, 50] });
-            }
+            return;
           }
         } catch (error) {
           console.error('Geocoding error:', error);
-          // Fallback to fitting markers
-          if (validStations.length > 0) {
-            const bounds = L.latLngBounds(
-              validStations.map(s => [s.latitude!, s.longitude!])
-            );
-            map.fitBounds(bounds, { padding: [50, 50] });
-          }
         }
-      } else if (validStations.length > 0) {
-        // No search location, just fit all markers
-        const bounds = L.latLngBounds(
-          validStations.map(s => [s.latitude!, s.longitude!])
-        );
-        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+
+      // Fit bounds to include user location and stations
+      if (locationsToFit.length > 0) {
+        const bounds = L.latLngBounds(locationsToFit);
+        map.fitBounds(bounds, {
+          padding: [50, 50],
+          maxZoom: userLocation ? 13 : 12
+        });
       }
     };
 
-    // Add a small delay to ensure map is fully loaded
     const timer = setTimeout(() => {
       handleMapView();
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [stations, searchLocation, map]);
+  }, [stations, searchLocation, map, userLocation]);
 
   return null;
 };
 
 const StationMap: React.FC<StationMapProps> = ({ stations, searchLocation }) => {
-  // Mock coordinates for common districts in Vietnam
-  const mockCoordinates: Record<string, { latitude: number; longitude: number }> = {
-    // TP.HCM
-    'quan 1': { latitude: 10.7756, longitude: 106.7019 },
-    'quận 1': { latitude: 10.7756, longitude: 106.7019 },
-    'quan 3': { latitude: 10.7869, longitude: 106.6818 },
-    'quận 3': { latitude: 10.7869, longitude: 106.6818 },
-    'thu duc': { latitude: 10.8505, longitude: 106.7718 },
-    'thủ đức': { latitude: 10.8505, longitude: 106.7718 },
-    'binh thanh': { latitude: 10.8142, longitude: 106.7011 },
-    'bình thạnh': { latitude: 10.8142, longitude: 106.7011 },
-    'tan binh': { latitude: 10.8006, longitude: 106.6525 },
-    'tân bình': { latitude: 10.8006, longitude: 106.6525 },
-    'phu nhuan': { latitude: 10.7992, longitude: 106.6836 },
-    'phú nhuận': { latitude: 10.7992, longitude: 106.6836 },
-    // Hà Nội
-    'hoan kiem': { latitude: 21.0285, longitude: 105.8542 },
-    'hoàn kiếm': { latitude: 21.0285, longitude: 105.8542 },
-    'cau giay': { latitude: 21.0333, longitude: 105.7940 },
-    'cầu giấy': { latitude: 21.0333, longitude: 105.7940 },
-    'dong da': { latitude: 21.0144, longitude: 105.8253 },
-    'đống đa': { latitude: 21.0144, longitude: 105.8253 },
-    'ba dinh': { latitude: 21.0333, longitude: 105.8189 },
-    'ba đình': { latitude: 21.0333, longitude: 105.8189 },
-    // Đà Nẵng
-    'hai chau': { latitude: 16.0471, longitude: 108.2068 },
-    'hải châu': { latitude: 16.0471, longitude: 108.2068 },
-    'son tra': { latitude: 16.0825, longitude: 108.2439 },
-    'sơn trà': { latitude: 16.0825, longitude: 108.2439 },
-  };
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-  // Function to assign coordinates to stations
-  const getMockCoordinates = (station: any, index: number): { latitude: number; longitude: number } => {
-    // If station already has coordinates, use them
-    if (station.latitude && station.longitude) {
-      return { latitude: station.latitude, longitude: station.longitude };
+  // Request user location on component mount
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      setIsLoadingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+          setIsLoadingLocation(false);
+          console.log('User location:', position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          setLocationError(error.message);
+          setIsLoadingLocation(false);
+          console.warn('Geolocation error:', error.message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      setLocationError('Trình duyệt không hỗ trợ định vị');
     }
+  }, []);
 
-    // Try to match from station name, address, district, or city
-    const searchText = `${station.name || ''} ${station.address || ''} ${station.district || ''} ${station.city || ''}`.toLowerCase();
-    
-    for (const [district, coords] of Object.entries(mockCoordinates)) {
-      if (searchText.includes(district)) {
-        // Add small random offset to avoid exact overlapping
-        return {
-          latitude: coords.latitude + (Math.random() - 0.5) * 0.01,
-          longitude: coords.longitude + (Math.random() - 0.5) * 0.01
-        };
+  // Add coordinates to all stations and calculate distances
+  const stationsWithCoords = React.useMemo(() => {
+    const stationsWithCoordinates = stations.map((station, index) => {
+      const coords = getStationCoordinates(station, index);
+      let distance: number | undefined;
+
+      // Calculate distance from user location if available
+      if (userLocation && coords.latitude && coords.longitude) {
+        distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          coords.latitude,
+          coords.longitude
+        );
       }
+
+      return {
+        ...station,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        distance
+      };
+    });
+
+    console.log('=== StationMap Debug ===');
+    console.log('Total stations received:', stations.length);
+    console.log('Total stations with coordinates:', stationsWithCoordinates.length);
+    console.log('Stations details:', stationsWithCoordinates.map((s, idx) => ({
+      index: idx + 1,
+      id: s._id,
+      name: s.name,
+      address: s.address,
+      district: s.district,
+      city: s.city,
+      coords: `[${s.latitude?.toFixed(4)}, ${s.longitude?.toFixed(4)}]`,
+      distance: s.distance ? `${s.distance.toFixed(2)} km` : 'N/A',
+      status: s.status
+    })));
+
+    return stationsWithCoordinates;
+  }, [stations, userLocation]);
+
+  // Sort stations by distance if user location is available
+  const sortedStations = React.useMemo(() => {
+    if (userLocation) {
+      return [...stationsWithCoords].sort((a, b) => {
+        if (a.distance === undefined) return 1;
+        if (b.distance === undefined) return -1;
+        return a.distance - b.distance;
+      });
     }
+    return stationsWithCoords;
+  }, [stationsWithCoords, userLocation]);
 
-    // Default: TP.HCM center with offset based on index to spread out stations
-    const baseLatitude = 10.8231;
-    const baseLongitude = 106.6297;
-    const offset = index * 0.02;
-    
-    return {
-      latitude: baseLatitude + (offset % 0.1),
-      longitude: baseLongitude + (Math.floor(offset / 0.1) * 0.02)
-    };
-  };
+  // Filter stations that have valid coordinates
+  const validStations = sortedStations.filter(s => s.latitude && s.longitude);
 
-  // Add coordinates to all stations
-  const stationsWithCoords = stations.map((station, index) => ({
-    ...station,
-    ...getMockCoordinates(station, index)
-  }));
+  // Default center (Ho Chi Minh City or user location)
+  const defaultCenter: [number, number] = userLocation
+    ? [userLocation.latitude, userLocation.longitude]
+    : [10.8231, 106.6297];
 
-  // Filter stations that have valid coordinates (now all should have them)
-  const validStations = stationsWithCoords.filter(s => s.latitude && s.longitude);
-
-  // Default center (Ho Chi Minh City)
-  const defaultCenter: [number, number] = [10.8231, 106.6297];
-
-  // Debug log
   console.log('StationMap - Total stations:', stations.length);
   console.log('StationMap - Valid stations with coordinates:', validStations.length);
+  console.log('StationMap - User location:', userLocation);
   console.log('StationMap - Search location:', searchLocation);
 
   if (stations.length === 0) {
@@ -204,7 +258,37 @@ const StationMap: React.FC<StationMapProps> = ({ stations, searchLocation }) => 
   }
 
   return (
-    <div className="w-full h-[600px] rounded-lg overflow-hidden shadow-lg">
+    <div className="w-full h-[600px] rounded-lg overflow-hidden shadow-lg relative">
+      {/* Location status indicator */}
+      {isLoadingLocation && (
+        <div className="absolute top-4 left-4 z-[1000] bg-white px-4 py-2 rounded-lg shadow-md">
+          <p className="text-sm text-gray-600">Đang lấy vị trí của bạn...</p>
+        </div>
+      )}
+      {locationError && !userLocation && (
+        <div className="absolute top-4 left-4 z-[1000] bg-yellow-50 px-4 py-2 rounded-lg shadow-md border border-yellow-200">
+          <p className="text-sm text-yellow-800">Không thể lấy vị trí: {locationError}</p>
+        </div>
+      )}
+      {userLocation && (
+        <div className="absolute top-4 left-4 z-[1000] bg-blue-50 px-4 py-2 rounded-lg shadow-md border border-blue-200">
+          <p className="text-sm text-blue-800 font-semibold">✓ Đang hiển thị vị trí của bạn</p>
+          <p className="text-xs text-blue-600 mt-1">
+            📍 Hiển thị <strong>{validStations.length} trạm</strong> trên bản đồ
+          </p>
+        </div>
+      )}
+      
+      {/* Station count indicator when no user location */}
+      {!isLoadingLocation && !userLocation && (
+        <div className="absolute top-4 left-4 z-[1000] bg-green-50 px-4 py-2 rounded-lg shadow-md border border-green-200">
+          <p className="text-sm text-green-800 font-semibold">📍 Hiển thị <strong>{validStations.length} trạm</strong> trên bản đồ</p>
+          <p className="text-xs text-green-600 mt-1">
+            🟢 Xanh lá: Hoạt động | 🔴 Đỏ: Không hoạt động
+          </p>
+        </div>
+      )}
+
       <MapContainer
         center={defaultCenter}
         zoom={13}
@@ -215,7 +299,43 @@ const StationMap: React.FC<StationMapProps> = ({ stations, searchLocation }) => 
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapViewController stations={validStations} searchLocation={searchLocation} />
+        <MapViewController
+          stations={validStations}
+          searchLocation={searchLocation}
+          userLocation={userLocation}
+        />
+
+        {/* User location marker */}
+        {userLocation && (
+          <>
+            <Marker
+              position={[userLocation.latitude, userLocation.longitude]}
+              icon={userLocationIcon}
+            >
+              <Popup>
+                <div className="p-2">
+                  <h3 className="font-bold text-lg mb-1">Vị trí của bạn</h3>
+                  <p className="text-sm text-gray-600">
+                    Các trạm được sắp xếp theo khoảng cách gần nhất
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+            {/* Circle around user location */}
+            <Circle
+              center={[userLocation.latitude, userLocation.longitude]}
+              radius={500}
+              pathOptions={{
+                color: '#3b82f6',
+                fillColor: '#3b82f6',
+                fillOpacity: 0.1,
+                weight: 2
+              }}
+            />
+          </>
+        )}
+
+        {/* Station markers */}
         {validStations.map((station) => (
           <Marker
             key={station._id}
@@ -231,6 +351,11 @@ const StationMap: React.FC<StationMapProps> = ({ stations, searchLocation }) => 
                     alt={station.name}
                     className="w-full h-32 object-cover rounded mb-2"
                   />
+                )}
+                {station.distance !== undefined && (
+                  <p className="text-sm text-blue-600 mb-2">
+                    <strong>📍 Khoảng cách:</strong> {station.distance.toFixed(2)} km từ vị trí của bạn
+                  </p>
                 )}
                 <p className="text-sm text-gray-600 mb-1">
                   <strong>Địa chỉ:</strong> {station.address}
@@ -269,4 +394,3 @@ const StationMap: React.FC<StationMapProps> = ({ stations, searchLocation }) => 
 };
 
 export default StationMap;
-

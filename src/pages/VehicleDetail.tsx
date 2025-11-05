@@ -8,10 +8,10 @@ import {
   Palette,
   Clock,
   Phone,
-  Mail,
-  Loader2
+  Mail
 } from 'lucide-react';
 import { Zap, Hash } from 'lucide-react';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 // Card component removed from VehicleDetail to use plain container for station list
 import { Badge } from '@/components/ui/badge';
@@ -194,10 +194,7 @@ const VehicleDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
-          <p className="text-gray-600 dark:text-gray-300">Đang tải thông tin xe...</p>
-        </div>
+        <LoadingSpinner size="lg" text="Đang tải thông tin xe..." />
       </div>
     );
   }

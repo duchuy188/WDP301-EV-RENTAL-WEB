@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Clock, 
-  Bike, 
   ChevronLeft,
   ChevronRight,
   CreditCard,
   RefreshCw,
 } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { feedbackAPI } from '@/api/feedbackAPI';
 import FeedbackForm from './FeedbackForm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { rentalAPI } from '@/api/rentalsAPI';
 import { bookingAPI } from '@/api/bookingAPI';
 import { Rental } from '@/types/rentals';
@@ -372,13 +373,13 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Bike className="h-5 w-5" />
+              <FaMotorcycle className="h-5 w-5" />
               Lịch sử thuê xe
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <LoadingSpinner size="md" />
             </div>
           </CardContent>
         </Card>
@@ -394,7 +395,7 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="flex items-center gap-2">
-                <Bike className="h-5 w-5 text-blue-600" />
+                  <FaMotorcycle className="h-5 w-5 text-blue-600" />
                 <span className="text-lg font-bold text-gray-900 dark:text-white">Lịch sử thuê xe</span>
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-2">
@@ -532,7 +533,7 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
               </>
             ) : (
               <div className="text-center py-8">
-                <Bike className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <FaMotorcycle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 dark:text-gray-300 mb-2">
                   {rentals.length === 0 ? 'Bạn chưa có lịch sử thuê xe nào' : (statusFilter === 'all' ? 'Không có kết quả' : `Không có lượt thuê với trạng thái "${getStatusText(statusFilter)}"`) }
                 </p>

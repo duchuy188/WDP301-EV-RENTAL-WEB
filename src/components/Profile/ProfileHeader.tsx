@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Camera, User, Phone, MapPin, Edit, X, Check } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { profile } from '@/types/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -103,7 +104,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             {/* Loading overlay */}
             {avatarLoading && (
               <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                <FaMotorcycle className="animate-spin h-6 w-6 text-white" />
               </div>
             )}
             

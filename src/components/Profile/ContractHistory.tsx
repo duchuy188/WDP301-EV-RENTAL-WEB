@@ -7,17 +7,18 @@ import {
   Download,
   Eye,
   Calendar,
-  Bike,
   MapPin,
   Hash,
   ExternalLink,
 } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ContractDetail from './ContractDetail';
 import ContractViewer from './ContractViewer';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { contractAPI } from '@/api/constractAPI';
@@ -229,7 +230,7 @@ const ContractHistory: React.FC<ContractHistoryProps> = ({ className }) => {
           <CardContent className="p-6">
             {loading ? (
               <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                <LoadingSpinner size="lg" />
               </div>
             ) : contracts.length > 0 ? (
               <>
@@ -257,7 +258,7 @@ const ContractHistory: React.FC<ContractHistoryProps> = ({ className }) => {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Bike className="h-4 w-4 text-blue-600" />
+                              <FaMotorcycle className="h-4 w-4 text-blue-600" />
                               <div>
                                 <p className="font-medium">{contract.vehicle.name}</p>
                                 <p className="text-xs text-gray-500">{contract.vehicle.license_plate}</p>
@@ -335,7 +336,7 @@ const ContractHistory: React.FC<ContractHistoryProps> = ({ className }) => {
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2">
-                            <Bike className="h-4 w-4 text-blue-600" />
+                            <FaMotorcycle className="h-4 w-4 text-blue-600" />
                             <span className="font-medium">{contract.vehicle.name}</span>
                             <span className="text-gray-500">({contract.vehicle.license_plate})</span>
                           </div>

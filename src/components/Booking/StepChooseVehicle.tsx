@@ -1,6 +1,8 @@
 import React from 'react';
-import { Loader2, Bike, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import VehicleListItem from './VehicleListItem';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import type { VehicleListItem as VehicleListItemType } from '@/types/vehicles';
 
 type Props = {
@@ -17,7 +19,7 @@ const StepChooseVehicle: React.FC<Props> = ({ vehicles, isLoadingVehicles, selec
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-          <Bike className="h-5 w-5 text-white" />
+          <FaMotorcycle className="h-5 w-5 text-white" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Chọn xe</h2>
@@ -49,8 +51,7 @@ const StepChooseVehicle: React.FC<Props> = ({ vehicles, isLoadingVehicles, selec
       {/* Content */}
       {isLoadingVehicles ? (
         <div className="flex flex-col justify-center items-center py-16 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700">
-          <Loader2 className="h-12 w-12 animate-spin text-green-600 mb-4" />
-          <span className="text-gray-600 dark:text-gray-300 font-medium">Đang tải danh sách xe...</span>
+          <LoadingSpinner size="lg" text="Đang tải danh sách xe..." />
         </div>
       ) : vehicles.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700">

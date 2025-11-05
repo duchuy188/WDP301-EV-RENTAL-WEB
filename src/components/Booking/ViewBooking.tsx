@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Bike, Calendar, Clock, CreditCard, MapPin, Phone, Hash, Image as ImageIcon, Edit, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, CreditCard, MapPin, Phone, Hash, Image as ImageIcon, Edit, RefreshCw } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Booking } from '@/types/booking';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -156,7 +157,7 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = fa
             <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <Bike className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <FaMotorcycle className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Xe</h4>
               </div>

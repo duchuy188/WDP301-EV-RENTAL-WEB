@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock, User, Bike, Zap, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Zap, ArrowLeft } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import GoogleLoginButton from '@/components/GoogleLoginButton';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -262,7 +263,7 @@ const AuthPage = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700"></div>
           <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white h-full">
             <div className="mb-8 transform transition-all duration-500 ease-in-out">
-              <Bike className="w-24 h-24 mb-4 mx-auto animate-bounce" />
+              <FaMotorcycle className="w-24 h-24 mb-4 mx-auto animate-bounce" />
               <h1 className="text-4xl font-bold mb-4 text-center transition-all duration-1000 ease-in-out">
                 EV Rental
               </h1>
@@ -278,7 +279,7 @@ const AuthPage = () => {
                 <p className="text-sm opacity-80">100% sạch, không khí thải</p>
               </div>
               <div className="text-center transform transition-all duration-500 hover:scale-105">
-                <Bike className="w-8 h-8 mx-auto mb-2" />
+                <FaMotorcycle className="w-8 h-8 mx-auto mb-2" />
                 <h3 className="font-semibold">Đa dạng xe</h3>
                 <p className="text-sm opacity-80">Nhiều loại xe điện hiện đại</p>
               </div>
@@ -367,7 +368,7 @@ const AuthPage = () => {
                         <AlertDescription className="flex items-center">
                           {successMessage}
                           {successMessage.includes('Google') && (
-                            <div className="ml-2 w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                            <FaMotorcycle className="ml-2 w-4 h-4 text-green-600 animate-spin" />
                           )}
                         </AlertDescription>
                       </Alert>
@@ -442,7 +443,7 @@ const AuthPage = () => {
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <FaMotorcycle className="w-4 h-4 animate-spin" />
                           <span>Đang đăng nhập...</span>
                         </div>
                       ) : (
@@ -615,7 +616,7 @@ const AuthPage = () => {
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <FaMotorcycle className="w-4 h-4 animate-spin" />
                           <span>Đang đăng ký...</span>
                         </div>
                       ) : (

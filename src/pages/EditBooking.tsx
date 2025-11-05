@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, Loader2, AlertTriangle } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import BookingSidebar from '@/components/Booking/BookingSidebar';
 import StepEditBooking from '@/components/Booking/StepEditBooking';
 import StepConfirm from '@/components/Booking/StepConfirm';
@@ -106,15 +108,15 @@ const EditBooking: React.FC = () => {
           const vehicleFromBooking: VehicleListItemType = {
             brand: bookingData.vehicle_id.brand,
             model: bookingData.vehicle_id.model,  
-            year: 0,
-            type: 'Xe máy điện',
+            year: bookingData.vehicle_id.year || 0,
+            type: bookingData.vehicle_id.type || 'Xe máy điện',
             color: bookingData.vehicle_id.color || '',
-            battery_capacity: 0,
-            max_range: 0,
-            max_speed: 0,
-            power: 0,
+            battery_capacity: bookingData.vehicle_id.battery_capacity || 0,
+            max_range: bookingData.vehicle_id.max_range || 0,
+            max_speed: bookingData.vehicle_id.max_speed || 0,
+            power: bookingData.vehicle_id.power || 0,
             price_per_day: bookingData.price_per_day || 0,
-            deposit_percentage: 0,
+            deposit_percentage: bookingData.vehicle_id.deposit_percentage || 0,
             available_quantity: 1,
             sample_image: bookingData.vehicle_id.images?.[0] || '',
             sample_vehicle_id: bookingData.vehicle_id._id,
@@ -195,8 +197,34 @@ const EditBooking: React.FC = () => {
             return acc;
           }, {});
 
+          // QUAN TRỌNG: Thêm xe gốc từ booking vào danh sách nếu chưa có
+          // Để đảm bảo xe đã đặt luôn hiển thị trong dropdown (giống như trạm)
+          if (booking && selectedModel && selectedColor) {
+            const originalVehicleKey = `${selectedModel}-${selectedColor}`;
+            if (!grouped[originalVehicleKey]) {
+              console.log('🔧 Adding original booked vehicle to list:', selectedModel, selectedColor);
+              grouped[originalVehicleKey] = {
+                model: selectedModel,
+                color: selectedColor,
+                brand: booking.vehicle_id.brand,
+                available_count: 0, // 0 để hiển thị là xe gốc (không còn available)
+                price_per_day: booking.price_per_day || 0,
+                sample_image: booking.vehicle_id.images?.[0] || '',
+                battery_capacity: booking.vehicle_id.battery_capacity || 0,
+                max_range: booking.vehicle_id.max_range || 0,
+                max_speed: booking.vehicle_id.max_speed || 0,
+                power: booking.vehicle_id.power || 0,
+                deposit_percentage: booking.vehicle_id.deposit_percentage || 0,
+                sample_vehicle_id: booking.vehicle_id._id,
+                year: booking.vehicle_id.year || 0,
+                type: booking.vehicle_id.type || 'Xe máy điện',
+                isOriginalBooking: true, // Flag để biết đây là xe gốc
+              };
+            }
+          }
+
           const groupedArray = Object.values(grouped);
-          console.log('📦 Grouped vehicles:', groupedArray);
+          console.log('📦 Grouped vehicles (with original):', groupedArray);
           setVehicles(groupedArray);
         }
       } catch (error) {
@@ -209,7 +237,7 @@ const EditBooking: React.FC = () => {
     };
 
     fetchVehicles();
-  }, [selectedStation]);
+  }, [selectedStation, booking, selectedModel, selectedColor]);
 
   // Update selectedVehicle when model/color changes (CẬP NHẬT ẢNH KHI CHỌN XE MỚI)
   useEffect(() => {
@@ -217,6 +245,9 @@ const EditBooking: React.FC = () => {
       const vehicleData = vehicles.find(v => v.model === selectedModel && v.color === selectedColor);
       
       if (vehicleData) {
+        // If deposit_percentage is not in vehicleData, try to get from booking
+        const depositPercentage = vehicleData.deposit_percentage || booking?.vehicle_id?.deposit_percentage || 0;
+        
         const updatedVehicle: VehicleListItemType = {
           brand: vehicleData.brand,
           model: vehicleData.model,
@@ -228,7 +259,7 @@ const EditBooking: React.FC = () => {
           max_speed: vehicleData.max_speed || 0,
           power: vehicleData.power || 0,
           price_per_day: vehicleData.price_per_day || 0,
-          deposit_percentage: vehicleData.deposit_percentage || 0,
+          deposit_percentage: depositPercentage,
           available_quantity: vehicleData.available_count || 1,
           sample_image: vehicleData.sample_image || '',
           sample_vehicle_id: vehicleData.sample_vehicle_id || '',
@@ -238,11 +269,11 @@ const EditBooking: React.FC = () => {
           color_images: [],
         };
         
-        console.log('🔄 Updated selectedVehicle with image:', updatedVehicle.sample_image);
+        console.log('🔄 Updated selectedVehicle with deposit:', depositPercentage);
         setSelectedVehicle(updatedVehicle);
       }
     }
-  }, [selectedModel, selectedColor, vehicles]);
+  }, [selectedModel, selectedColor, vehicles, booking]);
 
   // Calculate price
   const calculateDays = () => {
@@ -266,10 +297,23 @@ const EditBooking: React.FC = () => {
     return vehicleOption?.price_per_day || 0;
   };
   
+  // Get deposit percentage from booking or selected vehicle
+  const getDepositPercentage = () => {
+    // First try to get from selected vehicle
+    if (selectedVehicle?.deposit_percentage) return selectedVehicle.deposit_percentage;
+    
+    // Then try from vehicles list (when user selects a new vehicle)
+    const vehicleOption = vehicles.find(v => v.model === selectedModel && v.color === selectedColor);
+    if (vehicleOption?.deposit_percentage) return vehicleOption.deposit_percentage;
+    
+    // Finally fallback to original booking
+    return booking?.vehicle_id?.deposit_percentage || 0;
+  };
+  
   const pricePerDay = getPricePerDay();
   const basePrice = numberOfDays * pricePerDay;
   const totalPrice = basePrice;
-  const depositPercentage = selectedVehicle?.deposit_percentage || 0;
+  const depositPercentage = getDepositPercentage();
   const depositAmount = (totalPrice * depositPercentage) / 100;
 
   const formatPrice = (price: number) => {
@@ -390,8 +434,11 @@ const EditBooking: React.FC = () => {
   };
 
   const updateVehicleFromAlternative = (alt: AvailableAlternative) => {
-    // Tìm ảnh từ vehicles list nếu có
+    // Tìm ảnh và thông tin từ vehicles list nếu có
     const vehicleData = vehicles.find(v => v.model === alt.model && v.color === alt.color);
+    
+    // Get deposit percentage from vehicleData or fallback to booking
+    const depositPercentage = vehicleData?.deposit_percentage || booking?.vehicle_id?.deposit_percentage || 0;
     
     const vehicleFromAlt: VehicleListItemType = {
       brand: alt.brand,
@@ -404,7 +451,7 @@ const EditBooking: React.FC = () => {
       max_speed: vehicleData?.max_speed || 0,
       power: vehicleData?.power || 0,
       price_per_day: alt.price_per_day,
-      deposit_percentage: vehicleData?.deposit_percentage || 0,
+      deposit_percentage: depositPercentage,
       available_quantity: alt.available_count,
       sample_image: vehicleData?.sample_image || '',
       sample_vehicle_id: vehicleData?.sample_vehicle_id || '',
@@ -414,7 +461,7 @@ const EditBooking: React.FC = () => {
       color_images: [],
     };
     
-    console.log('🔄 Updated alternative vehicle with image:', vehicleFromAlt.sample_image);
+    console.log('🔄 Updated alternative vehicle with deposit:', depositPercentage);
     setSelectedVehicle(vehicleFromAlt);
     setSelectedModel(alt.model);
     setSelectedColor(alt.color);
@@ -423,10 +470,7 @@ const EditBooking: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-green-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin text-green-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Đang tải thông tin...</p>
-        </div>
+        <LoadingSpinner size="xl" text="Đang tải thông tin..." />
       </div>
     );
   }
@@ -444,17 +488,6 @@ const EditBooking: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between mb-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/history')}
-              className="gap-2"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Quay lại lịch sử
-            </Button>
-          </div>
-          
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
             Chỉnh sửa đặt xe
           </h1>
@@ -623,7 +656,7 @@ const EditBooking: React.FC = () => {
                 >
                   {submitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <FaMotorcycle className="h-4 w-4 animate-spin" />
                       Đang xử lý...
                     </>
                   ) : (

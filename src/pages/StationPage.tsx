@@ -4,6 +4,7 @@ import { Station } from '../types/station';
 import { Button } from '../components/ui/button';
 import StationMap from '../components/StationMap';
 import { MapIcon, LayoutGrid } from 'lucide-react';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const StationCard: React.FC<{ station: Station }> = ({ station }) => {
   return (
@@ -146,7 +147,11 @@ const StationPage: React.FC = () => {
           <option value="inactive">Không hoạt động</option>
         </select>
       </div>
-      {loading && <div className="text-lg text-blue-600 animate-pulse">Đang tải...</div>}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <LoadingSpinner size="lg" text="Đang tải danh sách trạm..." />
+        </div>
+      )}
       {error && <div className="text-red-600 font-semibold">Lỗi: {error}</div>}
       {!loading && !error && (
         <>

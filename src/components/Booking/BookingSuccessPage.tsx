@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { motion, easeInOut } from "framer-motion";
-import { Check, Copy, ArrowRight, Loader2 } from "lucide-react";
+import { Check, Copy, ArrowRight } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { formatDateVN } from '@/lib/utils';
 import { Booking as BookingType, BookingResponse } from '@/types/booking';
 import { bookingAPI } from '@/api/bookingAPI';
 import { toast } from '@/utils/toast';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const BookingSuccessPage: React.FC = () => {
   const location = useLocation();
@@ -122,10 +123,7 @@ const BookingSuccessPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-green-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Đang tải thông tin đặt xe...</p>
-        </div>
+        <LoadingSpinner size="xl" text="Đang tải thông tin đặt xe..." />
       </div>
     );
   }

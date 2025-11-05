@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Bike, Battery, Shield, Clock, CreditCard, CheckCircle, MapPin } from 'lucide-react';
+import { Star, Battery, Shield, Clock, CreditCard, CheckCircle, MapPin } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 
 const Home: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -19,7 +20,7 @@ const Home: React.FC = () => {
 
   const benefits = [
     {
-      icon: Bike,
+      icon: FaMotorcycle,
       title: 'Đơn giản',
       description: 'Đặt xe dễ dàng chỉ với vài thao tác'
     },

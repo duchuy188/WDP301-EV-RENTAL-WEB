@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Edit, Check, X, Shield, User, FileCheck, Bike } from 'lucide-react';
+import { Edit, Check, X, Shield, User, FileCheck } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -19,6 +20,7 @@ import {
   BookingHistory,
   RentalHistory
 } from '@/components/Profile';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const Profile: React.FC = () => {
   const location = useLocation();
@@ -433,12 +435,7 @@ const Profile: React.FC = () => {
 
         {(authLoading || loading) ? (
           <div className="flex justify-center items-center py-20">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-300">
-                Đang tải...
-              </p>
-            </div>
+            <LoadingSpinner size="lg" text="Đang tải..." />
           </div>
         ) : user ? (
           <div className="space-y-8">
@@ -466,7 +463,7 @@ const Profile: React.FC = () => {
                       value="booking-history"
                       className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:border-purple-200 hover:text-purple-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:border-purple-400 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/50 transform hover:scale-105 active:scale-95"
                     >
-                      <Bike className="h-4 w-4" />
+                      <FaMotorcycle className="h-4 w-4" />
                       Lịch sử đặt xe
                     </TabsTrigger>
 
@@ -474,7 +471,7 @@ const Profile: React.FC = () => {
                       value="rental-history"
                       className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 hover:border-orange-200 hover:text-orange-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:border-orange-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/50 transform hover:scale-105 active:scale-95"
                     >
-                      <Bike className="h-4 w-4" />
+                      <FaMotorcycle className="h-4 w-4" />
                       Lịch sử thuê xe
                     </TabsTrigger>
                   </TabsList>

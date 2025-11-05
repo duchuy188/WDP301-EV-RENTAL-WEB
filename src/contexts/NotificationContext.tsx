@@ -38,24 +38,56 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const { isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notifiedBookings, setNotifiedBookings] = useState<Set<string>>(new Set());
+  const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load danh sách booking đã thông báo từ localStorage (chỉ để tránh duplicate)
+  // Load danh sách booking đã thông báo từ localStorage (KHÔNG load notifications cũ)
   useEffect(() => {
     if (isAuthenticated) {
+      // Load dismissed notifications (những notification đã bị user xóa)
+      const storedDismissed = localStorage.getItem('dismissed_notifications');
+      const dismissedSet = new Set<string>();
+      if (storedDismissed) {
+        try {
+          const parsed = JSON.parse(storedDismissed);
+          parsed.forEach((id: string) => dismissedSet.add(id));
+        } catch (e) {
+          console.error('Failed to parse dismissed notifications from localStorage', e);
+        }
+      }
+      setDismissedNotifications(dismissedSet);
+
+      // Load notified bookings (để tránh tạo lại thông báo cho những booking đã thông báo rồi)
       const storedNotified = localStorage.getItem('notified_bookings');
+      const existingNotifiedBookings = new Set<string>();
       if (storedNotified) {
         try {
-          setNotifiedBookings(new Set(JSON.parse(storedNotified)));
+          const parsed = JSON.parse(storedNotified);
+          parsed.forEach((id: string) => existingNotifiedBookings.add(id));
         } catch (e) {
           console.error('Failed to parse notified bookings from localStorage', e);
         }
       }
+
+      setNotifiedBookings(existingNotifiedBookings);
+
+      // KHÔNG load notifications cũ - để trống khi refresh
+      setNotifications([]);
+
+      // Đánh dấu đã load xong
+      setIsInitialized(true);
     } else {
       // Clear khi logout
       setNotifications([]);
       setNotifiedBookings(new Set());
+      setDismissedNotifications(new Set());
+      setIsInitialized(false);
+      localStorage.removeItem('notified_bookings');
+      localStorage.removeItem('dismissed_notifications');
     }
   }, [isAuthenticated]);
+
+  // KHÔNG cần lưu notifications vào localStorage nữa (vì không load lại khi refresh)
 
   // Lưu danh sách booking đã thông báo vào localStorage (chỉ để tránh duplicate)
   useEffect(() => {
@@ -63,6 +95,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       localStorage.setItem('notified_bookings', JSON.stringify(Array.from(notifiedBookings)));
     }
   }, [notifiedBookings, isAuthenticated]);
+
+  // Lưu danh sách notifications đã bị xóa vào localStorage
+  useEffect(() => {
+    if (isAuthenticated && dismissedNotifications.size > 0) {
+      localStorage.setItem('dismissed_notifications', JSON.stringify(Array.from(dismissedNotifications)));
+    }
+  }, [dismissedNotifications, isAuthenticated]);
 
   // Kiểm tra booking mới được duyệt
   const checkForNewApprovals = async () => {
@@ -74,12 +113,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       const newNotifications: NotificationItem[] = [];
 
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 giờ trước
+
       bookings.forEach((booking: Booking) => {
-        // Kiểm tra nếu booking đã được confirm và CHƯA ĐƯỢC THÔNG BÁO
+        // Kiểm tra nếu booking đã được confirm GẦN ĐÂY (trong 24h) và CHƯA ĐƯỢC THÔNG BÁO và CHƯA BỊ XÓA
         if (
           booking.confirmed_at && 
           booking.status === 'confirmed' &&
-          !notifiedBookings.has(booking._id)
+          new Date(booking.confirmed_at) > oneDayAgo && // CHỈ lấy booking confirmed trong 24h gần đây
+          !notifiedBookings.has(booking._id) &&
+          !dismissedNotifications.has(booking._id)
         ) {
           const confirmedBy = typeof booking.confirmed_by === 'object' && booking.confirmed_by
             ? booking.confirmed_by.fullname
@@ -102,11 +146,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           });
         }
 
-        // Kiểm tra nếu booking bị hủy và CHƯA ĐƯỢC THÔNG BÁO
+        // Kiểm tra nếu booking bị hủy GẦN ĐÂY (trong 24h) và CHƯA ĐƯỢC THÔNG BÁO và CHƯA BỊ XÓA
         if (
           booking.cancelled_at &&
           booking.status === 'cancelled' &&
-          !notifiedBookings.has(booking._id)
+          new Date(booking.cancelled_at) > oneDayAgo && // CHỈ lấy booking cancelled trong 24h gần đây
+          !notifiedBookings.has(booking._id) &&
+          !dismissedNotifications.has(booking._id)
         ) {
           const cancelledBy = typeof booking.cancelled_by === 'object' && booking.cancelled_by
             ? booking.cancelled_by.fullname
@@ -147,16 +193,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Polling để kiểm tra thông báo mới mỗi 30 giây
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !isInitialized) return;
 
-    // Check ngay khi mount
+    // Check ngay khi mount (sau khi đã load xong từ localStorage)
     checkForNewApprovals();
 
     // Sau đó check định kỳ mỗi 30 giây
     const interval = setInterval(checkForNewApprovals, 30000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, notifiedBookings]);
+  }, [isAuthenticated, isInitialized, notifiedBookings, dismissedNotifications]);
 
   // Lắng nghe sự kiện thanh toán thành công
   useEffect(() => {
@@ -198,12 +244,51 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const clearNotification = (id: string) => {
+    // Tìm notification để lấy booking ID
+    const notification = notifications.find(n => n.id === id);
+    
+    // Xóa notification khỏi danh sách
     setNotifications(prev => prev.filter(n => n.id !== id));
+
+    // Thêm booking ID vào danh sách dismissed để không tạo lại notification này
+    if (notification?.data?.bookingId) {
+      setDismissedNotifications(prev => {
+        const updated = new Set(prev);
+        updated.add(notification.data.bookingId);
+        
+        // LƯU NGAY vào localStorage
+        if (isAuthenticated) {
+          localStorage.setItem('dismissed_notifications', JSON.stringify(Array.from(updated)));
+        }
+        
+        return updated;
+      });
+    }
   };
 
   const clearAllNotifications = () => {
+    // Thu thập tất cả booking IDs từ notifications hiện tại
+    const bookingIdsToDissmiss = notifications
+      .filter(notif => notif.data?.bookingId)
+      .map(notif => notif.data.bookingId);
+
+    // Thêm tất cả booking IDs vào dismissed trước khi xóa
+    if (bookingIdsToDissmiss.length > 0) {
+      setDismissedNotifications(prev => {
+        const updated = new Set(prev);
+        bookingIdsToDissmiss.forEach(id => updated.add(id));
+        
+        // LƯU NGAY vào localStorage
+        if (isAuthenticated) {
+          localStorage.setItem('dismissed_notifications', JSON.stringify(Array.from(updated)));
+        }
+        
+        return updated;
+      });
+    }
+
+    // Xóa tất cả notifications
     setNotifications([]);
-    // Không xóa notified_bookings để tránh thông báo lại những booking cũ
   };
 
   const refreshNotifications = () => {
