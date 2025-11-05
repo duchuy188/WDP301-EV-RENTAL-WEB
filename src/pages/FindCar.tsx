@@ -5,10 +5,10 @@ import {
   Search, 
   Filter, 
   Grid3X3,
-  Map,
-  Loader2
+  Map
 } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -110,10 +110,7 @@ const FindCar: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
-          <p className="text-gray-600 dark:text-gray-300">Đang tải dữ liệu xe...</p>
-        </div>
+        <LoadingSpinner size="lg" text="Đang tải dữ liệu xe..." />
       </div>
     );
   }

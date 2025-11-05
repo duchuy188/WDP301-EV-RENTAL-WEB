@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CreditCard, Clock, Shield, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { CreditCard, Clock, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { bookingAPI } from '@/api/bookingAPI';
@@ -448,7 +449,7 @@ const VNPayPayment: React.FC = () => {
                   >
                     {isRedirecting ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <FaMotorcycle className="mr-2 h-4 w-4 animate-spin" />
                         Đang chuyển hướng...
                       </>
                     ) : (
@@ -467,7 +468,7 @@ const VNPayPayment: React.FC = () => {
                   >
                     {isCancelling ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <FaMotorcycle className="mr-2 h-4 w-4 animate-spin" />
                         Đang hủy...
                       </>
                     ) : (

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Loader2, Home, FileText } from 'lucide-react';
+import { CheckCircle2, XCircle, Home, FileText } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import apiClient from '@/api/config';
@@ -235,7 +236,7 @@ const VNPayCallback: React.FC = () => {
 
   const getStatusIcon = () => {
     if (isProcessing) {
-      return <Loader2 className="h-20 w-20 text-blue-600 animate-spin" />;
+      return <FaMotorcycle className="h-20 w-20 text-blue-600 animate-spin" />;
     }
     
     switch (paymentStatus) {

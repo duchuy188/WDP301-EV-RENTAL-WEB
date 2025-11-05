@@ -20,6 +20,7 @@ import {
   BookingHistory,
   RentalHistory
 } from '@/components/Profile';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const Profile: React.FC = () => {
   const location = useLocation();
@@ -434,12 +435,7 @@ const Profile: React.FC = () => {
 
         {(authLoading || loading) ? (
           <div className="flex justify-center items-center py-20">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-300">
-                Đang tải...
-              </p>
-            </div>
+            <LoadingSpinner size="lg" text="Đang tải..." />
           </div>
         ) : user ? (
           <div className="space-y-8">

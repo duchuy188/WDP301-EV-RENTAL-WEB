@@ -11,6 +11,7 @@ import { UserStatsData } from '@/types/perssonal';
 import { formatDateVN, formatDateTimeVN } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/utils/toast';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const History: React.FC = () => {
   const { user: authUser, isAuthenticated } = useAuth();
@@ -191,12 +192,7 @@ const History: React.FC = () => {
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-green-600"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <FaMotorcycle className="h-10 w-10 text-green-600 animate-pulse" />
-              </div>
-            </div>
+            <LoadingSpinner size="xl" />
           </div>
         ) : (
           <>

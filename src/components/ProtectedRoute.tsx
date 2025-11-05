@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { clearAllStorage } from '@/utils/clearStorage';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -80,12 +81,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (isLoading || !checkComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="text-gray-600 dark:text-gray-300">
-            Đang xác thực...
-          </p>
-        </div>
+        <LoadingSpinner size="lg" text="Đang xác thực..." />
       </div>
     );
   }

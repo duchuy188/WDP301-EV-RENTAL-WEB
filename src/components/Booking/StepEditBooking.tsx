@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Station } from '@/types/station';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface VehicleOption {
   model: string;
@@ -169,8 +170,7 @@ const StepEditBooking: React.FC<Props> = ({
         
         {loadingVehicles ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-3"></div>
-            <p className="text-gray-600 dark:text-gray-400">Đang tải danh sách xe...</p>
+            <LoadingSpinner size="lg" text="Đang tải danh sách xe..." />
           </div>
         ) : vehicles.length === 0 ? (
           <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-lg">

@@ -368,7 +368,7 @@ const AuthPage = () => {
                         <AlertDescription className="flex items-center">
                           {successMessage}
                           {successMessage.includes('Google') && (
-                            <div className="ml-2 w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                            <FaMotorcycle className="ml-2 w-4 h-4 text-green-600 animate-spin" />
                           )}
                         </AlertDescription>
                       </Alert>
@@ -443,7 +443,7 @@ const AuthPage = () => {
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <FaMotorcycle className="w-4 h-4 animate-spin" />
                           <span>Đang đăng nhập...</span>
                         </div>
                       ) : (
@@ -616,7 +616,7 @@ const AuthPage = () => {
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <FaMotorcycle className="w-4 h-4 animate-spin" />
                           <span>Đang đăng ký...</span>
                         </div>
                       ) : (

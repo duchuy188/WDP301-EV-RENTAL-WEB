@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, CheckCircle, Loader2 } from 'lucide-react';
+import { Mail, CheckCircle } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
 import { authAPI } from '@/api/authAPI';
 import { toast } from '@/utils/toast';
@@ -321,7 +321,7 @@ const ForgotPassword = () => {
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <FaMotorcycle className="h-4 w-4 animate-spin" />
                       Đang gửi...
                     </span>
                   ) : attemptCount >= MAX_ATTEMPTS ? (

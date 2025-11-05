@@ -18,6 +18,7 @@ import { feedbackAPI } from '@/api/feedbackAPI';
 import FeedbackForm from './FeedbackForm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { rentalAPI } from '@/api/rentalsAPI';
 import { bookingAPI } from '@/api/bookingAPI';
 import { Rental } from '@/types/rentals';
@@ -378,7 +379,7 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
           </CardHeader>
           <CardContent>
             <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <LoadingSpinner size="md" />
             </div>
           </CardContent>
         </Card>

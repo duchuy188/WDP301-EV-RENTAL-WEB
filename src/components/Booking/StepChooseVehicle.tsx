@@ -1,7 +1,8 @@
 import React from 'react';
-import { Loader2, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
 import VehicleListItem from './VehicleListItem';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import type { VehicleListItem as VehicleListItemType } from '@/types/vehicles';
 
 type Props = {
@@ -50,8 +51,7 @@ const StepChooseVehicle: React.FC<Props> = ({ vehicles, isLoadingVehicles, selec
       {/* Content */}
       {isLoadingVehicles ? (
         <div className="flex flex-col justify-center items-center py-16 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700">
-          <Loader2 className="h-12 w-12 animate-spin text-green-600 mb-4" />
-          <span className="text-gray-600 dark:text-gray-300 font-medium">Đang tải danh sách xe...</span>
+          <LoadingSpinner size="lg" text="Đang tải danh sách xe..." />
         </div>
       ) : vehicles.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700">

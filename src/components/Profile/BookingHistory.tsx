@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { bookingAPI } from '@/api/bookingAPI';
 import { UserStatsData } from '@/types/perssonal';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Booking } from '@/types/booking';
 import { toast } from '@/utils/toast';
 
@@ -388,7 +389,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           </CardHeader>
           <CardContent>
             <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <LoadingSpinner size="md" />
             </div>
           </CardContent>
         </Card>

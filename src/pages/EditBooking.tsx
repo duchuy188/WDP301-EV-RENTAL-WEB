@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, Loader2, AlertTriangle } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import BookingSidebar from '@/components/Booking/BookingSidebar';
 import StepEditBooking from '@/components/Booking/StepEditBooking';
 import StepConfirm from '@/components/Booking/StepConfirm';
@@ -423,10 +425,7 @@ const EditBooking: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-green-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin text-green-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Đang tải thông tin...</p>
-        </div>
+        <LoadingSpinner size="xl" text="Đang tải thông tin..." />
       </div>
     );
   }
@@ -623,7 +622,7 @@ const EditBooking: React.FC = () => {
                 >
                   {submitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <FaMotorcycle className="h-4 w-4 animate-spin" />
                       Đang xử lý...
                     </>
                   ) : (

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Home, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle2, Home, FileText } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -165,7 +166,7 @@ const PaymentSuccess: React.FC = () => {
 
             {/* Auto redirect notice */}
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <FaMotorcycle className="h-4 w-4 animate-spin" />
               <span>Tự động chuyển đến lịch sử sau {countdown} giây...</span>
             </div>
           </Card>

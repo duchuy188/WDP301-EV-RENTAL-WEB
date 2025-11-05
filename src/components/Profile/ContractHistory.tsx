@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ContractDetail from './ContractDetail';
 import ContractViewer from './ContractViewer';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { contractAPI } from '@/api/constractAPI';
@@ -229,7 +230,7 @@ const ContractHistory: React.FC<ContractHistoryProps> = ({ className }) => {
           <CardContent className="p-6">
             {loading ? (
               <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                <LoadingSpinner size="lg" />
               </div>
             ) : contracts.length > 0 ? (
               <>

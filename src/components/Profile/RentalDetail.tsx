@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import ContractViewer from './ContractViewer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/utils/toast';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface Props {
   rental: Rental;
@@ -772,8 +773,7 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
       {/* Loading indicators */}
       {(loadingContract || loadingFeedback) && (
         <div className="text-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto mb-2"></div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Đang tải thông tin liên quan...</p>
+          <LoadingSpinner size="sm" text="Đang tải thông tin liên quan..." />
         </div>
       )}
 

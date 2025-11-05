@@ -18,6 +18,7 @@ import { FaMotorcycle } from 'react-icons/fa';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -530,10 +531,7 @@ const FeedbackHistory: React.FC = () => {
           {/* Loading State */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-300">Đang tải...</p>
-              </div>
+              <LoadingSpinner size="lg" text="Đang tải..." />
             </div>
           ) : filteredFeedbacks.length === 0 ? (
             <div className="text-center py-20">

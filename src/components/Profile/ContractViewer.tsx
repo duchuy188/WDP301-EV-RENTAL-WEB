@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { contractAPI } from '@/api/constractAPI';
-import { Loader2 } from 'lucide-react';
 import { toast } from '@/utils/toast';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface ContractViewerProps {
   contractId: string;
@@ -31,8 +31,7 @@ const ContractViewer: React.FC<ContractViewerProps> = ({ contractId }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <span className="ml-3 text-gray-600 dark:text-gray-400">Đang tải hợp đồng...</span>
+        <LoadingSpinner size="md" text="Đang tải hợp đồng..." />
       </div>
     );
   }

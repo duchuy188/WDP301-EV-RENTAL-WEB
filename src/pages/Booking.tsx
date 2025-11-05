@@ -5,8 +5,8 @@ import {
   Check, 
   ChevronLeft,
   ChevronRight,
-  Loader2,
 } from 'lucide-react';
+import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 // UI inputs used inside step components
 import BookingSidebar from '@/components/Booking/BookingSidebar';
@@ -783,7 +783,7 @@ const Booking: React.FC = () => {
                     >
                       {isLoading ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <FaMotorcycle className="mr-2 h-4 w-4 animate-spin" />
                           Đang xử lý...
                         </>
                       ) : !canRentVehicles(kycStatus) ? (
