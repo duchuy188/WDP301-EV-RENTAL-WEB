@@ -1,18 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, CreditCard, X, Clock } from 'lucide-react';
+import { AlertCircle, CreditCard, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { bookingAPI } from '@/api/bookingAPI';
 import { MyPendingBookingItem } from '@/types/booking';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/utils/toast';
 
 const PendingPaymentBanner: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [pendingPayments, setPendingPayments] = useState<MyPendingBookingItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const previousPaymentsRef = useRef<MyPendingBookingItem[]>([]);
+  const isFirstLoadRef = useRef(true);
 
   const loadPendingPayments = async () => {
     // Chỉ load khi user đã đăng nhập
@@ -25,7 +28,27 @@ const PendingPaymentBanner: React.FC = () => {
       const response = await bookingAPI.getMyPendingBookings();
       
       if (response.success && response.pending_bookings) {
-        setPendingPayments(response.pending_bookings);
+        const newPayments = response.pending_bookings;
+        
+        // Kiểm tra booking nào đã hết hạn (không còn trong danh sách mới)
+        if (!isFirstLoadRef.current && previousPaymentsRef.current.length > 0) {
+          const expiredBookings = previousPaymentsRef.current.filter(
+            oldPayment => !newPayments.some(newPayment => newPayment.temp_id === oldPayment.temp_id)
+          );
+          
+          // Hiển thị toast cho mỗi booking đã hết hạn
+          expiredBookings.forEach(expiredBooking => {
+            toast.error(
+              'ĐẶT XE THẤT BẠI',
+              `Đặt xe ${expiredBooking.booking_data.vehicle.name} đã hết thời gian thanh toán`
+            );
+          });
+        }
+        
+        // Cập nhật danh sách
+        previousPaymentsRef.current = newPayments;
+        setPendingPayments(newPayments);
+        isFirstLoadRef.current = false;
       }
     } catch (error) {
       console.error('Error loading pending bookings:', error);
@@ -71,25 +94,6 @@ const PendingPaymentBanner: React.FC = () => {
         },
       },
     });
-  };
-
-  const handleDismiss = async (tempId: string) => {
-    console.log('❌ Dismissing payment:', tempId);
-    
-    try {
-      // Gọi API hủy pending booking
-      await bookingAPI.cancelPendingBooking(tempId);
-      
-      // Xóa khỏi danh sách hiển thị
-      setPendingPayments(prev => prev.filter(p => p.temp_id !== tempId));
-      
-      // Hiển thị thông báo
-      // toast.success('Đã hủy đặt xe'); // Không hiển thị toast để tránh làm phiền user
-    } catch (error) {
-      console.error('Error dismissing pending booking:', error);
-      // Vẫn xóa khỏi UI ngay cả khi API fail (có thể đã hết hạn)
-      setPendingPayments(prev => prev.filter(p => p.temp_id !== tempId));
-    }
   };
 
   const formatPrice = (price: number) => {
@@ -163,14 +167,6 @@ const PendingPaymentBanner: React.FC = () => {
                     >
                       <CreditCard className="h-4 w-4 mr-1" />
                       Thanh toán ngay
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDismiss(payment.temp_id)}
-                      className="hover:bg-orange-100 dark:hover:bg-orange-900/30"
-                    >
-                      <X className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>

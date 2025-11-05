@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Clock, 
   ChevronLeft,
   ChevronRight,
-  CreditCard,
 } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
@@ -367,14 +365,8 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
-  // Statistics from bookings (fallback if userStats not provided)
-  const totalTrips = userStats?.overview.total_rentals ?? bookings.length;
-  const totalSpent = userStats?.overview.total_spent ?? bookings.reduce((s, b) => s + (b.total_price ?? 0), 0);
-  // Count trips that are currently active/on-going. Backend may use 'active' or 'confirmed' for ongoing trips.
-  const activeTrips = bookings.filter((booking: Booking) => booking.status === 'active' || booking.status === 'confirmed').length;
-  
   // Check if user has any booking history
-  const hasBookingHistory = totalTrips > 0 || bookings.length > 0;
+  const hasBookingHistory = bookings.length > 0;
   const insights = userStats?.insights || [];
 
   if (loading) {
@@ -425,71 +417,6 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           </Card>
         </motion.div>
       )}
-
-      {/* Statistics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <FaMotorcycle className="h-5 w-5 text-green-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng chuyến</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{totalTrips}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng chi tiêu</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {formatPrice(totalSpent)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                  <Clock className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đang thuê</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{activeTrips}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
 
       {/* Booking History Table */}
       <motion.div

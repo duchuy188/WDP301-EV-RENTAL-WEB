@@ -13,6 +13,7 @@ import {
 
 const NotificationDropdown: React.FC = () => {
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = React.useState(false);
   const { 
     notifications, 
     unreadCount, 
@@ -60,12 +61,30 @@ const NotificationDropdown: React.FC = () => {
     
     // Navigate based on notification type
     if (notification.type === 'booking_approved' || notification.type === 'booking_cancelled') {
+      setIsOpen(false);
       navigate('/profile?tab=bookings');
     }
   };
 
+  const handleDeleteNotification = (e: React.MouseEvent, notificationId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    clearNotification(notificationId);
+    // Giữ dropdown mở sau khi xóa
+  };
+
+  const handleClearAll = () => {
+    clearAllNotifications();
+    // Giữ dropdown mở sau khi xóa tất cả
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsRead();
+    // Giữ dropdown mở sau khi đánh dấu đọc tất cả
+  };
+
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-9 w-9 relative">
           <Bell className="h-4 w-4" />
@@ -104,7 +123,7 @@ const NotificationDropdown: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={markAllAsRead}
+                  onClick={handleMarkAllAsRead}
                   className="h-7 px-2 text-xs"
                 >
                   <CheckCheck className="h-3 w-3 mr-1" />
@@ -114,7 +133,7 @@ const NotificationDropdown: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={clearAllNotifications}
+                onClick={handleClearAll}
                 className="h-7 px-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
               >
                 <Trash2 className="h-3 w-3" />
@@ -172,11 +191,12 @@ const NotificationDropdown: React.FC = () => {
 
                       {/* Delete button */}
                       <button
-                        onClick={(e) => {
+                        onClick={(e) => handleDeleteNotification(e, notification.id)}
+                        onMouseDown={(e) => {
                           e.stopPropagation();
-                          clearNotification(notification.id);
                         }}
                         className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
+                        aria-label="Xóa thông báo"
                       >
                         <X className="h-3 w-3 text-gray-400 dark:text-gray-500" />
                       </button>
@@ -199,7 +219,10 @@ const NotificationDropdown: React.FC = () => {
             <Button
               variant="ghost"
               className="w-full text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-              onClick={() => navigate('/profile?tab=bookings')}
+              onClick={() => {
+                setIsOpen(false);
+                navigate('/profile?tab=bookings');
+              }}
             >
               Xem tất cả đặt xe
             </Button>

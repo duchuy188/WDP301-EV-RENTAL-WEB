@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, MapPin, FileText, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, MapPin, FileText, AlertTriangle, Wallet } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,7 @@ interface VehicleOption {
   brand: string;
   available_count?: number;
   price_per_day: number;
+  isOriginalBooking?: boolean; // Flag để biết đây là xe gốc đã đặt
 }
 
 type Props = {
@@ -66,6 +67,22 @@ const StepEditBooking: React.FC<Props> = ({
     return diffDays;
   };
 
+  // Calculate deposit amount
+  const calculateDeposit = () => {
+    if (!bookingDate || !endDate || !selectedModel || !selectedColor) return { depositPercentage: 0, depositAmount: 0, totalPrice: 0 };
+    
+    const days = calculateDays();
+    const selectedVeh = vehicles.find(v => v.model === selectedModel && v.color === selectedColor);
+    const pricePerDay = selectedVeh?.price_per_day || 0;
+    const totalPrice = days * pricePerDay;
+    
+    // Lấy deposit_percentage từ originalBooking nếu có
+    const depositPercentage = originalBooking?.vehicle_id?.deposit_percentage || 0;
+    const depositAmount = (totalPrice * depositPercentage) / 100;
+    
+    return { depositPercentage, depositAmount, totalPrice, pricePerDay, days };
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -116,13 +133,44 @@ const StepEditBooking: React.FC<Props> = ({
             />
           </div>
         </div>
-        {bookingDate && endDate && (
-          <div className="mt-4 bg-white dark:bg-gray-700 rounded-lg p-3">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Tổng số ngày thuê: <span className="font-bold text-green-600 dark:text-green-400">{calculateDays()} ngày</span>
-            </p>
-          </div>
-        )}
+        {bookingDate && endDate && (() => {
+          const days = calculateDays();
+          const { depositPercentage, depositAmount, totalPrice, pricePerDay } = calculateDeposit();
+          const hasValidData = selectedModel && selectedColor && days > 0;
+          
+          return (
+            <div className="mt-4 bg-white dark:bg-gray-700 rounded-lg p-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-700 dark:text-gray-300">Tổng số ngày thuê:</span>
+                <span className="font-bold text-green-600 dark:text-green-400">{days} ngày</span>
+              </div>
+              
+              {hasValidData && pricePerDay && pricePerDay > 0 && (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700 dark:text-gray-300">Đơn giá:</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">{formatPrice(pricePerDay || 0)}/ngày</span>
+                  </div>
+                  <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-bold text-gray-900 dark:text-gray-100">Tổng cộng:</span>
+                    <span className="font-bold text-green-600 dark:text-green-400">{formatPrice(totalPrice)}</span>
+                  </div>
+                  
+                  {depositPercentage > 0 && (
+                    <>
+                      <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                      <div className="flex items-center justify-between text-sm bg-orange-50 dark:bg-orange-900/20 p-2 rounded-lg">
+                        <span className="font-bold text-orange-700 dark:text-orange-400">Đặt cọc ({depositPercentage}%):</span>
+                        <span className="font-bold text-orange-600 dark:text-orange-400">{formatPrice(depositAmount)}</span>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Station Section */}
@@ -159,7 +207,7 @@ const StepEditBooking: React.FC<Props> = ({
         </h3>
         {vehicles.length > 0 ? (
           <p className="text-sm text-green-700 dark:text-green-400 mb-4">
-            ✓ Có <strong>{vehicles.length} model</strong> available tại trạm này
+            ✓ Có <strong>{vehicles.length} màu</strong> có sẵn tại trạm này
           </p>
         ) : (
           <p className="text-sm text-amber-700 dark:text-amber-400 mb-4 flex items-center gap-2">
@@ -207,6 +255,11 @@ const StepEditBooking: React.FC<Props> = ({
                       <div className="flex items-center justify-between w-full min-w-[300px]">
                         <span className="font-medium">
                           {vehicle.brand} {vehicle.model} - {vehicle.color}
+                          {vehicle.isOriginalBooking && (
+                            <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                              Xe đã đặt
+                            </span>
+                          )}
                         </span>
                         <span className="text-green-600 font-semibold ml-4">
                           {formatPrice(vehicle.price_per_day)}/ngày
@@ -219,17 +272,25 @@ const StepEditBooking: React.FC<Props> = ({
             </div>
             
             {/* Selected vehicle info */}
-            {selectedModel && selectedColor && (
-              <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 rounded-lg p-4">
-                <p className="text-sm text-green-900 dark:text-green-100 font-semibold flex items-center gap-2">
-                  <span className="text-lg">✓</span>
-                  Đã chọn: {vehicles.find(v => v.model === selectedModel && v.color === selectedColor)?.brand} {selectedModel} - {selectedColor}
-                </p>
-                <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                  Giá: <strong>{formatPrice(vehicles.find(v => v.model === selectedModel && v.color === selectedColor)?.price_per_day || 0)}/ngày</strong>
-                </p>
-              </div>
-            )}
+            {selectedModel && selectedColor && (() => {
+              const selectedVeh = vehicles.find(v => v.model === selectedModel && v.color === selectedColor);
+              return (
+                <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 rounded-lg p-4">
+                  <p className="text-sm text-green-900 dark:text-green-100 font-semibold flex items-center gap-2">
+                    <span className="text-lg">✓</span>
+                    Đã chọn: {selectedVeh?.brand} {selectedModel} - {selectedColor}
+                    {selectedVeh?.isOriginalBooking && (
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                        Xe gốc
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                    Giá: <strong>{formatPrice(selectedVeh?.price_per_day || 0)}/ngày</strong>
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>

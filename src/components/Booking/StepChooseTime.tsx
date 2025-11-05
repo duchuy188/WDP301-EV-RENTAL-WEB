@@ -79,17 +79,12 @@ const StepChooseTime: React.FC<Props> = ({
     // If onColorChangeLoadVehicle callback is provided and we have color info, load vehicle detail for this color
     if (onColorChangeLoadVehicle && selectedVehicleDetail?.available_colors) {
       const colorOption = selectedVehicleDetail.available_colors.find(c => c.color === newColor);
-      console.log('Color option found:', colorOption);
-      console.log('Sample vehicle ID:', colorOption?.sample_vehicle_id);
-      
-      if (colorOption?.sample_vehicle_id && colorOption.sample_vehicle_id.trim() !== '') {
+      if (colorOption?.sample_vehicle_id) {
         try {
           await onColorChangeLoadVehicle(colorOption.sample_vehicle_id);
         } catch (error) {
           console.error('Error loading vehicle detail for color:', error);
         }
-      } else {
-        console.warn('No valid sample_vehicle_id found for color:', newColor);
       }
     }
   };
