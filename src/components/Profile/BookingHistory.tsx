@@ -157,6 +157,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
   // Helper function to check if booking can be edited
   const canEditBooking = (booking: Booking): { canEdit: boolean; reason?: string } => {
     console.log('🔍 Checking edit booking:', booking.code);
+    console.log('  Booking type:', booking.booking_type);
     
     // Điều kiện 1: Phải ở trạng thái 'pending' (chưa confirm)
     console.log('  Status:', booking.status);
@@ -165,37 +166,12 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       return { canEdit: false, reason: 'Chỉ có thể chỉnh sửa đặt xe ở trạng thái "Đang chờ"' };
     }
 
-    // Điều kiện 2: CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1)
+    // Điều kiện 2: CHỈ ĐƯỢC EDIT 1 LẦN DUY NHẤT (edit_count < 1) - áp dụng cho TẤT CẢ booking
     const editCount = booking.edit_count || 0;
     console.log('  Edit count:', editCount);
     if (editCount >= 1) {
       console.log('  ❌ Đã edit 1 lần rồi');
       return { canEdit: false, reason: 'Bạn đã sử dụng hết lượt chỉnh sửa (tối đa 1 lần)' };
-    }
-
-    // Điều kiện 3: Phải edit trước thời gian nhận xe ít nhất 24 giờ
-    // Kết hợp cả start_date và pickup_time để tính chính xác
-    const startDate = parseBookingDate(booking.start_date);
-    console.log('  Start date (parsed):', startDate);
-    console.log('  Pickup time:', booking.pickup_time);
-    
-    // Thêm pickup_time vào startDate để có thời gian chính xác
-    if (booking.pickup_time) {
-      const [hours, minutes] = booking.pickup_time.split(':').map(s => parseInt(s, 10));
-      if (!isNaN(hours) && !isNaN(minutes)) {
-        startDate.setHours(hours, minutes, 0, 0);
-        console.log('  Start date with time:', startDate);
-      }
-    }
-    
-    const now = new Date();
-    const hoursDiff = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-    console.log('  Now:', now);
-    console.log('  Hours diff:', hoursDiff.toFixed(2), 'giờ');
-    
-    if (hoursDiff < 24) {
-      console.log('  ❌ Còn dưới 24 giờ');
-      return { canEdit: false, reason: 'Phải chỉnh sửa trước thời gian nhận xe ít nhất 24 giờ' };
     }
 
     console.log('  ✅ CÓ THỂ EDIT');
@@ -616,6 +592,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-gray-700">Bạn có chắc muốn hủy đặt xe <span className="font-medium">{cancelingBooking?.code ?? cancelingBooking?._id}</span>?</p>
+            <p className="text-gray-700"><span className="text-red-600 font-semibold">Lưu ý:</span> Hủy đặt xe sẽ không thể hoàn tiền lại.</p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Lý do (tuỳ chọn)</label>
               <Textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} />
