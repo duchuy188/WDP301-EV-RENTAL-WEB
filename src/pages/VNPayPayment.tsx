@@ -344,13 +344,13 @@ const VNPayPayment: React.FC = () => {
                       <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                         <Clock className="h-4 w-4" />
                         <span>
-                          {new Date(bookingData.startDate).toLocaleDateString('vi-VN')} {bookingData.pickupTime}
+                          {bookingData.startDate.split(' ')[0]} {bookingData.pickupTime}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                         <Clock className="h-4 w-4" />
                         <span>
-                          {new Date(bookingData.endDate).toLocaleDateString('vi-VN')} {bookingData.returnTime}
+                          {bookingData.endDate.split(' ')[0]} {bookingData.returnTime}
                         </span>
                       </div>
                     </div>
