@@ -8,7 +8,7 @@ export interface BookingRequest {
   start_date: string;      // yyyy-mm-dd
   end_date: string;        // yyyy-mm-dd
   pickup_time: string;     // HH:mm
-  return_time: string;     // HH:mm
+  // return_time được backend tự động tính, không cần gửi
   special_requests?: string;
   notes?: string;
 }

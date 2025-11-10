@@ -421,8 +421,7 @@ const Booking: React.FC = () => {
         station_id: selectedStation, // Trạm được chọn từ dropdown
         start_date: bookingDate, // Ngày bắt đầu từ form
         end_date: endDate || bookingDate, // Ngày kết thúc từ form hoặc = ngày bắt đầu
-        pickup_time: startTime, // Giờ nhận xe từ form
-        return_time: endTime, // Giờ trả xe từ form
+        pickup_time: startTime, // Giờ nhận xe từ form (backend sẽ tự tính return_time)
         special_requests: specialRequests || "", // Yêu cầu đặc biệt từ form
         notes: notes || "", // Ghi chú từ form
       };
