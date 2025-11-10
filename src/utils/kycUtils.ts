@@ -40,7 +40,7 @@ export const isKYCNotSubmitted = (kyc: KYCStatusResponseUnion | null): boolean =
 
 // Business logic functions
 export const canRentVehicles = (kyc: KYCStatusResponseUnion | null): boolean => {
-  return isKYCApproved(kyc);
+  return isKYCApproved(kyc) || isKYCPending(kyc);
 };
 
 export const needsDocumentSubmission = (kyc: KYCStatusResponseUnion | null): boolean => {

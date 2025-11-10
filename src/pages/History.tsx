@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, BarChart3, TrendingUp, MapPin, AlertCircle, Award, Navigation, Lock } from 'lucide-react';
+import { Calendar, Clock, BarChart3, TrendingUp, MapPin, Award, Navigation, Lock } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

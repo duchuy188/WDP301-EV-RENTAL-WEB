@@ -1,6 +1,6 @@
 import React from 'react';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
+// import { Separator } from '@/components/ui/separator';
+// import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Calendar, Clock, Palette, FileText, MessageSquare, Calculator, Wallet, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
@@ -62,7 +62,7 @@ const formatTimeVN = (timeString?: string, dateString?: string): string => {
 const StepConfirm: React.FC<Props> = ({
   selectedVehicle,
   selectedColor,
-  selectedStation,
+  // selectedStation,
   bookingDate,
   endDate,
   startTime,
@@ -75,10 +75,10 @@ const StepConfirm: React.FC<Props> = ({
   depositPercentage,
   depositAmount,
   formatPrice,
-  stations,
+  // stations,
   isEditMode = false,
   editReason = '',
-  onEditReasonChange,
+  // onEditReasonChange,
   availableAlternatives = [],
   selectedAlternative = null,
   onSelectAlternative,

@@ -111,7 +111,6 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
                 kyc={kyc}
                 onKycUpdate={handleKycUpdate}
                 onImagePreview={handleImagePreview}
-                showResponseDetails={showResponseDetails}
               />
               
               {/* Căn cước công dân */}
@@ -119,7 +118,6 @@ const DocumentVerification: React.FC<DocumentVerificationProps> = () => {
                 kyc={kyc}
                 onKycUpdate={handleKycUpdate}
                 onImagePreview={handleImagePreview}
-                showResponseDetails={showResponseDetails}
               />
               
               {/* Information notice based on status */}

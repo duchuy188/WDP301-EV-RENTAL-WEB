@@ -205,7 +205,7 @@ const FloatingChat: React.FC = () => {
   // Listen for payment notification event
   useEffect(() => {
     const handlePaymentNotification = (event: CustomEvent) => {
-      const { type, bookingCode, message, amount } = event.detail;
+      const { type, bookingCode, message } = event.detail;
       
       let notificationMessage = '';
       if (type === 'success') {

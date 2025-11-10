@@ -1,29 +1,29 @@
 import React, { useState } from 'react';
-import { Shield, Upload, Eye, Image as ImageIcon, FileText } from 'lucide-react';
+import { Shield, Upload, Eye, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { uploadIdentityCardFront, uploadIdentityCardBack } from '@/api/kycAPI';
 import type { KYCStatusResponseUnion, KYCIdentityResponse, KYCIdentityCardResponse } from '@/types/kyc';
 import { getIdentityData, isKYCRejected } from '@/utils/kycUtils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '../ui/input';
+// import { Input } from '../ui/input';
 import { toast } from '@/utils/toast';
 
 interface IdentityCardVerificationProps {
   kyc: KYCStatusResponseUnion | null;
   onKycUpdate: () => Promise<void>;
   onImagePreview: (imageUrl: string) => void;
-  showResponseDetails: (response: any, title: string) => void;
+  // showResponseDetails: (response: any, title: string) => void;
 }
 // (CCCD) Xác minh Căn cước công dân
 const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
   kyc,
   onKycUpdate,
   onImagePreview,
-  showResponseDetails
+  // showResponseDetails
 }) => {
   const [loading, setLoading] = useState(false);
-  const [reuploadEnabled, setReuploadEnabled] = useState<Record<string, boolean>>({});
+  // const [reuploadEnabled, setReuploadEnabled] = useState<Record<string, boolean>>({});
   const [identityFrontResponse, setIdentityFrontResponse] = useState<KYCIdentityResponse | null>(null);
   const [identityBackResponse, setIdentityBackResponse] = useState<KYCIdentityCardResponse | null>(null);
   
@@ -81,7 +81,7 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
       if (side === 'front') {
         response = await uploadIdentityCardFront(file);
         setIdentityFrontResponse(response);
-        setReuploadEnabled(prev => ({ ...prev, ['identity-front']: false }));
+        // setReuploadEnabled(prev => ({ ...prev, ['identity-front']: false }));
         // Clear preview after successful upload
         setFrontPreview(null);
         setFrontFile(null);
@@ -90,7 +90,7 @@ const IdentityCardVerification: React.FC<IdentityCardVerificationProps> = ({
       } else {
         response = await uploadIdentityCardBack(file);
         setIdentityBackResponse(response);
-        setReuploadEnabled(prev => ({ ...prev, ['identity-back']: false }));
+        // setReuploadEnabled(prev => ({ ...prev, ['identity-back']: false }));
         // Clear preview after successful upload
         setBackPreview(null);
         setBackFile(null);
