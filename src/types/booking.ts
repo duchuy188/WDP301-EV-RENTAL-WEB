@@ -54,6 +54,12 @@ export interface BookingVehicle {
   color?: string; // Màu xe
   price_per_day?: number; // Giá thuê mỗi ngày
   images?: string[];
+  type?: string; // Vehicle type
+  battery_capacity?: number; // Battery capacity
+  max_range?: number; // Maximum range
+  max_speed?: number; // Maximum speed
+  power?: number; // Power
+  deposit_percentage?: number; // Deposit percentage
 }
 
 // Station info embedded trong booking

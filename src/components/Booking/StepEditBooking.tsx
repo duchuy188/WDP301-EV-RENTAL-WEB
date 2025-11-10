@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, MapPin, FileText, AlertTriangle, Wallet } from 'lucide-react';
+import { Calendar, MapPin, FileText, AlertTriangle } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

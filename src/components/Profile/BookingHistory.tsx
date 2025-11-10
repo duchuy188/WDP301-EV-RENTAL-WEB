@@ -96,14 +96,14 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
     fetchData();
   }, []);
 
-  const formatPrice = (price: number) => {
-    // Format as in screenshot: group thousands and append ' đ'
-    try {
-      return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
-    } catch (e) {
-      return price + ' đ';
-    }
-  };
+  // const formatPrice = (price: number) => {
+  //   // Format as in screenshot: group thousands and append ' đ'
+  //   try {
+  //     return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+  //   } catch (e) {
+  //     return price + ' đ';
+  //   }
+  // };
 
   const formatTime = (dateString?: string | null) => {
     const d = parseBookingDate(dateString);

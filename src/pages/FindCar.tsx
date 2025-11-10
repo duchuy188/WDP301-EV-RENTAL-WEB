@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Search, 
-  Filter, 
   Grid3X3,
   Map
 } from 'lucide-react';
@@ -14,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import VehicleImage from '@/components/VehicleImage';
 import VehicleMap from '@/components/VehicleMap';
 import { vehiclesAPI } from '@/api/vehiclesAPI';

@@ -6,12 +6,10 @@ import {
   X, 
   Sun, 
   Moon, 
-  Bell, 
   User, 
   Settings, 
   LogOut,
   Zap,
-  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -41,7 +39,7 @@ const Header: React.FC = () => {
     navigate('/');
   };
 
-  const handleNavClick = (path: string, label: string, e: React.MouseEvent) => {
+  const handleNavClick = (path: string, _label: string, e: React.MouseEvent) => {
     // Kiểm tra nếu là trang thống kê và chưa đăng nhập
     if (path === '/history' && !isAuthenticated) {
       e.preventDefault();

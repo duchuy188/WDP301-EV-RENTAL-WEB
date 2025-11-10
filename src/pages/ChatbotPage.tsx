@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Sparkles, History, ArrowLeft, Paperclip, Image as ImageIcon, Mic, Send, MessageCircle, CreditCard, ExternalLink } from 'lucide-react';
+import { Zap, Sparkles, History, ArrowLeft, Paperclip, Image as ImageIcon, Mic, Send, MessageCircle, CreditCard } from 'lucide-react';
 import { sendMessage, conversations, getConversationHistory } from '@/api/chatbotAPI';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';

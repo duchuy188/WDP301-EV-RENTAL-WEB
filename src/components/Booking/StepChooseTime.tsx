@@ -67,8 +67,8 @@ const StepChooseTime: React.FC<Props> = ({
   setNotes,
   onNotesChange,
   isRebooking = false,
-  isEditMode = false,
-  stations,
+  // isEditMode = false,
+  // stations,
   onColorChangeLoadVehicle,
 }) => {
   // Handler for color change - load vehicle detail for the selected color

@@ -18,7 +18,7 @@ const BookingSuccessPage: React.FC = () => {
   const state = (location.state || {}) as any;
   const bookingResponse: BookingResponse = state.bookingResponse;
   const selectedVehicle = state.selectedVehicle;
-  const bookingFromState: BookingType = bookingResponse?.booking;
+  const bookingFromState: BookingType | undefined = bookingResponse?.booking;
   
   // Get booking code from query params (for payment callback flow)
   const bookingCodeFromUrl = searchParams.get('code') || searchParams.get('bookingCode');
@@ -77,7 +77,7 @@ const BookingSuccessPage: React.FC = () => {
   }, [bookingCodeFromUrl, bookingFromState, holdingFeePaid, navigate]);
 
   // Use fetched booking if available, otherwise use booking from state
-  const booking: BookingType = fetchedBooking || bookingFromState;
+  const booking: BookingType | undefined = fetchedBooking || bookingFromState;
 
   // Use local formatting helpers (do not accept functions from location.state)
   const formatDateSafe = (s: string) => {

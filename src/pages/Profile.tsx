@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Edit, Check, X, Shield, User, FileCheck } from 'lucide-react';
+import { Shield, User, FileCheck } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
-import { Button } from '@/components/ui/button';
+// import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { 
   ProfileHeader, 
   DocumentVerification, 
-  ProfileActions, 
+  // ProfileActions, 
   ImagePreviewDialog,
   BookingHistory,
   RentalHistory

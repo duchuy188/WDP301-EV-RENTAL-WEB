@@ -199,7 +199,7 @@ const AuthPage = () => {
       } else {
         // Fallback: extract user info and use regular login
         // You'll need to decode the Google token to get user info
-  const userInfo = googleCredential.profileObj || googleCredential;
+  // const userInfo = googleCredential.profileObj || googleCredential;
   // For now, just show success and redirect
   // In real implementation, you'd need to handle this in your backend
       }
@@ -221,36 +221,36 @@ const AuthPage = () => {
   };
 
   // Handle Google Login Error
-  const handleGoogleLoginError = (error: any) => {
-    setError('Đăng nhập Google thất bại. Vui lòng thử lại.');
-  };
+  // const handleGoogleLoginError = (_error: any) => {
+  //   setError('Đăng nhập Google thất bại. Vui lòng thử lại.');
+  // };
 
   // Simple Google Login Success (alternative approach)
-  const handleSimpleGoogleSuccess = async (credentialResponse: any) => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      // Show success message
-      setSuccessMessage('Đăng nhập Google thành công!');
-      
-      // Here you would typically:
-      // 1. Send the credential to your backend
-      // 2. Get user info and JWT token
-      // 3. Store in auth context
-      
-      
-      // For demo purposes, just redirect after delay
-      setTimeout(() => {
-        navigate('/');
-      }, 1500);
-      
-    } catch (err: any) {
-      setError('Đăng nhập Google thất bại. Vui lòng thử lại.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleSimpleGoogleSuccess = async (_credentialResponse: any) => {
+  //   setLoading(true);
+  //   setError('');
+  //   
+  //   try {
+  //     // Show success message
+  //     setSuccessMessage('Đăng nhập Google thành công!');
+  //     
+  //     // Here you would typically:
+  //     // 1. Send the credential to your backend
+  //     // 2. Get user info and JWT token
+  //     // 3. Store in auth context
+  //     
+  //     
+  //     // For demo purposes, just redirect after delay
+  //     setTimeout(() => {
+  //       navigate('/');
+  //     }, 1500);
+  //     
+  //   } catch (err: any) {
+  //     setError('Đăng nhập Google thất bại. Vui lòng thử lại.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen flex relative overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -466,7 +466,7 @@ const AuthPage = () => {
                     {/* Google Login Button with multiple approaches */}
                     <GoogleLoginButton 
                       onSuccess={handleGoogleLoginSuccess}
-                      onError={handleGoogleLoginError}
+                      onError={() => setError('Đăng nhập Google thất bại. Vui lòng thử lại.')}
                       disabled={loading}
                     />
                   </form>

@@ -2,11 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Clock, 
   ChevronLeft,
   ChevronRight,
-  CreditCard,
-  RefreshCw,
 } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
@@ -177,28 +174,28 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
     return new Date(0);
   };
 
-  const formatTime = (dateString?: string | null) => {
-    const d = parseBookingDate(dateString);
-    if (d.getTime() === 0) return '';
-    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  };
+  // const formatTime = (dateString?: string | null) => {
+  //   const d = parseBookingDate(dateString);
+  //   if (d.getTime() === 0) return '';
+  //   return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  // };
 
-  const formatDate = (dateString?: string | null) => {
-    const d = parseBookingDate(dateString);
-    return d.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
+  // const formatDate = (dateString?: string | null) => {
+  //   const d = parseBookingDate(dateString);
+  //   return d.toLocaleDateString('vi-VN', {
+  //     day: '2-digit',
+  //     month: '2-digit',
+  //     year: 'numeric',
+  //   });
+  // };
 
-  const formatPrice = (price: number) => {
-    try {
-      return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
-    } catch (e) {
-      return price + ' đ';
-    }
-  };
+  // const formatPrice = (price: number) => {
+  //   try {
+  //     return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+  //   } catch (e) {
+  //     return price + ' đ';
+  //   }
+  // };
 
   const getStatusColor = (status: string) => {
     switch (status) {

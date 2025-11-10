@@ -1,29 +1,29 @@
 import React, { useState } from 'react';
-import { Shield, Upload, Eye, Image as ImageIcon, FileText } from 'lucide-react';
+import { Shield, Upload, Eye, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { uploadLicenseFront, uploadLicenseBack } from '@/api/kycAPI';
 import type { KYCStatusResponseUnion, KYCLicenseFrontResponse, KYCLicenseBackResponse } from '@/types/kyc';
 import { getLicenseData, isKYCRejected } from '@/utils/kycUtils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '../ui/input';
+// import { Input } from '../ui/input';
 import { toast } from '@/utils/toast';
 
 interface DriverLicenseVerificationProps {
   kyc: KYCStatusResponseUnion | null;
   onKycUpdate: () => Promise<void>;
   onImagePreview: (imageUrl: string) => void;
-  showResponseDetails: (response: any, title: string) => void;
+  // showResponseDetails: (response: any, title: string) => void;
 }
 // (GPLX) Xác minh Giấy phép lái xe
 const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
   kyc,
   onKycUpdate,
   onImagePreview,
-  showResponseDetails
+  // showResponseDetails
 }) => {
   const [loading, setLoading] = useState(false);
-  const [reuploadEnabled, setReuploadEnabled] = useState<Record<string, boolean>>({});
+  // const [reuploadEnabled, setReuploadEnabled] = useState<Record<string, boolean>>({});
   const [licenseFrontResponse, setLicenseFrontResponse] = useState<KYCLicenseFrontResponse | null>(null);
   const [licenseBackResponse, setLicenseBackResponse] = useState<KYCLicenseBackResponse | null>(null);
   
@@ -82,7 +82,7 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
         response = await uploadLicenseFront(file);
         setLicenseFrontResponse(response);
         // lock reupload for this side after success
-        setReuploadEnabled(prev => ({ ...prev, ['license-front']: false }));
+        // setReuploadEnabled(prev => ({ ...prev, ['license-front']: false }));
         // Clear preview after successful upload
         setFrontPreview(null);
         setFrontFile(null);
@@ -91,7 +91,7 @@ const DriverLicenseVerification: React.FC<DriverLicenseVerificationProps> = ({
       } else {
         response = await uploadLicenseBack(file);
         setLicenseBackResponse(response);
-        setReuploadEnabled(prev => ({ ...prev, ['license-back']: false }));
+        // setReuploadEnabled(prev => ({ ...prev, ['license-back']: false }));
         // Clear preview after successful upload
         setBackPreview(null);
         setBackFile(null);
