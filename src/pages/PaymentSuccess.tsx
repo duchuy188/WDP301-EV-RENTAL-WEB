@@ -20,7 +20,17 @@ const PaymentSuccess: React.FC = () => {
   const transactionId = searchParams.get('transactionId') || searchParams.get('transaction_id');
 
   useEffect(() => {
-    // 📢 Gửi thông báo đến FloatingChat khi trang load
+    // Kiểm tra xem có phải thanh toán từ chatbot không
+    const isFromChatbot = sessionStorage.getItem('payment_from_chatbot') === 'true';
+    
+    // Nếu từ chatbot, redirect về history ngay lập tức
+    if (isFromChatbot) {
+      sessionStorage.removeItem('payment_from_chatbot');
+      navigate('/history', { replace: true });
+      return;
+    }
+    
+    // 📢 Gửi thông báo đến FloatingChat khi trang load (chỉ khi KHÔNG từ chatbot)
     // Chỉ gửi nếu chưa được gửi từ VNPayCallback (kiểm tra bằng sessionStorage)
     const notificationSent = sessionStorage.getItem('payment_notification_sent');
     
@@ -37,7 +47,7 @@ const PaymentSuccess: React.FC = () => {
       // Đánh dấu đã gửi notification
       sessionStorage.setItem('payment_notification_sent', 'true');
     }
-  }, [bookingCode, amount]);
+  }, [bookingCode, amount, navigate]);
 
   useEffect(() => {
     // Countdown timer

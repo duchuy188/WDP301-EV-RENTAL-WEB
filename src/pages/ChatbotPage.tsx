@@ -352,7 +352,11 @@ const ChatbotPage: React.FC = () => {
                                     transition={{ delay: suggIdx * 0.1 }}
                                   >
                                     <Button
-                                      onClick={() => window.open(paymentLink, '_blank')}
+                                      onClick={() => {
+                                        // Đánh dấu thanh toán từ chatbot
+                                        sessionStorage.setItem('payment_from_chatbot', 'true');
+                                        window.open(paymentLink, '_blank');
+                                      }}
                                       className="w-full text-left px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] text-sm font-medium"
                                     >
                                       <CreditCard className="h-4 w-4 mr-2 inline" />
