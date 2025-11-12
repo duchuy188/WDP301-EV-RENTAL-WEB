@@ -190,7 +190,6 @@ const BookingSuccessPage: React.FC = () => {
 
               <motion.div variants={itemVariants} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                 <h3 className="font-bold text-base text-green-600 dark:text-green-400 mb-3 flex items-center gap-2">
-                  <span className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-xs">🚗</span>
                   Chi tiết thuê xe
                 </h3>
                 <div className="space-y-2">
@@ -214,7 +213,7 @@ const BookingSuccessPage: React.FC = () => {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <motion.div variants={itemVariants} className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                  <h3 className="font-semibold text-base text-blue-600 dark:text-blue-400 mb-2">📅 Thời gian thuê</h3>
+                  <h3 className="font-semibold text-base text-blue-600 dark:text-blue-400 mb-2">Thời gian thuê</h3>
                   <div className="space-y-1">
                     <div>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Từ ngày</p>
@@ -228,7 +227,7 @@ const BookingSuccessPage: React.FC = () => {
                 </motion.div>
 
                 <motion.div variants={itemVariants} className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">💰 Tổng tiền</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tổng tiền</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{formatPrice(booking.total_price ?? 0)}</p>
                   {booking.deposit_amount != null && booking.deposit_amount > 0 && (
                     <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-800">

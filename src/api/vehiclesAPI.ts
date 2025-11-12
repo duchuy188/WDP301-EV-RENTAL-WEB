@@ -5,8 +5,8 @@ import apiClient from './config';
 
 
 export const vehiclesAPI = {
-  getVehicles: async (): Promise<VehiclesResponse> => {
-    const response = await apiClient.get('/vehicles');
+  getVehicles: async (params?: { station_id?: string }): Promise<VehiclesResponse> => {
+    const response = await apiClient.get('/vehicles', { params });
     return response.data;
   },
   getVehicleById: async (id: string): Promise<Vehicle> => {

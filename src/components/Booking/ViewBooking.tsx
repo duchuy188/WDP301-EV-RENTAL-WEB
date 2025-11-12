@@ -19,14 +19,6 @@ interface ViewBookingProps {
 const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = false, editDisabledReason, onRebook, canRebook = false }) => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
 
-  // Debug: Log booking data received
-  console.log('📥 ViewBooking received:', {
-    pickup_time: booking.pickup_time,
-    return_time: booking.return_time,
-    start_date: booking.start_date,
-    end_date: booking.end_date
-  });
-
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 

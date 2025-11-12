@@ -14,7 +14,12 @@ interface VehicleOption {
   brand: string;
   available_count?: number;
   price_per_day: number;
-  isOriginalBooking?: boolean; // Flag để biết đây là xe gốc đã đặt
+  isOriginalBooking?: boolean;
+  available_colors?: Array<{
+    color: string;
+    available_quantity: number;
+    price_per_day: number;
+  }>
 }
 
 type Props = {
@@ -229,65 +234,99 @@ const StepEditBooking: React.FC<Props> = ({
           </div>
         ) : (
           <div className="space-y-3">
+            {/* Dropdown 1: Chọn Model */}
             <div>
               <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Chọn model xe <span className="text-red-500">*</span>
+                Bước 1: Chọn model xe <span className="text-red-500">*</span>
               </Label>
               <Select 
-                value={selectedModel && selectedColor ? `${selectedModel}|${selectedColor}` : ''} 
+                value={selectedModel} 
                 onValueChange={(value) => {
-                  if (value) {
-                    const [model, color] = value.split('|');
-                    setSelectedModel(model);
-                    setSelectedColor(color);
-                  } else {
-                    setSelectedModel('');
-                    setSelectedColor('');
-                  }
+                  setSelectedModel(value);
+                  // Reset màu khi đổi model
+                  setSelectedColor('');
                 }}
               >
                 <SelectTrigger className="mt-2 h-11 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-200">
-                  <SelectValue placeholder="-- Chọn xe --" />
+                  <SelectValue placeholder="-- Chọn model xe --" />
                 </SelectTrigger>
                 <SelectContent>
-                  {vehicles.map((vehicle, idx) => (
-                    <SelectItem key={idx} value={`${vehicle.model}|${vehicle.color}`}>
-                      <div className="flex items-center justify-between w-full min-w-[300px]">
-                        <span className="font-medium">
-                          {vehicle.brand} {vehicle.model} - {vehicle.color}
-                          {vehicle.isOriginalBooking && (
-                            <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                              Xe đã đặt
+                  {(() => {
+                    // Lấy danh sách model duy nhất
+                    const uniqueModels = Array.from(new Set(vehicles.map(v => v.model)));
+                    return uniqueModels.map((model) => {
+                      const vehicleOfModel = vehicles.find(v => v.model === model);
+                      const colorCount = vehicles.filter(v => v.model === model).length;
+                      return (
+                        <SelectItem key={model} value={model}>
+                          <div className="flex items-center justify-between w-full min-w-[300px]">
+                            <span className="font-medium">
+                              {vehicleOfModel?.brand} {model}
                             </span>
-                          )}
-                        </span>
-                        <span className="text-green-600 font-semibold ml-4">
-                          {formatPrice(vehicle.price_per_day)}/ngày
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                            <span className="text-gray-500 text-sm ml-4">
+                              {colorCount} màu
+                            </span>
+                          </div>
+                        </SelectItem>
+                      );
+                    });
+                  })()}
                 </SelectContent>
               </Select>
             </div>
-            
-            {/* Selected vehicle info */}
-            {selectedModel && selectedColor && (() => {
-              const selectedVeh = vehicles.find(v => v.model === selectedModel && v.color === selectedColor);
+
+            {/* Dropdown 2: Chọn Màu (chỉ hiện khi đã chọn model) */}
+            {selectedModel && (() => {
+              // Tìm vehicle của model đã chọn
+              const selectedVehicle = vehicles.find(v => v.model === selectedModel);
+              const availableColors = selectedVehicle?.available_colors || [];
+              
+              // Nếu có available_colors từ API getVehicleById, dùng nó
+              // Nếu không, fallback về cách cũ (filter vehicles)
+              const colorOptions = availableColors.length > 0 
+                ? availableColors 
+                : vehicles.filter(v => v.model === selectedModel).map(v => ({
+                    color: v.color,
+                    available_quantity: v.available_count || 0,
+                    price_per_day: v.price_per_day,
+                  }));
+              
               return (
-                <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 rounded-lg p-4">
-                  <p className="text-sm text-green-900 dark:text-green-100 font-semibold flex items-center gap-2">
-                    <span className="text-lg">✓</span>
-                    Đã chọn: {selectedVeh?.brand} {selectedModel} - {selectedColor}
-                    {selectedVeh?.isOriginalBooking && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                        Xe gốc
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                    Giá: <strong>{formatPrice(selectedVeh?.price_per_day || 0)}/ngày</strong>
-                  </p>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Bước 2: Chọn màu xe <span className="text-red-500">*</span>
+                    <span className="ml-2 text-xs text-gray-500">({colorOptions.length} màu có sẵn)</span>
+                  </Label>
+                  <Select 
+                    value={selectedColor} 
+                    onValueChange={setSelectedColor}
+                  >
+                    <SelectTrigger className="mt-2 h-11 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-200">
+                      <SelectValue placeholder="-- Chọn màu --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {colorOptions.map((colorOption, idx) => (
+                        <SelectItem key={idx} value={colorOption.color}>
+                          <div className="flex items-center justify-between w-full min-w-[300px]">
+                            <span className="font-medium">
+                              {colorOption.color}
+                              {selectedVehicle?.isOriginalBooking && colorOption.color === selectedVehicle.color && (
+                                <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                  Xe đã đặt
+                                </span>
+                              )}
+                              <span className="ml-2 text-xs text-gray-500">
+                                (Còn {colorOption.available_quantity} xe)
+                              </span>
+                            </span>
+                            <span className="text-green-600 font-semibold ml-4">
+                              {formatPrice(colorOption.price_per_day)}/ngày
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               );
             })()}

@@ -149,26 +149,25 @@ const EditBooking: React.FC = () => {
 
       try {
         setLoadingVehicles(true);
-        const response = await vehiclesAPI.getVehicles();
-
-        console.log('🚗 All vehicles response:', response);
-        console.log('📍 Selected station:', selectedStation);
+        
+        // Thử gọi API với station_id, nếu backend không hỗ trợ thì sẽ trả về tất cả
+        const response = await vehiclesAPI.getVehicles({ station_id: selectedStation });
 
         if (response?.vehicles) {
-          // Filter vehicles có station này trong array stations
+          // Filter vehicles có station này trong array stations (phòng trường hợp backend không filter)
           const filteredVehicles = response.vehicles.filter((vehicle: any) => {
-            // Check if selectedStation exists in vehicle.stations array
-            if (Array.isArray(vehicle.stations)) {
-              const hasStation = vehicle.stations.some((s: any) => 
-                (typeof s === 'string' ? s : s._id) === selectedStation
-              );
-              console.log(`Vehicle ${vehicle.model} ${vehicle.color}: has station ${selectedStation}?`, hasStation);
-              return hasStation;
+            // Nếu không có stations array, bỏ qua filter (backend đã filter rồi)
+            if (!Array.isArray(vehicle.stations)) {
+              return true;
             }
-            return false;
+            // Check if selectedStation exists in vehicle.stations array
+            const hasStation = vehicle.stations.some((s: any) => 
+              (typeof s === 'string' ? s : s._id) === selectedStation
+            );
+            return hasStation;
           });
+          
 
-          console.log('✅ Filtered vehicles:', filteredVehicles);
 
           // Group filtered vehicles by model and color - LƯU LẠI THÔNG TIN ẢNH
           const grouped = filteredVehicles.reduce((acc: any, vehicle: any) => {
@@ -202,7 +201,6 @@ const EditBooking: React.FC = () => {
           if (booking && selectedModel && selectedColor) {
             const originalVehicleKey = `${selectedModel}-${selectedColor}`;
             if (!grouped[originalVehicleKey]) {
-              console.log('🔧 Adding original booked vehicle to list:', selectedModel, selectedColor);
               grouped[originalVehicleKey] = {
                 model: selectedModel,
                 color: selectedColor,
@@ -224,8 +222,27 @@ const EditBooking: React.FC = () => {
           }
 
           const groupedArray = Object.values(grouped);
-          console.log('📦 Grouped vehicles (with original):', groupedArray);
-          setVehicles(groupedArray);
+          
+          // QUAN TRỌNG: Fetch chi tiết từng xe để lấy available_colors
+          // Giống như React Native code: expandedVehicles
+          const vehiclesWithColors = await Promise.all(
+            groupedArray.map(async (vehicle: any) => {
+              try {
+                if (vehicle.sample_vehicle_id) {
+                  const details = await vehiclesAPI.getVehicleById(vehicle.sample_vehicle_id);
+                  return {
+                    ...vehicle,
+                    available_colors: details.available_colors || [],
+                  };
+                }
+              } catch (err) {
+                console.error('Error loading vehicle details:', err);
+              }
+              return vehicle;
+            })
+          );
+          
+          setVehicles(vehiclesWithColors);
         }
       } catch (error) {
         console.error('❌ Failed to fetch vehicles:', error);
@@ -237,39 +254,45 @@ const EditBooking: React.FC = () => {
     };
 
     fetchVehicles();
-  }, [selectedStation, booking, selectedModel, selectedColor]);
+  }, [selectedStation]);
 
   // Update selectedVehicle when model/color changes (CẬP NHẬT ẢNH KHI CHỌN XE MỚI)
   useEffect(() => {
     if (selectedModel && selectedColor && vehicles.length > 0) {
-      const vehicleData = vehicles.find(v => v.model === selectedModel && v.color === selectedColor);
+      // Tìm vehicle theo model
+      const vehicleData = vehicles.find(v => v.model === selectedModel);
       
       if (vehicleData) {
-        // If deposit_percentage is not in vehicleData, try to get from booking
-        const depositPercentage = vehicleData.deposit_percentage || booking?.vehicle_id?.deposit_percentage || 0;
+        // Tìm màu đã chọn trong available_colors
+        const colorData = vehicleData.available_colors?.find((c: any) => c.color === selectedColor);
+        
+        // Lấy ảnh từ colorData nếu có, nếu không dùng ảnh mặc định
+        const colorImage = colorData?.sample_images?.[0] || colorData?.images?.[0] || colorData?.image || vehicleData.sample_image || '';
+        const colorPrice = colorData?.price_per_day || vehicleData.price_per_day || 0;
+        const colorDepositPercentage = colorData?.deposit_percentage || vehicleData.deposit_percentage || booking?.vehicle_id?.deposit_percentage || 0;
+        const colorAvailableQuantity = colorData?.available_quantity || vehicleData.available_count || 1;
         
         const updatedVehicle: VehicleListItemType = {
           brand: vehicleData.brand,
           model: vehicleData.model,
           year: vehicleData.year || 0,
           type: vehicleData.type || 'Xe máy điện',
-          color: vehicleData.color,
+          color: selectedColor,
           battery_capacity: vehicleData.battery_capacity || 0,
           max_range: vehicleData.max_range || 0,
           max_speed: vehicleData.max_speed || 0,
           power: vehicleData.power || 0,
-          price_per_day: vehicleData.price_per_day || 0,
-          deposit_percentage: depositPercentage,
-          available_quantity: vehicleData.available_count || 1,
-          sample_image: vehicleData.sample_image || '',
-          sample_vehicle_id: vehicleData.sample_vehicle_id || '',
+          price_per_day: colorPrice,
+          deposit_percentage: colorDepositPercentage,
+          available_quantity: colorAvailableQuantity,
+          sample_image: colorImage,
+          sample_vehicle_id: colorData?.sample_vehicle_id || vehicleData.sample_vehicle_id || '',
           stations: [],
           total_available_quantity: 0,
           all_vehicle_ids: [],
           color_images: [],
         };
         
-        console.log('🔄 Updated selectedVehicle with deposit:', depositPercentage);
         setSelectedVehicle(updatedVehicle);
       }
     }
@@ -405,8 +428,6 @@ const EditBooking: React.FC = () => {
         reason: reason,
       };
 
-      console.log('📤 Sending update data:', updateData);
-
       await bookingAPI.updateBooking(booking._id, updateData);
       
       toast.success('Chỉnh sửa đặt xe thành công!');
@@ -461,7 +482,6 @@ const EditBooking: React.FC = () => {
       color_images: [],
     };
     
-    console.log('🔄 Updated alternative vehicle with deposit:', depositPercentage);
     setSelectedVehicle(vehicleFromAlt);
     setSelectedModel(alt.model);
     setSelectedColor(alt.color);

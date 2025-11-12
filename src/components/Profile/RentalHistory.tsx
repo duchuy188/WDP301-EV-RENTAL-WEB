@@ -59,13 +59,9 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
       });
       
       // Fetch user's feedbacks to know which rentals were rated
-      console.log('🔄 Fetching feedbacks...');
-      const fdata = await feedbackAPI.getFeedbacks().catch((err) => {
-        console.error('❌ Failed to fetch feedbacks:', err);
+      const fdata = await feedbackAPI.getFeedbacks().catch(() => {
         return null;
       });
-      
-      console.log('📥 Raw feedback response:', fdata);
       
       // Handle different response formats
       let feedbackList: any[] = [];
@@ -83,19 +79,11 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
         }
       }
       
-      console.log('📋 Feedback list:', feedbackList, 'Count:', feedbackList.length);
-      
       // Extract rental IDs from feedbacks
       const ratedIds: string[] = [];
       if (Array.isArray(feedbackList) && feedbackList.length > 0) {
         feedbackList.forEach((f: any) => {
           const rid = f.rental_id;
-          console.log('  📌 Processing feedback:', {
-            feedback_id: f._id,
-            rental_id: rid,
-            rental_id_type: typeof rid,
-            type: f.type
-          });
           
           if (!rid) return;
           
@@ -113,20 +101,16 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
         });
         
         const uniqueRatedIds = Array.from(new Set(ratedIds));
-        console.log('✅ Rated rental IDs:', uniqueRatedIds);
         setRatedRentalIds(uniqueRatedIds);
       } else {
-        console.log('⚠️ No feedbacks found');
         setRatedRentalIds([]);
       }
       
       // Set rentals data
       if (data && data.rentals) {
         setRentals(data.rentals);
-        console.log('📦 Rentals loaded:', data.rentals.length);
       } else if (data && Array.isArray(data)) {
         setRentals(data as Rental[]);
-        console.log('📦 Rentals loaded:', data.length);
       } else {
         setRentals([]);
       }
@@ -460,15 +444,6 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                                 const isRated = ratedRentalIds.includes(r._id);
                                 const isCompleted = r.status === 'completed';
                                 
-                                // Debug log
-                                console.log(`Rental ${r._id} (${r.code}):`, {
-                                  status: r.status,
-                                  isRated,
-                                  isCompleted,
-                                  canRate: isCompleted && !isRated,
-                                  ratedRentalIds
-                                });
-                                
                                 // Chỉ cho đánh giá nếu rental đã hoàn thành VÀ chưa được đánh giá
                                 if (!isCompleted) {
                                   // Không phải completed -> không hiện nút đánh giá
@@ -603,15 +578,10 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
               })()}
               onClose={() => setFeedbackOpen(false)}
               onSuccess={async (created) => {
-                console.log('✅ Feedback created successfully:', created);
-                console.log('Current rental ID:', feedbackRentalId);
-                
                 // Optimistic update: immediately mark this rental as rated
                 if (feedbackRentalId) {
-                  console.log('➕ Adding rental to rated list:', feedbackRentalId);
                   setRatedRentalIds(prev => {
                     const updated = Array.from(new Set([...prev, feedbackRentalId]));
-                    console.log('Updated rated IDs (optimistic):', updated);
                     return updated;
                   });
                   
@@ -620,7 +590,6 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                                                (created as any).rental?._id || 
                                                (created as any).rental?.id;
                   if (rentalIdFromResponse && String(rentalIdFromResponse) !== String(feedbackRentalId)) {
-                    console.log('➕ Also adding rental ID from response:', rentalIdFromResponse);
                     setRatedRentalIds(prev => Array.from(new Set([...prev, String(rentalIdFromResponse)])));
                   }
                 }
@@ -634,7 +603,6 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                 
                 // Refetch in background to sync with server
                 setTimeout(async () => {
-                  console.log('🔄 Syncing with server...');
                   try {
                     const fdata = await feedbackAPI.getFeedbacks().catch(() => null);
                     
@@ -668,7 +636,6 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                       });
                       
                       const uniqueRatedIds = Array.from(new Set(ratedIds));
-                      console.log('✅ Synced rated rental IDs from server:', uniqueRatedIds);
                       setRatedRentalIds(uniqueRatedIds);
                     }
                   } catch (error) {

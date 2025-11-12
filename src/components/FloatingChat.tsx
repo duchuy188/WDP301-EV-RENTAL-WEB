@@ -202,41 +202,53 @@ const FloatingChat: React.FC = () => {
     };
   }, []);
 
-  // Listen for payment notification event
+  // Listen for payment notification event via localStorage (for cross-tab communication)
   useEffect(() => {
-    const handlePaymentNotification = (event: CustomEvent) => {
-      const { type, bookingCode, message } = event.detail;
-      
-      let notificationMessage = '';
-      if (type === 'success') {
-        notificationMessage = `🎉 Thanh toán thành công! Mã đặt xe: ${bookingCode}. ${message || 'Bạn sẽ nhận được email xác nhận trong vài phút.'}`;
-      } else if (type === 'failed') {
-        notificationMessage = `❌ Thanh toán thất bại. ${message || 'Vui lòng thử lại.'}`;
-      } else if (type === 'cancelled') {
-        notificationMessage = `ℹ️ Bạn đã hủy thanh toán. ${message || ''}`;
-      } else {
-        notificationMessage = message || 'Có thông báo mới về thanh toán.';
+    const handleStorageChange = (event: StorageEvent) => {
+      // Chỉ xử lý khi key là 'payment_notification'
+      if (event.key !== 'payment_notification' || !event.newValue) {
+        return;
       }
 
-      const botMessage: ChatMessage = {
-        id: `payment-notif-${Date.now()}`,
-        type: 'bot',
-        message: notificationMessage,
-        timestamp: new Date(),
-      };
+      try {
+        const notificationData = JSON.parse(event.newValue);
+        const { type, bookingCode, message } = notificationData;
+        
+        let notificationMessage = '';
+        if (type === 'success') {
+          notificationMessage = `🎉 Thanh toán thành công! Mã đặt xe: ${bookingCode}. ${message || 'Bạn sẽ nhận được email xác nhận trong vài phút.'}`;
+        } else if (type === 'failed') {
+          notificationMessage = `❌ Thanh toán thất bại. ${message || 'Vui lòng thử lại.'}`;
+        } else if (type === 'cancelled') {
+          notificationMessage = `ℹ️ Bạn đã hủy thanh toán. ${message || ''}`;
+        } else {
+          notificationMessage = message || 'Có thông báo mới về thanh toán.';
+        }
 
-      setChatMessages(prev => [...prev, botMessage]);
-      
-      // Auto open chat if it's closed
-      if (!isOpen) {
-        setIsOpen(true);
-        setIsMinimized(false);
+        const botMessage: ChatMessage = {
+          id: `payment-notif-${Date.now()}`,
+          type: 'bot',
+          message: notificationMessage,
+          timestamp: new Date(),
+        };
+
+        setChatMessages(prev => [...prev, botMessage]);
+        
+        // Auto open chat if it's closed
+        if (!isOpen) {
+          setIsOpen(true);
+          setIsMinimized(false);
+        }
+      } catch (error) {
+        console.error('Failed to parse payment notification:', error);
       }
     };
 
-    window.addEventListener('paymentNotification', handlePaymentNotification as unknown as EventListener);
+    // Listen to storage event (fired when localStorage changes in another tab)
+    window.addEventListener('storage', handleStorageChange);
+    
     return () => {
-      window.removeEventListener('paymentNotification', handlePaymentNotification as unknown as EventListener);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [isOpen]);
 
@@ -744,7 +756,11 @@ const FloatingChat: React.FC = () => {
                                     return (
                                       <Button
                                         key={idx}
-                                        onClick={() => window.open(paymentLink, '_blank')}
+                                        onClick={() => {
+                                          // Đánh dấu thanh toán từ chatbot
+                                          sessionStorage.setItem('payment_from_chatbot', 'true');
+                                          window.open(paymentLink, '_blank');
+                                        }}
                                         size="sm"
                                         className="w-full text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
                                       >
@@ -810,7 +826,13 @@ const FloatingChat: React.FC = () => {
                                   return (
                                     <Button
                                       key={idx}
-                                      onClick={() => window.open(action, '_blank')}
+                                      onClick={() => {
+                                        // Đánh dấu nếu là payment link
+                                        if (isPaymentLink) {
+                                          sessionStorage.setItem('payment_from_chatbot', 'true');
+                                        }
+                                        window.open(action, '_blank');
+                                      }}
                                       size="sm"
                                       className={`w-full text-xs shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] ${
                                         isPaymentLink

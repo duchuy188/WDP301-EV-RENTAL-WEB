@@ -98,7 +98,6 @@ export async function geocodeAddress(
       bbox: feature.bbox as [number, number, number, number] | undefined
     };
     
-    console.log('Geocoded:', query, '→', result);
     return result;
     
   } catch (error) {
@@ -157,7 +156,6 @@ export async function reverseGeocode(
       bbox: feature.bbox as [number, number, number, number] | undefined
     };
     
-    console.log('Reverse geocoded:', `[${latitude}, ${longitude}]`, '→', result);
     return result;
     
   } catch (error) {

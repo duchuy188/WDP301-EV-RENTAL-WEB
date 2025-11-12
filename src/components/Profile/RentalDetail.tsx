@@ -111,25 +111,18 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
     const fetchContract = async () => {
       try {
         setLoadingContract(true);
-        console.log('🔍 Fetching contracts for rental:', rental._id, rental.code);
         // Try to fetch contracts and find the one matching this rental ID
         const response = await contractAPI.getContracts({ limit: 100 });
-        console.log('📥 Contract API response:', response);
         
         if (response.success && response.data.contracts) {
-          console.log('📋 Total contracts found:', response.data.contracts.length);
-          
           // Find contract that matches this rental ID
           const matchedContract = response.data.contracts.find((c) => {
             const isMatch = c.rental._id === rental._id;
-            console.log(`  🔸 Contract ${c.code}: rental_id=${c.rental._id}, match=${isMatch}`);
             return isMatch;
           });
           
-          console.log('✅ Matched contract:', matchedContract ? `Found (${matchedContract.code})` : 'None');
           setContract(matchedContract || null);
         } else {
-          console.log('⚠️ No contracts data in response');
           setContract(null);
         }
       } catch (error) {
@@ -148,9 +141,7 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
     const fetchFeedback = async () => {
       try {
         setLoadingFeedback(true);
-        console.log('🔍 Fetching feedbacks for rental:', rental._id, rental.code);
         const response = await feedbackAPI.getFeedbacks();
-        console.log('📥 Feedback API response:', response);
         
         let feedbackList: Feedback[] = [];
         if (response && response.success && response.data) {
@@ -158,8 +149,6 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
         } else if (Array.isArray(response)) {
           feedbackList = response;
         }
-        
-        console.log('📋 Total feedbacks found:', feedbackList.length);
 
         // Find feedback that matches this rental ID
         const matchedFeedback = feedbackList.find((f) => {
@@ -173,12 +162,10 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
           }
           
           const isMatch = ridString === rental._id;
-          console.log(`  🔸 Feedback ${f._id}: rental_id=${ridString}, match=${isMatch}`);
           
           return isMatch;
         });
         
-        console.log('✅ Matched feedback:', matchedFeedback ? `Found (${matchedFeedback._id})` : 'None');
         setFeedback(matchedFeedback || null);
       } catch (error) {
         console.error('❌ Failed to fetch feedback for rental:', error);
