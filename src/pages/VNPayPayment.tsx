@@ -96,7 +96,6 @@ const VNPayPayment: React.FC = () => {
             return new Date(Date.now() + 15 * 60 * 1000);
           }
           
-          console.log('✅ Parsed as VN date:', dateString, '→', date.toLocaleString('vi-VN'));
           return date;
         } else {
           // Thử parse ISO format (yyyy-mm-ddTHH:mm:ss.xxxZ hoặc yyyy-mm-dd HH:mm:ss)
@@ -107,7 +106,6 @@ const VNPayPayment: React.FC = () => {
             return new Date(Date.now() + 15 * 60 * 1000);
           }
           
-          console.log('✅ Parsed as ISO date:', dateString, '→', isoDate.toLocaleString('vi-VN'));
           return isoDate;
         }
       } catch (error) {
@@ -123,14 +121,6 @@ const VNPayPayment: React.FC = () => {
       const expiryTime = parseVietnameseDate(state.expiresAt).getTime();
       const currentTime = new Date().getTime();
       const secondsRemaining = Math.max(0, Math.floor((expiryTime - currentTime) / 1000));
-      
-      console.log('⏰ Timer info:', {
-        expiresAt: state.expiresAt,
-        expiryTime: new Date(expiryTime).toLocaleString('vi-VN'),
-        currentTime: new Date(currentTime).toLocaleString('vi-VN'),
-        secondsRemaining,
-        minutesRemaining: Math.floor(secondsRemaining / 60)
-      });
       
       return secondsRemaining;
     };
@@ -202,8 +192,6 @@ const VNPayPayment: React.FC = () => {
     
     try {
       setIsCancelling(true);
-      
-      console.log('🔄 Cancelling pending booking:', state.pendingBookingId);
       
       // Gọi API hủy pending booking
       const response = await bookingAPI.cancelPendingBooking(state.pendingBookingId);

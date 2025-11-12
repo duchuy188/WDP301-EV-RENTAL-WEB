@@ -18,7 +18,6 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onErro
       const user = result.user;
       if (user) {
         const idToken = await user.getIdToken();
-        console.log('Google idToken:', idToken);
         if (onSuccess) onSuccess(idToken);
       }
     } catch (error) {

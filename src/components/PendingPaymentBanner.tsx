@@ -72,8 +72,6 @@ const PendingPaymentBanner: React.FC = () => {
   }, [isAuthenticated]);
 
   const handleContinuePayment = (payment: MyPendingBookingItem) => {
-    console.log('🔄 Continuing payment for:', payment.temp_id);
-    
     const vehicleImage = payment.booking_data.vehicle.image?.[0] || '';
     
     // Navigate với thông tin từ API

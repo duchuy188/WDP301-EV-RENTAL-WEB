@@ -163,7 +163,6 @@ const StationMap: React.FC<StationMapProps> = ({ stations, searchLocation }) => 
             longitude: position.coords.longitude
           });
           setIsLoadingLocation(false);
-          console.log('User location:', position.coords.latitude, position.coords.longitude);
         },
         (error) => {
           setLocationError(error.message);
@@ -205,21 +204,6 @@ const StationMap: React.FC<StationMapProps> = ({ stations, searchLocation }) => 
       };
     });
 
-    console.log('=== StationMap Debug ===');
-    console.log('Total stations received:', stations.length);
-    console.log('Total stations with coordinates:', stationsWithCoordinates.length);
-    console.log('Stations details:', stationsWithCoordinates.map((s, idx) => ({
-      index: idx + 1,
-      id: s._id,
-      name: s.name,
-      address: s.address,
-      district: s.district,
-      city: s.city,
-      coords: `[${s.latitude?.toFixed(4)}, ${s.longitude?.toFixed(4)}]`,
-      distance: s.distance ? `${s.distance.toFixed(2)} km` : 'N/A',
-      status: s.status
-    })));
-
     return stationsWithCoordinates;
   }, [stations, userLocation]);
 
@@ -242,11 +226,6 @@ const StationMap: React.FC<StationMapProps> = ({ stations, searchLocation }) => 
   const defaultCenter: [number, number] = userLocation
     ? [userLocation.latitude, userLocation.longitude]
     : [10.8231, 106.6297];
-
-  console.log('StationMap - Total stations:', stations.length);
-  console.log('StationMap - Valid stations with coordinates:', validStations.length);
-  console.log('StationMap - User location:', userLocation);
-  console.log('StationMap - Search location:', searchLocation);
 
   if (stations.length === 0) {
     return (

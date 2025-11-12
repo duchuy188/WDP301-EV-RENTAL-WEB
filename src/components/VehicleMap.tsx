@@ -154,7 +154,6 @@ const VehicleMap: React.FC<VehicleMapProps> = ({ vehicles, searchLocation }) => 
             longitude: position.coords.longitude
           });
           setIsLoadingLocation(false);
-          console.log('User location:', position.coords.latitude, position.coords.longitude);
         },
         (error) => {
           setLocationError(error.message);
@@ -231,26 +230,12 @@ const VehicleMap: React.FC<VehicleMapProps> = ({ vehicles, searchLocation }) => 
     // Convert to array and sort by distance if user location is available
     let stationsArray = Array.from(stationMap.values());
     
-    console.log('=== VehicleMap Stations Debug ===');
-    console.log('Total vehicles received:', vehicles.length);
-    console.log('Total unique stations on map:', stationsArray.length);
-    console.log('Stations details:', stationsArray.map((s, idx) => ({
-      index: idx + 1,
-      id: s.station._id || 'no-id',
-      name: s.station.name,
-      address: s.station.address,
-      coords: `[${s.coordinates.latitude.toFixed(4)}, ${s.coordinates.longitude.toFixed(4)}]`,
-      vehicleCount: s.vehicles.length,
-      distance: s.distance ? `${s.distance.toFixed(2)} km` : 'N/A'
-    })));
-
     if (userLocation) {
       stationsArray = stationsArray.sort((a, b) => {
         if (a.distance === undefined) return 1;
         if (b.distance === undefined) return -1;
         return a.distance - b.distance;
       });
-      console.log('✓ Stations sorted by distance from user location');
     }
 
     return stationsArray;
@@ -260,11 +245,6 @@ const VehicleMap: React.FC<VehicleMapProps> = ({ vehicles, searchLocation }) => 
   const defaultCenter: [number, number] = userLocation
     ? [userLocation.latitude, userLocation.longitude]
     : [10.8231, 106.6297];
-
-  console.log('VehicleMap - Total vehicles:', vehicles.length);
-  console.log('VehicleMap - Stations with coordinates:', stationsWithVehicles.length);
-  console.log('VehicleMap - User location:', userLocation);
-  console.log('VehicleMap - Search location:', searchLocation);
 
   if (vehicles.length === 0) {
     return (

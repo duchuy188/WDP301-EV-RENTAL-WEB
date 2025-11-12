@@ -47,14 +47,6 @@ const VNPayCallback: React.FC = () => {
       return;
     }
 
-    console.log('📥 VNPay callback params:', {
-      responseCode,
-      transactionStatus,
-      txnRef,
-      amount,
-      bankCode,
-    });
-
     // Verify payment với backend
     const verifyPayment = async () => {
       try {
@@ -64,8 +56,6 @@ const VNPayCallback: React.FC = () => {
         const response = await apiClient.get<PaymentCallbackResponse>(
           `/payments/holding-fee/callback?${queryString}`
         );
-
-        console.log('✅ Backend verification response:', response.data);
 
         // Kiểm tra kết quả từ backend
         if (response.data.success) {
@@ -80,7 +70,6 @@ const VNPayCallback: React.FC = () => {
           toast.success(response.data.message || 'Thanh toán thành công!');
 
           // 🔥 XÓA KHỎI LOCALSTORAGE sau khi thanh toán thành công
-          console.log('🗑️ Cleaning up pending payment from localStorage');
           const pendingIds = JSON.parse(localStorage.getItem('pending_booking_ids') || '[]');
           pendingIds.forEach((id: string) => {
             localStorage.removeItem(`pending_payment_${id}`);

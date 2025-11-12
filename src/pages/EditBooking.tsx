@@ -153,9 +153,6 @@ const EditBooking: React.FC = () => {
         // Thử gọi API với station_id, nếu backend không hỗ trợ thì sẽ trả về tất cả
         const response = await vehiclesAPI.getVehicles({ station_id: selectedStation });
 
-        console.log('🚗 All vehicles response:', response);
-        console.log('📍 Selected station:', selectedStation);
-
         if (response?.vehicles) {
           // Filter vehicles có station này trong array stations (phòng trường hợp backend không filter)
           const filteredVehicles = response.vehicles.filter((vehicle: any) => {
@@ -169,9 +166,6 @@ const EditBooking: React.FC = () => {
             );
             return hasStation;
           });
-
-          console.log('✅ Vehicles from API:', filteredVehicles);
-          console.log('📊 Total vehicles:', filteredVehicles.length);
           
           // Log tất cả các màu của mỗi model
           const modelColors = filteredVehicles.reduce((acc: any, v: any) => {
@@ -179,9 +173,6 @@ const EditBooking: React.FC = () => {
             acc[v.model].add(v.color);
             return acc;
           }, {});
-          console.log('🎨 Colors by model:', Object.entries(modelColors).map(([model, colors]: any) => 
-            `${model}: ${Array.from(colors).join(', ')}`
-          ));
 
           // Group filtered vehicles by model and color - LƯU LẠI THÔNG TIN ẢNH
           const grouped = filteredVehicles.reduce((acc: any, vehicle: any) => {
@@ -215,7 +206,6 @@ const EditBooking: React.FC = () => {
           if (booking && selectedModel && selectedColor) {
             const originalVehicleKey = `${selectedModel}-${selectedColor}`;
             if (!grouped[originalVehicleKey]) {
-              console.log('🔧 Adding original booked vehicle to list:', selectedModel, selectedColor);
               grouped[originalVehicleKey] = {
                 model: selectedModel,
                 color: selectedColor,
@@ -237,7 +227,6 @@ const EditBooking: React.FC = () => {
           }
 
           const groupedArray = Object.values(grouped);
-          console.log('📦 Grouped vehicles (with original):', groupedArray);
           
           // QUAN TRỌNG: Fetch chi tiết từng xe để lấy available_colors
           // Giống như React Native code: expandedVehicles
@@ -246,7 +235,6 @@ const EditBooking: React.FC = () => {
               try {
                 if (vehicle.sample_vehicle_id) {
                   const details = await vehiclesAPI.getVehicleById(vehicle.sample_vehicle_id);
-                  console.log(`🎨 Vehicle ${vehicle.model} colors:`, details.available_colors);
                   return {
                     ...vehicle,
                     available_colors: details.available_colors || [],
@@ -259,7 +247,6 @@ const EditBooking: React.FC = () => {
             })
           );
           
-          console.log('🚀 Vehicles with colors:', vehiclesWithColors);
           setVehicles(vehiclesWithColors);
         }
       } catch (error) {
@@ -290,13 +277,6 @@ const EditBooking: React.FC = () => {
         const colorDepositPercentage = colorData?.deposit_percentage || vehicleData.deposit_percentage || booking?.vehicle_id?.deposit_percentage || 0;
         const colorAvailableQuantity = colorData?.available_quantity || vehicleData.available_count || 1;
         
-        console.log('🎨 Selected color data:', {
-          color: selectedColor,
-          image: colorImage,
-          price: colorPrice,
-          deposit: colorDepositPercentage,
-        });
-        
         const updatedVehicle: VehicleListItemType = {
           brand: vehicleData.brand,
           model: vehicleData.model,
@@ -318,7 +298,6 @@ const EditBooking: React.FC = () => {
           color_images: [],
         };
         
-        console.log('🔄 Updated selectedVehicle with deposit:', depositPercentage);
         setSelectedVehicle(updatedVehicle);
       }
     }
@@ -454,8 +433,6 @@ const EditBooking: React.FC = () => {
         reason: reason,
       };
 
-      console.log('📤 Sending update data:', updateData);
-
       await bookingAPI.updateBooking(booking._id, updateData);
       
       toast.success('Chỉnh sửa đặt xe thành công!');
@@ -510,7 +487,6 @@ const EditBooking: React.FC = () => {
       color_images: [],
     };
     
-    console.log('🔄 Updated alternative vehicle with deposit:', depositPercentage);
     setSelectedVehicle(vehicleFromAlt);
     setSelectedModel(alt.model);
     setSelectedColor(alt.color);

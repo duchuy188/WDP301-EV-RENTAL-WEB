@@ -98,16 +98,6 @@ export const authAPI = {
         formData.append('avatar', data.avatar); // URL hiện tại
       }
 
-      // DEBUG: log keys (chỉ ở dev build)
-      if (import.meta.env.DEV) {
-        const entries: Record<string, any> = {};
-        formData.forEach((v, k) => {
-          entries[k] = v instanceof File ? `File(name=${v.name}, size=${v.size})` : v;
-        });
-        // eslint-disable-next-line no-console
-        console.log('[updateProfile] FormData entries:', entries);
-      }
-
       const response = await apiClient.put('/auth/profile', formData);
       return normalize(response.data);
     } catch (error: any) {
@@ -168,7 +158,6 @@ export const authAPI = {
 
   // Google login
   googleLogin: async (idToken: string) => {
-  console.log('Gửi idToken lên backend:', idToken);
   const response = await apiClient.post('/auth/login/google', { idToken });
   return response.data;
   }

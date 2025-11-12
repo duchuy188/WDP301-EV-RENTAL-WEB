@@ -118,7 +118,6 @@ const Profile: React.FC = () => {
       
       // If user is logged in with Google and we don't have backend API, skip API call
       if (isGoogleUser() && authUser) {
-        console.log('Google user detected, using local data');
         setUser(authUser);
         setFormData({
           fullname: authUser.fullname || '',
@@ -146,7 +145,6 @@ const Profile: React.FC = () => {
     } catch (error) {
       // For Google users, don't show error if we have fallback data
       if (isGoogleUser() && authUser) {
-        console.log('Using Google user fallback data');
         return;
       }
       
@@ -204,8 +202,6 @@ const Profile: React.FC = () => {
           const errorStatus = apiError?.response?.status;
           if (errorStatus === 500) {
             toast.error('Lỗi server khi cập nhật avatar. Đang lưu thay đổi cục bộ...');
-          } else {
-            console.log('API not available, using local storage fallback');
           }
           
           // Fallback: Update local storage for Google users
