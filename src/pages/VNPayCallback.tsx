@@ -32,7 +32,6 @@ const VNPayCallback: React.FC = () => {
     const transactionStatus = searchParams.get('vnp_TransactionStatus');
     const txnRef = searchParams.get('vnp_TxnRef');
     const amount = searchParams.get('vnp_Amount');
-    const bankCode = searchParams.get('vnp_BankCode');
 
     // Nếu không có query params từ VNPay, redirect về find-car
     if (!responseCode && !transactionStatus) {

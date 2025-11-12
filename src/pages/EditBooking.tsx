@@ -167,12 +167,7 @@ const EditBooking: React.FC = () => {
             return hasStation;
           });
           
-          // Log tất cả các màu của mỗi model
-          const modelColors = filteredVehicles.reduce((acc: any, v: any) => {
-            if (!acc[v.model]) acc[v.model] = new Set();
-            acc[v.model].add(v.color);
-            return acc;
-          }, {});
+
 
           // Group filtered vehicles by model and color - LƯU LẠI THÔNG TIN ẢNH
           const grouped = filteredVehicles.reduce((acc: any, vehicle: any) => {
