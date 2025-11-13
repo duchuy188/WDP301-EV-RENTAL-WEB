@@ -58,9 +58,20 @@ const VNPayPayment: React.FC = () => {
 
   const state = getPaymentState();
 
+  // Debug log
+  useEffect(() => {
+    console.log('🔍 VNPayPayment state:', {
+      hasState: !!state,
+      hasPaymentUrl: !!state?.paymentUrl,
+      hasPendingBookingId: !!state?.pendingBookingId,
+      state: state
+    });
+  }, [state]);
+
   useEffect(() => {
     // Nếu không có state, redirect về trang tìm xe
     if (!state?.paymentUrl) {
+      console.warn('⚠️ No payment state found, redirecting to find-car');
       navigate('/find-car', { replace: true });
       return;
     }
@@ -224,35 +235,43 @@ const VNPayPayment: React.FC = () => {
   };
 
   const handleFakeSuccess = async () => {
-    if (!state?.pendingBookingId) return;
+    if (!state?.pendingBookingId) {
+      console.error('❌ No pendingBookingId found in state');
+      return;
+    }
     
     try {
       setIsFakingSuccess(true);
       
+      console.log('🔍 Calling fake success API');
+      console.log('📝 temp_id:', state.pendingBookingId);
+      console.log('📦 Full state:', state);
+      
       // Gọi API fake success
       const response = await paymentAPI.fakeSuccess(state.pendingBookingId);
+      
+      console.log('✅ Fake success response:', response);
+      console.log('📊 Response data:', JSON.stringify(response, null, 2));
       
       // Xóa state khỏi sessionStorage
       sessionStorage.removeItem('vnpay_payment_state');
       
       // Hiển thị thông báo thành công
-      toast.success(response.message || 'Thanh toán test thành công!');
+      toast.success(response.message || 'Thanh toán thành công!');
       
-      // Navigate về trang payment success
-      navigate('/payment-success', { 
-        replace: true,
-        state: {
-          bookingCode: response.booking?.code || state.pendingBookingId,
-          amount: '50000',
-          transactionId: state.pendingBookingId,
-          message: response.message
-        }
+      // Lấy booking code từ response
+      const bookingCode = response.booking?.code || response.bookingCode || state.pendingBookingId;
+      const transactionId = response.transactionId || response.transaction_id || state.pendingBookingId;
+      
+      // Navigate về trang payment success với query params (giống VNPay callback)
+      navigate(`/payment-success?bookingCode=${bookingCode}&amount=50000&transactionId=${transactionId}`, { 
+        replace: true
       });
     } catch (error: any) {
       console.error('Error faking payment success:', error);
       
       // Hiển thị lỗi
-      const errorMessage = error.response?.data?.message || 'Không thể test thanh toán. Vui lòng thử lại.';
+      const errorMessage = error.response?.data?.message || 'Không thể thanh toán. Vui lòng thử lại.';
       toast.error(errorMessage);
     } finally {
       setIsFakingSuccess(false);

@@ -23,10 +23,10 @@ const PaymentSuccess: React.FC = () => {
     // Kiểm tra xem có phải thanh toán từ chatbot không
     const isFromChatbot = sessionStorage.getItem('payment_from_chatbot') === 'true';
     
-    // Nếu từ chatbot, redirect về history ngay lập tức
+    // Nếu từ chatbot, redirect về profile booking history ngay lập tức
     if (isFromChatbot) {
       sessionStorage.removeItem('payment_from_chatbot');
-      navigate('/history', { replace: true });
+      navigate('/profile?tab=booking-history', { replace: true });
       return;
     }
     
@@ -64,7 +64,7 @@ const PaymentSuccess: React.FC = () => {
       const redirectTimer = setTimeout(() => {
         // Xóa flag notification trước khi redirect
         sessionStorage.removeItem('payment_notification_sent');
-        navigate('/history', { replace: true });
+        navigate('/profile?tab=booking-history', { replace: true });
       }, 100);
       
       return () => clearTimeout(redirectTimer);
@@ -159,7 +159,7 @@ const PaymentSuccess: React.FC = () => {
             {/* Action Buttons */}
             <div className="flex gap-3 justify-center mb-4">
               <Button
-                onClick={() => navigate('/history')}
+                onClick={() => navigate('/profile?tab=booking-history')}
                 className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
               >
                 <FileText className="mr-2 h-4 w-4" />
@@ -177,7 +177,7 @@ const PaymentSuccess: React.FC = () => {
             {/* Auto redirect notice */}
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <FaMotorcycle className="h-4 w-4 animate-spin" />
-              <span>Tự động chuyển đến lịch sử sau {countdown} giây...</span>
+              <span>Tự động chuyển đến lịch sử đặt xe sau {countdown} giây...</span>
             </div>
           </Card>
         </motion.div>
