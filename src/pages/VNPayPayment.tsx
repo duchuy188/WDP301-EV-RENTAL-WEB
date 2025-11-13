@@ -6,6 +6,7 @@ import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { bookingAPI } from '@/api/bookingAPI';
+import { paymentAPI } from '@/api/paymentAPI';
 import { toast } from 'sonner';
 
 interface PaymentState {
@@ -30,6 +31,7 @@ const VNPayPayment: React.FC = () => {
   const [timeRemaining, setTimeRemaining] = useState<number>(15 * 60); // 15 phút tính bằng giây
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isFakingSuccess, setIsFakingSuccess] = useState(false);
 
   // Lấy state từ location hoặc sessionStorage (để tránh mất data khi user back)
   const getPaymentState = (): PaymentState | null => {
@@ -218,6 +220,42 @@ const VNPayPayment: React.FC = () => {
       }
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleFakeSuccess = async () => {
+    if (!state?.pendingBookingId) return;
+    
+    try {
+      setIsFakingSuccess(true);
+      
+      // Gọi API fake success
+      const response = await paymentAPI.fakeSuccess(state.pendingBookingId);
+      
+      // Xóa state khỏi sessionStorage
+      sessionStorage.removeItem('vnpay_payment_state');
+      
+      // Hiển thị thông báo thành công
+      toast.success(response.message || 'Thanh toán test thành công!');
+      
+      // Navigate về trang payment success
+      navigate('/payment-success', { 
+        replace: true,
+        state: {
+          bookingCode: response.booking?.code || state.pendingBookingId,
+          amount: '50000',
+          transactionId: state.pendingBookingId,
+          message: response.message
+        }
+      });
+    } catch (error: any) {
+      console.error('Error faking payment success:', error);
+      
+      // Hiển thị lỗi
+      const errorMessage = error.response?.data?.message || 'Không thể test thanh toán. Vui lòng thử lại.';
+      toast.error(errorMessage);
+    } finally {
+      setIsFakingSuccess(false);
     }
   };
 
@@ -444,6 +482,25 @@ const VNPayPayment: React.FC = () => {
                       <>
                         <CreditCard className="mr-2 h-4 w-4" />
                         Thanh toán ngay
+                      </>
+                    )}
+                  </Button>
+                  
+                  {/* Test Button - Fake Success */}
+                  <Button
+                    onClick={handleFakeSuccess}
+                    disabled={isExpired || isRedirecting || isFakingSuccess}
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                  >
+                    {isFakingSuccess ? (
+                      <>
+                        <FaMotorcycle className="mr-2 h-4 w-4 animate-spin" />
+                        Đang xử lý...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Xác nhận thanh toán
                       </>
                     )}
                   </Button>
