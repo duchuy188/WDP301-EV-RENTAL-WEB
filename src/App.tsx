@@ -7,6 +7,7 @@ import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
+
 import Home from './pages/Home';
 import FindCar from './pages/FindCar';
 import VehicleDetail from './pages/VehicleDetail';
