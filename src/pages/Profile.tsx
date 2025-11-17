@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, User, FileCheck } from 'lucide-react';
+import { Shield, User, FileCheck, AlertTriangle } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
 // import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import {
   BookingHistory,
   RentalHistory
 } from '@/components/Profile';
+import ReportList from '@/components/Profile/ReportList';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const Profile: React.FC = () => {
@@ -470,6 +471,14 @@ const Profile: React.FC = () => {
                       <FaMotorcycle className="h-4 w-4" />
                       Lịch sử thuê xe
                     </TabsTrigger>
+
+                    <TabsTrigger
+                      value="reports"
+                      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border-2 border-transparent bg-gray-50 text-gray-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-rose-50 hover:border-red-200 hover:text-red-700 hover:shadow-md dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:border-red-400 data-[state=active]:shadow-lg data-[state=active]:shadow-red-500/50 transform hover:scale-105 active:scale-95"
+                    >
+                      <AlertTriangle className="h-4 w-4" />
+                      Báo cáo sự cố
+                    </TabsTrigger>
                   </TabsList>
                 </div>
               
@@ -571,6 +580,17 @@ const Profile: React.FC = () => {
                   transition={{ delay: 0.1 }}
                 >
                   <RentalHistory />
+                </motion.div>
+              </TabsContent>
+
+              <TabsContent value="reports" className="mt-0">
+                {/* Report List - View all reports */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <ReportList />
                 </motion.div>
               </TabsContent>
 
