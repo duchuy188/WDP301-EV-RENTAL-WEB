@@ -60,10 +60,11 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700">
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Mã báo cáo: {report.code}</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Mã thuê xe: {report.rental_id.code}</p>
+          <p className="text-xs font-medium text-blue-100 dark:text-blue-200 uppercase tracking-wide mb-1">Mã báo cáo</p>
+          <h3 className="text-xl font-bold text-white">{report.code}</h3>
+          <p className="text-sm text-blue-100 dark:text-blue-200 mt-1">Mã thuê xe: {report.rental_id.code}</p>
         </div>
         <Badge className={`${getStatusColor(report.status)} px-3 py-1 rounded-md text-sm font-semibold`}>
           {getStatusText(report.status)}

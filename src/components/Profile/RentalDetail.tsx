@@ -17,6 +17,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 interface Props {
   rental: Rental;
   onRebook?: () => void;
+  onContractFeedbackReady?: (buttons: React.ReactNode) => void;
 }
 
 const parseBookingDate = (dateString?: string | null) => {
@@ -91,7 +92,7 @@ const getStatusText = (status: string) => {
   }
 };
 
-const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
+const RentalDetail: React.FC<Props> = ({ rental, onRebook, onContractFeedbackReady }) => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [loadingContract, setLoadingContract] = useState(true);
@@ -126,7 +127,6 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
           setContract(null);
         }
       } catch (error) {
-        console.error('❌ Failed to fetch contract for rental:', error);
         setContract(null);
       } finally {
         setLoadingContract(false);
@@ -168,7 +168,6 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
         
         setFeedback(matchedFeedback || null);
       } catch (error) {
-        console.error('❌ Failed to fetch feedback for rental:', error);
         setFeedback(null);
       } finally {
         setLoadingFeedback(false);
@@ -177,6 +176,43 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
 
     fetchFeedback();
   }, [rental._id, rental.code]);
+
+  // Send contract and feedback buttons to parent when ready
+  useEffect(() => {
+    if (!onContractFeedbackReady || loadingContract || loadingFeedback) return;
+    
+    const buttons = (
+      <>
+        {contract && (
+          <Button
+            onClick={() => setContractModalOpen(true)}
+            className="bg-white hover:bg-white/90 text-gray-800 border-white hover:border-gray-100"
+            size="sm"
+          >
+            <FileText className="h-4 w-4 mr-1" />
+            Hợp đồng
+            <span className="ml-1 text-[10px] opacity-70">{getContractStatusText(contract.status)}</span>
+          </Button>
+        )}
+        {feedback && (
+          <Button
+            onClick={() => setFeedbackModalOpen(true)}
+            className="bg-white hover:bg-white/90 text-gray-800 border-white hover:border-gray-100"
+            size="sm"
+          >
+            {feedback.type === 'rating' ? (
+              <Star className="h-4 w-4 mr-1" />
+            ) : (
+              <AlertCircle className="h-4 w-4 mr-1" />
+            )}
+            {feedback.type === 'rating' ? 'Đánh giá' : 'Khiếu nại'}
+          </Button>
+        )}
+      </>
+    );
+    
+    onContractFeedbackReady(buttons);
+  }, [contract, feedback, loadingContract, loadingFeedback, onContractFeedbackReady]);
 
   const handleDownloadContract = async () => {
     if (!contract) return;
@@ -194,7 +230,6 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
       window.URL.revokeObjectURL(url);
       toast.success('Thành công', 'Đã tải hợp đồng về máy');
     } catch (error: any) {
-      console.error('Error downloading contract:', error);
       toast.error('Lỗi', 'Không thể tải file hợp đồng');
     }
   };
@@ -262,25 +297,57 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
   return (
     <div className="space-y-4">
       {/* Header với mã rental và trạng thái */}
-      <div className="bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 rounded-lg p-4 shadow-lg">
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-lg p-4 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
               <Hash className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-xs text-green-100 uppercase tracking-wide font-medium mb-0.5">Mã thuê xe</p>
+              <p className="text-xs text-blue-100 uppercase tracking-wide font-medium mb-0.5">Mã thuê xe</p>
               <h3 className="font-bold text-xl text-white font-mono">{rental.code}</h3>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Contract Button */}
+            {!onContractFeedbackReady && !loadingContract && contract && (
+              <Button
+                onClick={() => setContractModalOpen(true)}
+                className="bg-white hover:bg-white/90 text-gray-800 border-white hover:border-gray-100"
+                size="sm"
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                Hợp đồng
+                <span className="ml-1 text-[10px] opacity-70">{getContractStatusText(contract.status)}</span>
+              </Button>
+            )}
+            
+            {/* Feedback Button */}
+            {!onContractFeedbackReady && !loadingFeedback && feedback && (
+              <Button
+                onClick={() => setFeedbackModalOpen(true)}
+                className="bg-white hover:bg-white/90 text-gray-800 border-white hover:border-gray-100"
+                size="sm"
+              >
+                {feedback.type === 'rating' ? (
+                  <Star className="h-4 w-4 mr-1" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                )}
+                {feedback.type === 'rating' ? 'Đánh giá' : 'Khiếu nại'}
+              </Button>
+            )}
+            
+            {/* Status Badge */}
             <Badge className={`${getStatusColor(rental.status)} text-sm px-3 py-1.5 font-semibold`}>
               {getStatusText(rental.status)}
             </Badge>
+            
+            {/* Rebook Button */}
             {onRebook && rental.status === 'completed' && (
               <Button
                 onClick={onRebook}
-                className="bg-white hover:bg-white/90 text-green-600 border-white hover:border-green-100"
+                className="bg-white hover:bg-white/90 text-gray-800 border-white hover:border-gray-100"
                 size="sm"
               >
                 <RefreshCw className="h-4 w-4 mr-1" />
@@ -710,52 +777,6 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
           </div>
         </div>
       )}
-
-      {/* Contract & Feedback Buttons - Side by side */}
-      <div className="flex flex-wrap gap-3">
-        {/* Contract Section - Button to open modal */}
-        {!loadingContract && contract && (
-          <button
-            onClick={() => setContractModalOpen(true)}
-            className="flex-1 min-w-[280px] bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-900/20 rounded-lg border-2 border-purple-300 dark:border-purple-700 shadow-sm hover:shadow-md transition-all duration-200 p-3 flex items-center justify-between hover:bg-purple-100/50 dark:hover:bg-purple-900/30"
-          >
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-purple-600 rounded-lg shadow-md">
-                <FileText className="h-4 w-4 text-white" />
-              </div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">Hợp đồng liên quan</h4>
-                <Badge className={`${getContractStatusColor(contract.status)} text-xs px-2 py-0.5`}>
-                  {getContractStatusText(contract.status)}
-                </Badge>
-              </div>
-            </div>
-            <Eye className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-          </button>
-        )}
-
-        {/* Feedback/Rating Section - Button to open modal */}
-        {!loadingFeedback && feedback && (
-          <button
-            onClick={() => setFeedbackModalOpen(true)}
-            className="flex-1 min-w-[280px] bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-900/20 rounded-lg border-2 border-yellow-300 dark:border-yellow-700 shadow-sm hover:shadow-md transition-all duration-200 p-3 flex items-center justify-between hover:bg-yellow-100/50 dark:hover:bg-yellow-900/30"
-          >
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-yellow-600 rounded-lg shadow-md">
-                {feedback.type === 'rating' ? (
-                  <Star className="h-4 w-4 text-white" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-white" />
-                )}
-              </div>
-              <h4 className="font-semibold text-sm text-yellow-900 dark:text-yellow-100">
-                {feedback.type === 'rating' ? 'Đánh giá của bạn' : 'Khiếu nại của bạn'}
-              </h4>
-            </div>
-            <Eye className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
-          </button>
-        )}
-      </div>
 
       {/* Loading indicators */}
       {(loadingContract || loadingFeedback) && (

@@ -68,11 +68,11 @@ const ReportList: React.FC<ReportListProps> = ({ className }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-2 border-yellow-600';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-2 border-yellow-600 dark:border-yellow-500';
       case 'resolved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-2 border-green-600';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-2 border-green-600 dark:border-green-500';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400 border-2 border-gray-600';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400 border-2 border-gray-600 dark:border-gray-500';
     }
   };
 
@@ -147,16 +147,16 @@ const ReportList: React.FC<ReportListProps> = ({ className }) => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <AlertTriangle className="h-5 w-5 text-blue-600" />
                 <span className="text-lg font-bold text-gray-900 dark:text-white">Danh sách báo cáo</span>
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-[140px]">
-                    <SelectValue placeholder="Trạng thái" />
+                    <SelectValue placeholder="--" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="all">--</SelectItem>
                     <SelectItem value="pending">Đang xử lý</SelectItem>
                     <SelectItem value="resolved">Đã giải quyết</SelectItem>
                   </SelectContent>
