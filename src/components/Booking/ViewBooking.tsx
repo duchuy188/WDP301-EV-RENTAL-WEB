@@ -4,7 +4,7 @@ import { FaMotorcycle } from 'react-icons/fa';
 import { Booking } from '@/types/booking';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 
 interface ViewBookingProps {
@@ -379,6 +379,9 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = fa
             <DialogTitle>
               {booking.vehicle_id.brand} {booking.vehicle_id.model}
             </DialogTitle>
+            <DialogDescription>
+              Xem hình ảnh xe {booking.vehicle_id.brand} {booking.vehicle_id.model}.
+            </DialogDescription>
           </DialogHeader>
           <div className="relative">
             {booking.vehicle_id.images && booking.vehicle_id.images.length > 0 && (

@@ -9,10 +9,11 @@ import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import RentalDetail from './RentalDetail';
 import { feedbackAPI } from '@/api/feedbackAPI';
 import FeedbackForm from './FeedbackForm';
+import ReportForm from './ReportForm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -42,6 +43,9 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
   const [feedbackRentalId, setFeedbackRentalId] = useState<string | null>(null);
   // rentals that already have feedback
   const [ratedRentalIds, setRatedRentalIds] = useState<string[]>([]);
+  // report modal
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportRentalId, setReportRentalId] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -62,6 +66,8 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
       const fdata = await feedbackAPI.getFeedbacks().catch(() => {
         return null;
       });
+
+
       
       // Handle different response formats
       let feedbackList: any[] = [];
@@ -418,6 +424,7 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
                         <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">Hành động</TableHead>
                         <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">Đánh giá</TableHead>
+                        <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">Báo cáo</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -480,6 +487,22 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                               })()}
                             </div>
                           </TableCell>
+                          <TableCell className="px-3 py-2 text-center">
+                            {r.status === 'active' ? (
+                              <button
+                                onClick={() => {
+                                  setReportRentalId(r._id);
+                                  setReportOpen(true);
+                                }}
+                                className="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 text-xs font-semibold whitespace-nowrap border-2 border-red-700 dark:border-red-600"
+                                aria-label={`Báo cáo sự cố ${r.code}`}
+                              >
+                                Báo cáo
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-xs">-</span>
+                            )}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -521,6 +544,9 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi tiết thuê xe</DialogTitle>
+            <DialogDescription>
+              Xem thông tin chi tiết về chuyến thuê xe của bạn.
+            </DialogDescription>
           </DialogHeader>
           {selectedRental ? (
             <RentalDetail 
@@ -539,6 +565,9 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Đánh giá chuyến đi</DialogTitle>
+            <DialogDescription>
+              Chia sẻ trải nghiệm của bạn về chuyến thuê xe này.
+            </DialogDescription>
           </DialogHeader>
           {feedbackRentalId ? (
             <FeedbackForm
@@ -643,6 +672,32 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
                     // Keep optimistic update even if refetch fails
                   }
                 }, 500);
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Report modal */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Báo cáo sự cố</DialogTitle>
+            <DialogDescription>
+              Báo cáo sự cố hoặc vấn đề gặp phải trong chuyến thuê xe.
+            </DialogDescription>
+          </DialogHeader>
+          {reportRentalId ? (
+            <ReportForm
+              rentalId={reportRentalId}
+              onClose={() => {
+                setReportOpen(false);
+                setReportRentalId(null);
+              }}
+              onSuccess={() => {
+                // Close modal
+                setReportOpen(false);
+                setReportRentalId(null);
               }}
             />
           ) : null}

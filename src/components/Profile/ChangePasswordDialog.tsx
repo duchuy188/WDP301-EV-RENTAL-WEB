@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,6 +64,9 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({ open, onOpe
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Đổi mật khẩu</DialogTitle>
+          <DialogDescription>
+            Nhập mật khẩu hiện tại và mật khẩu mới để thay đổi mật khẩu của bạn.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

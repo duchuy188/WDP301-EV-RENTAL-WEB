@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ImagePreviewDialogProps {
   imageUrl: string | null;
@@ -21,6 +21,9 @@ const ImagePreviewDialog: React.FC<ImagePreviewDialogProps> = ({
               </svg>
               Xem ảnh giấy tờ
             </DialogTitle>
+            <DialogDescription>
+              Xem chi tiết ảnh giấy tờ tùy thân đã tải lên.
+            </DialogDescription>
           </DialogHeader>
           
           {imageUrl && (

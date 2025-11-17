@@ -9,7 +9,7 @@ import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import ViewBooking from '../Booking/ViewBooking';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -557,6 +557,9 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi tiết đặt xe</DialogTitle>
+            <DialogDescription>
+              Xem thông tin chi tiết về đặt xe của bạn.
+            </DialogDescription>
           </DialogHeader>
           {selectedBooking && (
             <ViewBooking 
@@ -581,6 +584,9 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Xác nhận hủy đặt xe</DialogTitle>
+            <DialogDescription>
+              Xác nhận hủy đặt xe. Lưu ý: Hủy đặt xe sẽ không thể hoàn tiền lại.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-gray-700">Bạn có chắc muốn hủy đặt xe <span className="font-medium">{cancelingBooking?.code ?? cancelingBooking?._id}</span>?</p>

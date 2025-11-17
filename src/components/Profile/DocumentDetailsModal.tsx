@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { formatDateVN } from '@/lib/utils';
 import { useState } from 'react';
 import ImagePreviewDialog from './ImagePreviewDialog';
@@ -111,6 +111,9 @@ export default function DocumentDetailsModal({ open, onOpenChange, response }: P
         <div className="flex flex-col h-full">
           <DialogHeader className="px-3 py-2 border-b">
             <DialogTitle className="text-sm font-semibold">{title}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Xem chi tiết thông tin giấy tờ tùy thân đã tải lên.
+            </DialogDescription>
           </DialogHeader>
 
           {actualData && (

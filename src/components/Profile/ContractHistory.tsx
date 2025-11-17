@@ -15,7 +15,7 @@ import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import ContractDetail from './ContractDetail';
 import ContractViewer from './ContractViewer';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -443,6 +443,9 @@ const ContractHistory: React.FC<ContractHistoryProps> = ({ className }) => {
               <FileText className="h-5 w-5 text-purple-600" />
               Chi tiết hợp đồng
             </DialogTitle>
+            <DialogDescription>
+              Xem thông tin chi tiết về hợp đồng thuê xe.
+            </DialogDescription>
           </DialogHeader>
           {selectedContract && <ContractDetail contract={selectedContract} />}
         </DialogContent>
@@ -456,6 +459,9 @@ const ContractHistory: React.FC<ContractHistoryProps> = ({ className }) => {
               <Eye className="h-5 w-5 text-blue-600" />
               Xem hợp đồng trên web
             </DialogTitle>
+            <DialogDescription>
+              Xem nội dung hợp đồng trực tuyến.
+            </DialogDescription>
           </DialogHeader>
           {viewerContractId && <ContractViewer contractId={viewerContractId} />}
         </DialogContent>
