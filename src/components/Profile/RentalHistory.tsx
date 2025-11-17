@@ -9,7 +9,7 @@ import { FaMotorcycle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import RentalDetail from './RentalDetail';
 import { feedbackAPI } from '@/api/feedbackAPI';
 import FeedbackForm from './FeedbackForm';
@@ -544,6 +544,9 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi tiết thuê xe</DialogTitle>
+            <DialogDescription>
+              Xem thông tin chi tiết về chuyến thuê xe của bạn.
+            </DialogDescription>
           </DialogHeader>
           {selectedRental ? (
             <RentalDetail 
@@ -562,6 +565,9 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Đánh giá chuyến đi</DialogTitle>
+            <DialogDescription>
+              Chia sẻ trải nghiệm của bạn về chuyến thuê xe này.
+            </DialogDescription>
           </DialogHeader>
           {feedbackRentalId ? (
             <FeedbackForm
@@ -677,6 +683,9 @@ const RentalHistory: React.FC<RentalHistoryProps> = ({ className }) => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Báo cáo sự cố</DialogTitle>
+            <DialogDescription>
+              Báo cáo sự cố hoặc vấn đề gặp phải trong chuyến thuê xe.
+            </DialogDescription>
           </DialogHeader>
           {reportRentalId ? (
             <ReportForm

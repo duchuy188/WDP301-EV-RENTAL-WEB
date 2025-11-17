@@ -4,7 +4,7 @@ import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -285,6 +285,9 @@ const ReportList: React.FC<ReportListProps> = ({ className }) => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi tiết báo cáo</DialogTitle>
+            <DialogDescription>
+              Xem thông tin chi tiết về báo cáo sự cố.
+            </DialogDescription>
           </DialogHeader>
           {selectedReport ? <ReportDetail report={selectedReport} /> : null}
         </DialogContent>

@@ -10,7 +10,7 @@ import { contractAPI } from '@/api/constractAPI';
 import { feedbackAPI } from '@/api/feedbackAPI';
 import { Button } from '@/components/ui/button';
 import ContractViewer from './ContractViewer';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/utils/toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -779,6 +779,9 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
                 <FileText className="h-5 w-5 text-purple-600" />
                 Thông tin hợp đồng
               </DialogTitle>
+              <DialogDescription>
+                Xem thông tin chi tiết về hợp đồng thuê xe.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
@@ -835,6 +838,9 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
                 <Eye className="h-5 w-5 text-blue-600" />
                 Xem hợp đồng - {contract.code}
               </DialogTitle>
+              <DialogDescription>
+                Xem nội dung đầy đủ của hợp đồng thuê xe.
+              </DialogDescription>
             </DialogHeader>
             <ContractViewer contractId={contract._id} />
           </DialogContent>
@@ -849,6 +855,9 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
               <ImageIcon className="h-5 w-5 text-cyan-600" />
               Xem ảnh
             </DialogTitle>
+            <DialogDescription>
+              Xem hình ảnh chi tiết về tình trạng xe.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-lg p-4">
             <img 
@@ -883,6 +892,9 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook }) => {
                 )}
                 {feedback.type === 'rating' ? 'Đánh giá của bạn' : 'Khiếu nại của bạn'}
               </DialogTitle>
+              <DialogDescription>
+                {feedback.type === 'rating' ? 'Xem chi tiết đánh giá của bạn về chuyến thuê xe.' : 'Xem chi tiết khiếu nại của bạn.'}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               {feedback.type === 'rating' && (

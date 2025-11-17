@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -173,6 +173,9 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       <DialogContent className={`${availableAlternatives.length > 0 ? 'max-w-2xl' : 'max-w-lg'} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle>Chỉnh sửa đặt xe</DialogTitle>
+          <DialogDescription>
+            Thay đổi thông tin ngày thuê xe và lý do chỉnh sửa. Lưu ý: Bạn chỉ được chỉnh sửa 1 lần duy nhất.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
