@@ -1,21 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Report } from '@/types/report';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { formatDateTimeVN } from '@/lib/utils';
+import { Eye, Download } from 'lucide-react';
 
 interface ReportDetailProps {
   report: Report;
 }
 
 const ReportDetail: React.FC<ReportDetailProps> = ({ report }) => {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    try {
+      return formatDateTimeVN(dateString);
+    } catch (error) {
+      return '-';
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -121,16 +123,58 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report }) => {
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Hình ảnh</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {report.images.map((img, idx) => (
-              <img
+              <div
                 key={idx}
-                src={img}
-                alt={`Hình ảnh ${idx + 1}`}
-                className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-              />
+                className="relative group cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+                onClick={() => setSelectedImage(img)}
+              >
+                <img
+                  src={img}
+                  alt={`Hình ảnh ${idx + 1}`}
+                  className="w-full h-32 object-cover transition-transform group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Eye className="w-8 h-8 text-white" />
+                </div>
+              </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Dialog xem hình ảnh */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-3xl p-4 bg-white dark:bg-gray-900">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base text-gray-900 dark:text-white">
+              <Eye className="w-4 h-4 text-blue-600" />
+              Xem ảnh
+            </DialogTitle>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Xem hình ảnh chi tiết về tình trạng xe.</p>
+          </DialogHeader>
+          {selectedImage && (
+            <div className="mt-3">
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 flex items-center justify-center">
+                <img
+                  src={selectedImage}
+                  alt="Hình ảnh chi tiết"
+                  className="max-w-full max-h-[60vh] object-contain rounded"
+                />
+              </div>
+              <div className="mt-3 flex justify-end">
+                <a
+                  href={selectedImage}
+                  download
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Tải ảnh
+                </a>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Giải quyết */}
       {report.status === 'resolved' && (
