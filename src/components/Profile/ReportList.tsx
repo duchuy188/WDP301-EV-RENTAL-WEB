@@ -56,14 +56,7 @@ const ReportList: React.FC<ReportListProps> = ({ className }) => {
     fetchReports();
   }, []);
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -181,9 +174,8 @@ const ReportList: React.FC<ReportListProps> = ({ className }) => {
                     <TableHeader className="bg-gray-100 dark:bg-gray-800">
                       <TableRow>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Mã báo cáo</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Mã thuê xe</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Loại sự cố</TableHead>
-                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Xe</TableHead>
+                        <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Biển số xe</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Ngày báo cáo</TableHead>
                         <TableHead className="px-3 py-2 text-left text-gray-600 dark:text-gray-300">Trạng thái</TableHead>
                         <TableHead className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">Hành động</TableHead>
@@ -195,9 +187,6 @@ const ReportList: React.FC<ReportListProps> = ({ className }) => {
                           <TableCell className="px-3 py-2 text-gray-900 dark:text-white font-medium">
                             {report.code}
                           </TableCell>
-                          <TableCell className="px-3 py-2 text-gray-900 dark:text-white">
-                            {typeof report.rental_id === 'string' ? report.rental_id : report.rental_id.code}
-                          </TableCell>
                           <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400">
                             {getIssueTypeText(report.issue_type)}
                           </TableCell>
@@ -205,7 +194,7 @@ const ReportList: React.FC<ReportListProps> = ({ className }) => {
                             {report.vehicle_id.license_plate}
                           </TableCell>
                           <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400">
-                            {formatDate(report.createdAt)}
+                            {report.createdAt.split(' ')[0]}
                           </TableCell>
                           <TableCell className="px-3 py-2">
                             <Badge className={`${getStatusColor(report.status)} px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap`}>

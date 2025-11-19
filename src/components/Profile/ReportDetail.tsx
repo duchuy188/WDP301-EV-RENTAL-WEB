@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Report } from '@/types/report';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { formatDateTimeVN } from '@/lib/utils';
 import { Eye, Download } from 'lucide-react';
 
 interface ReportDetailProps {
@@ -13,11 +12,7 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
-    try {
-      return formatDateTimeVN(dateString);
-    } catch (error) {
-      return '-';
-    }
+    return dateString;
   };
 
   const getStatusColor = (status: string) => {
