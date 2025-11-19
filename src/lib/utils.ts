@@ -99,11 +99,16 @@ export function formatDateVN(dateInput: string | Date | number): string {
  */
 export function formatDateTimeVN(dateInput: string | Date | number): string {
   try {
+    if (!dateInput) {
+      return 'Invalid Date';
+    }
+
     let date: Date;
     
     if (typeof dateInput === 'string') {
+      // Handle DD/MM/YYYY format
       if (dateInput.includes('/')) {
-        const parts = dateInput.split('/');
+        const parts = dateInput.split(' ')[0].split('/');
         if (parts.length === 3) {
           const [first, second, third] = parts.map(p => parseInt(p));
           
@@ -118,6 +123,7 @@ export function formatDateTimeVN(dateInput: string | Date | number): string {
           date = new Date(dateInput);
         }
       } else {
+        // Handle ISO format (e.g., "2025-11-18T08:01:31.687Z")
         date = new Date(dateInput);
       }
     } else {
@@ -136,6 +142,7 @@ export function formatDateTimeVN(dateInput: string | Date | number): string {
     
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   } catch (error) {
+    console.error('Error in formatDateTimeVN:', error, 'for input:', dateInput);
     return 'Invalid Date';
   }
 }
