@@ -571,6 +571,7 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook, onContractFeedbackRea
                       case 'rental_fee': return 'Tiền thuê';
                       case 'additional_fee': return 'Phí phát sinh';
                       case 'deposit': return 'Đặt cọc';
+                      case 'holding_fee': return 'Phí giữ chỗ';
                       default: return type;
                     }
                   };
@@ -657,11 +658,11 @@ const RentalDetail: React.FC<Props> = ({ rental, onRebook, onContractFeedbackRea
                   <span className="font-medium text-gray-900 dark:text-white">{rental.vehicle_condition_after?.battery_level ?? '-'}%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Ngoại thất:</span>
+                  <span className="text-gray-600 dark:text-gray-400">Ngoại hình:</span>
                   <span className="font-medium text-gray-900 dark:text-white text-xs">{rental.vehicle_condition_after?.exterior_condition ?? '-'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Nội thất:</span>
+                  <span className="text-gray-600 dark:text-gray-400">Kỹ Thuật:</span>
                   <span className="font-medium text-gray-900 dark:text-white text-xs">{rental.vehicle_condition_after?.interior_condition ?? '-'}</span>
                 </div>
               </div>
