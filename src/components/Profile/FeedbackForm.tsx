@@ -29,7 +29,6 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
   });
 
   const [complaint, setComplaint] = useState({
-    fullname: '',
     title: '',
     description: '',
     category: '',
@@ -134,7 +133,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
     // reset fields
     setType('rating');
     setRatings({ overall: 5, staff: 5, vehicle: 5, station: 5, checkout: 5 });
-    setComplaint({ fullname: '', title: '', description: '', category: '', staffRole: '' });
+    setComplaint({ title: '', description: '', category: '', staffRole: '' });
     setComment('');
     setSubmitting(false);
     setSubmittedType(null);
@@ -149,7 +148,6 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
     if (type === 'rating' && ratings.overall === null) return 'Vui lòng đánh giá tổng thể.';
 
     if (type === 'complaint') {
-      if (!complaint.fullname.trim()) return 'Vui lòng nhập họ tên.';
       if (!complaint.title.trim()) return 'Vui lòng nhập tiêu đề.';
       if (!complaint.description.trim()) return 'Vui lòng nhập mô tả.';
       if (!complaint.category) return 'Vui lòng chọn danh mục.';
@@ -182,7 +180,6 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
       }
 
       if (type === 'complaint') {
-        form.append('fullname', complaint.fullname);
         form.append('title', complaint.title);
         form.append('description', complaint.description);
         form.append('category', complaint.category);
@@ -308,17 +305,6 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ rentalId, onClose, onSucces
       {/* Form khiếu nại */}
       {type === 'complaint' && (
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Họ tên <span className="text-red-500">*</span></label>
-            <input
-              value={complaint.fullname}
-              onChange={e => setComplaint(p => ({ ...p, fullname: e.target.value }))}
-              placeholder="Nhập họ tên của bạn"
-              disabled={submitting || !!submittedType}
-              className="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium mb-2">Tiêu đề <span className="text-red-500">*</span></label>
             <input

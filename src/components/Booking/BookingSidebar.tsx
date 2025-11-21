@@ -197,7 +197,7 @@ const BookingSidebar: React.FC<Props> = ({
                           <span>Tổng cộng:</span>
                           <span>{formatPrice(totalPrice || 0)}</span>
                         </div>
-                        {depositPercentage != null && depositPercentage > 0 && (
+                        {depositPercentage != null && depositPercentage > 0 && numberOfDays && numberOfDays >= 2 && (
                           <>
                             <Separator className="my-1" />
                             <div className="flex items-center justify-between text-orange-600 dark:text-orange-400">

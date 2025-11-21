@@ -229,7 +229,7 @@ const BookingSuccessPage: React.FC = () => {
                 <motion.div variants={itemVariants} className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
                   <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tổng tiền</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{formatPrice(booking.total_price ?? 0)}</p>
-                  {booking.deposit_amount != null && booking.deposit_amount > 0 && (
+                  {booking.deposit_amount != null && booking.deposit_amount > 0 && booking.total_days != null && booking.total_days >= 2 && (
                     <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-800">
                       <p className="text-xs text-gray-600 dark:text-gray-400">Đặt cọc: <span className="font-semibold text-orange-600 dark:text-orange-400">{formatPrice(booking.deposit_amount)}</span></p>
                     </div>

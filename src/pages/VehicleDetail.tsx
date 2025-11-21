@@ -388,7 +388,7 @@ const VehicleDetail: React.FC = () => {
               <div className="py-4 px-2">
                 <Button
                   onClick={handleBookNow}
-                  className="bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-md inline-flex items-center space-x-2 shadow-md"
+                  className="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-md inline-flex items-center space-x-2 shadow-md"
                 >
                   <Mail className="h-4 w-4" />
                   <span>Đặt Thuê Xe</span>

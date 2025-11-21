@@ -119,7 +119,6 @@ const StepEditBooking: React.FC<Props> = ({
               className="mt-2 h-11"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">Phải ít nhất 24 giờ kể từ bây giờ</p>
           </div>
 
           <div>
@@ -138,39 +137,31 @@ const StepEditBooking: React.FC<Props> = ({
             />
           </div>
         </div>
-        {bookingDate && endDate && (() => {
+        {bookingDate && endDate && selectedModel && selectedColor && (() => {
           const days = calculateDays();
           const { depositPercentage, depositAmount, totalPrice, pricePerDay } = calculateDeposit();
-          const hasValidData = selectedModel && selectedColor && days > 0;
+          
+          if (!pricePerDay || pricePerDay <= 0) return null;
           
           return (
             <div className="mt-4 bg-white dark:bg-gray-700 rounded-lg p-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-700 dark:text-gray-300">Tổng số ngày thuê:</span>
-                <span className="font-bold text-green-600 dark:text-green-400">{days} ngày</span>
+                <span className="text-gray-700 dark:text-gray-300">Đơn giá:</span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">{formatPrice(pricePerDay)}/ngày</span>
+              </div>
+              <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-bold text-gray-900 dark:text-gray-100">Tổng cộng:</span>
+                <span className="font-bold text-green-600 dark:text-green-400">{formatPrice(totalPrice)}</span>
               </div>
               
-              {hasValidData && pricePerDay && pricePerDay > 0 && (
+              {depositPercentage > 0 && days >= 2 && (
                 <>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700 dark:text-gray-300">Đơn giá:</span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">{formatPrice(pricePerDay || 0)}/ngày</span>
-                  </div>
                   <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-bold text-gray-900 dark:text-gray-100">Tổng cộng:</span>
-                    <span className="font-bold text-green-600 dark:text-green-400">{formatPrice(totalPrice)}</span>
+                  <div className="flex items-center justify-between text-sm bg-orange-50 dark:bg-orange-900/20 p-2 rounded-lg">
+                    <span className="font-bold text-orange-700 dark:text-orange-400">Đặt cọc ({depositPercentage}%):</span>
+                    <span className="font-bold text-orange-600 dark:text-orange-400">{formatPrice(depositAmount)}</span>
                   </div>
-                  
-                  {depositPercentage > 0 && (
-                    <>
-                      <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                      <div className="flex items-center justify-between text-sm bg-orange-50 dark:bg-orange-900/20 p-2 rounded-lg">
-                        <span className="font-bold text-orange-700 dark:text-orange-400">Đặt cọc ({depositPercentage}%):</span>
-                        <span className="font-bold text-orange-600 dark:text-orange-400">{formatPrice(depositAmount)}</span>
-                      </div>
-                    </>
-                  )}
                 </>
               )}
             </div>
@@ -210,11 +201,7 @@ const StepEditBooking: React.FC<Props> = ({
           <FaMotorcycle className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           Chọn xe tại trạm đã chọn
         </h3>
-        {vehicles.length > 0 ? (
-          <p className="text-sm text-green-700 dark:text-green-400 mb-4">
-            ✓ Có <strong>{vehicles.length} màu</strong> có sẵn tại trạm này
-          </p>
-        ) : (
+        {vehicles.length === 0 && (
           <p className="text-sm text-amber-700 dark:text-amber-400 mb-4 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             {selectedStation ? 'Đang tải xe...' : 'Vui lòng chọn trạm trước'}
@@ -256,15 +243,11 @@ const StepEditBooking: React.FC<Props> = ({
                     const uniqueModels = Array.from(new Set(vehicles.map(v => v.model)));
                     return uniqueModels.map((model) => {
                       const vehicleOfModel = vehicles.find(v => v.model === model);
-                      const colorCount = vehicles.filter(v => v.model === model).length;
                       return (
                         <SelectItem key={model} value={model}>
                           <div className="flex items-center justify-between w-full min-w-[300px]">
                             <span className="font-medium">
                               {vehicleOfModel?.brand} {model}
-                            </span>
-                            <span className="text-gray-500 text-sm ml-4">
-                              {colorCount} màu
                             </span>
                           </div>
                         </SelectItem>
@@ -352,10 +335,6 @@ const StepEditBooking: React.FC<Props> = ({
           className="mt-2"
           required
         />
-        <p className="text-xs text-gray-500 mt-2">
-          <AlertTriangle className="h-3 w-3 inline mr-1" />
-          Lý do này sẽ được ghi lại trong hệ thống
-        </p>
       </div>
     </div>
   );
