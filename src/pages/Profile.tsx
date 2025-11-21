@@ -32,6 +32,7 @@ const Profile: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
     fullname: '',
+    email: '',
     phone: '',
     address: ''
   });
@@ -77,6 +78,7 @@ const Profile: React.FC = () => {
       setUser(authUser);
       setFormData({
         fullname: authUser.fullname || '',
+        email: authUser.email || '',
         phone: authUser.phone || '',
         address: authUser.address || '',
       });
@@ -134,6 +136,7 @@ const Profile: React.FC = () => {
         setUser(response.data);
         setFormData({
           fullname: response.data.fullname || '',
+          email: response.data.email || '',
           phone: response.data.phone || '',
           address: response.data.address || '',
         });
@@ -170,6 +173,7 @@ const Profile: React.FC = () => {
       setLoading(true);
       
       // Tạo data theo UpdateProfileRequest interface
+      // Email is read-only and should not be updated
       const updateData: UpdateProfileRequest = {
         fullname: formData.fullname,
         phone: formData.phone,
@@ -187,6 +191,7 @@ const Profile: React.FC = () => {
             setUser(response.data);
             setFormData({
               fullname: response.data.fullname,
+              email: response.data.email || '', // Keep email in formData for display
               phone: response.data.phone || '',
               address: response.data.address || ''
             });
@@ -259,6 +264,7 @@ const Profile: React.FC = () => {
           setUser(response.data);
           setFormData({
             fullname: response.data.fullname,
+            email: response.data.email || '', // Keep email in formData for display
             phone: response.data.phone || '',
             address: response.data.address || ''
           });
@@ -282,6 +288,7 @@ const Profile: React.FC = () => {
 
   const hasChanges = () => {
     if (!user) return true;
+    // Email is read-only, so we don't check it for changes
     const basicChanged = user.fullname !== formData.fullname || 
                          (user.phone || '') !== formData.phone || 
                          (user.address || '') !== formData.address;
@@ -293,6 +300,7 @@ const Profile: React.FC = () => {
     if (user) {
       setFormData({
         fullname: user.fullname,
+        email: user.email || '',
         phone: user.phone || '',
         address: user.address || '',
       });
@@ -306,6 +314,7 @@ const Profile: React.FC = () => {
 
   const handleFormDataChange = (data: {
     fullname: string;
+    email: string;
     phone: string;
     address: string;
   }) => {
