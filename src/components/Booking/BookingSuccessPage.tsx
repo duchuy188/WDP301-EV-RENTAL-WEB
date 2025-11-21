@@ -79,6 +79,36 @@ const BookingSuccessPage: React.FC = () => {
   // Use fetched booking if available, otherwise use booking from state
   const booking: BookingType | undefined = fetchedBooking || bookingFromState;
 
+  // 📢 Gửi thông báo đến FloatingChat khi booking thành công (không phải từ payment callback)
+  useEffect(() => {
+    // Chỉ gửi thông báo nếu:
+    // 1. Có booking data
+    // 2. KHÔNG có bookingCodeFromUrl (tức là không phải từ payment callback)
+    // 3. Chưa gửi notification (kiểm tra sessionStorage)
+    if (booking && !bookingCodeFromUrl && !isLoading) {
+      const notificationSent = sessionStorage.getItem('booking_notification_sent');
+      
+      if (!notificationSent) {
+        // Gửi thông báo đến FloatingChat
+        window.dispatchEvent(new CustomEvent('paymentNotification', {
+          detail: {
+            type: 'success',
+            bookingCode: booking.code,
+            message: 'Booking đã được tạo thành công! Xe đã được giữ chỗ cho bạn.',
+          }
+        }));
+        
+        // Đánh dấu đã gửi notification
+        sessionStorage.setItem('booking_notification_sent', 'true');
+      }
+    }
+
+    // Cleanup: Xóa flag khi component unmount để lần sau có thể gửi lại
+    return () => {
+      sessionStorage.removeItem('booking_notification_sent');
+    };
+  }, [booking, bookingCodeFromUrl, isLoading]);
+
   // Use local formatting helpers (do not accept functions from location.state)
   const formatDateSafe = (s: string) => {
     if (!s) return 'Chưa có ngày';
