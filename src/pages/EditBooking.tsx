@@ -389,14 +389,25 @@ const EditBooking: React.FC = () => {
         const [hours, minutes] = booking.pickup_time.split(':').map(s => parseInt(s, 10));
         if (!isNaN(hours) && !isNaN(minutes)) {
           startDate.setHours(hours, minutes, 0, 0);
+        } else {
+          // Nếu không parse được giờ, mặc định là 9:00 sáng
+          startDate.setHours(9, 0, 0, 0);
         }
+      } else {
+        // Nếu không có pickup_time, mặc định là 9:00 sáng
+        startDate.setHours(9, 0, 0, 0);
       }
       
       const now = new Date();
       const hoursDiff = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
       
       if (hoursDiff < 24) {
-        toast.error('Thời gian nhận xe phải ít nhất 24 giờ kể từ bây giờ');
+        const pickupTimeStr = booking?.pickup_time || '09:00';
+        toast.error(
+          `Phải chỉnh sửa trước thời gian nhận xe ít nhất 24 giờ. ` +
+          `Thời gian nhận xe: ${bookingDate} lúc ${pickupTimeStr}. ` +
+          `Vui lòng chọn ngày muộn hơn hoặc liên hệ hỗ trợ.`
+        );
         return;
       }
 

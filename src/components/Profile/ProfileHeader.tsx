@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Camera, User, Phone, MapPin, Edit, X, Check } from 'lucide-react';
+import { Camera, User, Phone, MapPin, Edit, X, Check, Mail } from 'lucide-react';
 import { FaMotorcycle } from 'react-icons/fa';
 import { profile } from '@/types/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,6 +10,7 @@ import ProfileActions from './ProfileActions';
 
 interface ProfileFormData {
   fullname: string;
+  email: string;
   phone: string;
   address: string;
 }
@@ -199,6 +200,18 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   <span className="text-gray-900 dark:text-gray-100 text-sm font-medium">{user.fullname}</span>
                 </div>
               )}
+            </div>
+
+            {/* Email - Read only */}
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1.5">
+                <Mail className="h-3.5 w-3.5 text-orange-600" />
+                <span>Email</span>
+              </Label>
+              <div className="flex items-center space-x-2 px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+                <Mail className="h-4 w-4 text-orange-600" />
+                <span className="text-gray-900 dark:text-gray-100 text-sm font-medium">{user.email || 'Chưa cập nhật'}</span>
+              </div>
             </div>
 
             {/* Số điện thoại */}

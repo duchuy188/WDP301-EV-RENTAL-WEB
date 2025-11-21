@@ -25,24 +25,36 @@ const VNPayCallback: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'failed' | 'cancelled'>('success');
   const [bookingCode, setBookingCode] = useState<string>('');
+  const [isFromChatbot, setIsFromChatbot] = useState(false);
 
   useEffect(() => {
+    // Kiểm tra ngay từ đầu xem có phải từ chatbot không
+    const fromChatbot = sessionStorage.getItem('payment_from_chatbot') === 'true';
+    setIsFromChatbot(fromChatbot);
+    
     // Kiểm tra xem có query params từ VNPay không
     const responseCode = searchParams.get('vnp_ResponseCode');
     const transactionStatus = searchParams.get('vnp_TransactionStatus');
     const txnRef = searchParams.get('vnp_TxnRef');
     const amount = searchParams.get('vnp_Amount');
 
-    // Nếu không có query params từ VNPay, redirect về find-car
+    // Nếu không có query params từ VNPay
     if (!responseCode && !transactionStatus) {
       console.warn('⚠️ No VNPay callback params found');
-      navigate('/find-car', { 
-        replace: true,
-        state: { 
-          message: 'Link thanh toán không hợp lệ.',
-          type: 'error'
-        }
-      });
+      
+      if (fromChatbot) {
+        // Nếu từ chatbot, đóng tab ngay
+        window.close();
+        navigate('/', { replace: true });
+      } else {
+        navigate('/find-car', { 
+          replace: true,
+          state: { 
+            message: 'Link thanh toán không hợp lệ.',
+            type: 'error'
+          }
+        });
+      }
       return;
     }
 
@@ -79,7 +91,7 @@ const VNPayCallback: React.FC = () => {
           const isFromChatbot = sessionStorage.getItem('payment_from_chatbot') === 'true';
           
           if (isFromChatbot) {
-            // Nếu từ chatbot, gửi thông báo đến FloatingChat qua localStorage (để cross-tab communication)
+            // Nếu từ chatbot, gửi thông báo đến FloatingChat và đóng tab ngay
             const notificationData = {
               type: 'success',
               bookingCode: bookingCode,
@@ -88,7 +100,12 @@ const VNPayCallback: React.FC = () => {
               timestamp: Date.now()
             };
             
-            // Lưu vào localStorage để trigger event ở tab khác
+            // Method 1: Dispatch custom event (for same-tab communication)
+            window.dispatchEvent(new CustomEvent('paymentNotification', { 
+              detail: notificationData 
+            }));
+            
+            // Method 2: Lưu vào localStorage để trigger event ở tab khác (cross-tab communication)
             localStorage.setItem('payment_notification', JSON.stringify(notificationData));
             
             // Xóa ngay sau khi set để có thể trigger lại lần sau
@@ -96,11 +113,13 @@ const VNPayCallback: React.FC = () => {
               localStorage.removeItem('payment_notification');
             }, 100);
             
-            // Đánh dấu đã gửi notification
-            sessionStorage.setItem('payment_notification_sent', 'true');
-            
             // Xóa flag payment_from_chatbot
             sessionStorage.removeItem('payment_from_chatbot');
+            
+            // Đóng tab ngay lập tức (không cần setTimeout)
+            window.close();
+            // Fallback nếu không đóng được
+            navigate('/', { replace: true });
           } else {
             // Nếu không từ chatbot, redirect đến trang PaymentSuccess
             sessionStorage.setItem('payment_success_data', JSON.stringify({
@@ -119,20 +138,29 @@ const VNPayCallback: React.FC = () => {
             toast.info('Bạn đã hủy thanh toán.');
             
             if (isFromChatbot) {
-              // 📢 Gửi thông báo hủy đến FloatingChat qua localStorage
+              // 📢 Gửi thông báo hủy đến FloatingChat và đóng tab
               const notificationData = {
                 type: 'cancelled',
                 message: response.data.message || 'Bạn đã hủy thanh toán.',
                 timestamp: Date.now()
               };
               
+              // Method 1: Dispatch custom event (for same-tab communication)
+              window.dispatchEvent(new CustomEvent('paymentNotification', { 
+                detail: notificationData 
+              }));
+              
+              // Method 2: localStorage (for cross-tab communication)
               localStorage.setItem('payment_notification', JSON.stringify(notificationData));
               setTimeout(() => {
                 localStorage.removeItem('payment_notification');
               }, 100);
               
-              // Đánh dấu đã gửi notification
-              sessionStorage.setItem('payment_notification_sent', 'true');
+              sessionStorage.removeItem('payment_from_chatbot');
+              
+              // Đóng tab ngay lập tức
+              window.close();
+              navigate('/', { replace: true });
             }
             
             // Xóa flag
@@ -142,20 +170,29 @@ const VNPayCallback: React.FC = () => {
             toast.error(response.data.message || 'Thanh toán thất bại. Vui lòng thử lại.');
             
             if (isFromChatbot) {
-              // 📢 Gửi thông báo thất bại đến FloatingChat qua localStorage
+              // 📢 Gửi thông báo thất bại đến FloatingChat và đóng tab
               const notificationData = {
                 type: 'failed',
                 message: response.data.message || 'Thanh toán thất bại. Vui lòng thử lại.',
                 timestamp: Date.now()
               };
               
+              // Method 1: Dispatch custom event (for same-tab communication)
+              window.dispatchEvent(new CustomEvent('paymentNotification', { 
+                detail: notificationData 
+              }));
+              
+              // Method 2: localStorage (for cross-tab communication)
               localStorage.setItem('payment_notification', JSON.stringify(notificationData));
               setTimeout(() => {
                 localStorage.removeItem('payment_notification');
               }, 100);
               
-              // Đánh dấu đã gửi notification
-              sessionStorage.setItem('payment_notification_sent', 'true');
+              sessionStorage.removeItem('payment_from_chatbot');
+              
+              // Đóng tab ngay lập tức
+              window.close();
+              navigate('/', { replace: true });
             }
             
             // Xóa flag
@@ -176,7 +213,7 @@ const VNPayCallback: React.FC = () => {
           toast.warning('Thanh toán thành công nhưng không thể xác thực với server. Vui lòng kiểm tra lịch sử.');
           
           if (isFromChatbot) {
-            // 📢 Gửi thông báo đến FloatingChat qua localStorage
+            // 📢 Gửi thông báo đến FloatingChat và đóng tab
             const notificationData = {
               type: 'success',
               bookingCode: txnRef || '',
@@ -185,13 +222,22 @@ const VNPayCallback: React.FC = () => {
               timestamp: Date.now()
             };
             
+            // Method 1: Dispatch custom event (for same-tab communication)
+            window.dispatchEvent(new CustomEvent('paymentNotification', { 
+              detail: notificationData 
+            }));
+            
+            // Method 2: localStorage (for cross-tab communication)
             localStorage.setItem('payment_notification', JSON.stringify(notificationData));
             setTimeout(() => {
               localStorage.removeItem('payment_notification');
             }, 100);
             
-            // Đánh dấu đã gửi notification
-            sessionStorage.setItem('payment_notification_sent', 'true');
+            sessionStorage.removeItem('payment_from_chatbot');
+            
+            // Đóng tab ngay lập tức
+            window.close();
+            navigate('/', { replace: true });
           } else {
             sessionStorage.setItem('payment_success_data', JSON.stringify({
               bookingCode: txnRef || '',
@@ -208,20 +254,29 @@ const VNPayCallback: React.FC = () => {
           toast.info('Bạn đã hủy thanh toán.');
           
           if (isFromChatbot) {
-            // 📢 Gửi thông báo hủy đến FloatingChat qua localStorage
+            // 📢 Gửi thông báo hủy đến FloatingChat và đóng tab
             const notificationData = {
               type: 'cancelled',
               message: 'Bạn đã hủy thanh toán.',
               timestamp: Date.now()
             };
             
+            // Method 1: Dispatch custom event (for same-tab communication)
+            window.dispatchEvent(new CustomEvent('paymentNotification', { 
+              detail: notificationData 
+            }));
+            
+            // Method 2: localStorage (for cross-tab communication)
             localStorage.setItem('payment_notification', JSON.stringify(notificationData));
             setTimeout(() => {
               localStorage.removeItem('payment_notification');
             }, 100);
             
-            // Đánh dấu đã gửi notification
-            sessionStorage.setItem('payment_notification_sent', 'true');
+            sessionStorage.removeItem('payment_from_chatbot');
+            
+            // Đóng tab ngay lập tức
+            window.close();
+            navigate('/', { replace: true });
           }
           
           // Xóa flag
@@ -231,20 +286,31 @@ const VNPayCallback: React.FC = () => {
           toast.error(error.response?.data?.message || 'Lỗi xác thực thanh toán.');
           
           if (isFromChatbot) {
-            // 📢 Gửi thông báo thất bại đến FloatingChat qua localStorage
+            // 📢 Gửi thông báo thất bại đến FloatingChat và đóng tab
             const notificationData = {
               type: 'failed',
               message: error.response?.data?.message || 'Lỗi xác thực thanh toán.',
               timestamp: Date.now()
             };
             
+            // Method 1: Dispatch custom event (for same-tab communication)
+            window.dispatchEvent(new CustomEvent('paymentNotification', { 
+              detail: notificationData 
+            }));
+            
+            // Method 2: localStorage (for cross-tab communication)
             localStorage.setItem('payment_notification', JSON.stringify(notificationData));
             setTimeout(() => {
               localStorage.removeItem('payment_notification');
             }, 100);
             
-            // Đánh dấu đã gửi notification
-            sessionStorage.setItem('payment_notification_sent', 'true');
+            sessionStorage.removeItem('payment_from_chatbot');
+            
+            // Đóng tab ngay
+            setTimeout(() => {
+              window.close();
+              navigate('/', { replace: true });
+            }, 500);
           }
           
           // Xóa flag
@@ -258,15 +324,12 @@ const VNPayCallback: React.FC = () => {
     verifyPayment();
   }, [searchParams, navigate]);
 
-  // Separate useEffect for auto redirect
+  // Separate useEffect for auto redirect (chỉ cho thanh toán KHÔNG từ chatbot)
   useEffect(() => {
-    if (!isProcessing) {
+    if (!isProcessing && !isFromChatbot) {
       const redirectTimer = setTimeout(() => {
         // Xóa payment state từ sessionStorage
         sessionStorage.removeItem('vnpay_payment_state');
-        
-        // Kiểm tra xem có phải từ chatbot không
-        const wasFromChatbot = sessionStorage.getItem('payment_notification_sent') === 'true';
         
         // Nếu thanh toán thành công, đảm bảo cleanup localStorage
         if (paymentStatus === 'success') {
@@ -276,44 +339,24 @@ const VNPayCallback: React.FC = () => {
           });
           localStorage.removeItem('pending_booking_ids');
           
-          if (wasFromChatbot) {
-            // Nếu từ chatbot, redirect về trang trước đó hoặc history
-            // Xóa flag notification sau 1 giây để tránh gửi lại ở trang tiếp theo
-            setTimeout(() => {
-              sessionStorage.removeItem('payment_notification_sent');
-            }, 1000);
-            
-            navigate('/history', { replace: true });
-          } else {
-            // Nếu không từ chatbot, redirect đến PaymentSuccess
-            navigate('/payment-success?' + searchParams.toString(), { replace: true });
-          }
+          // Redirect đến PaymentSuccess
+          navigate('/payment-success?' + searchParams.toString(), { replace: true });
         } else {
-          // Xóa flag notification sau 1 giây
-          setTimeout(() => {
-            sessionStorage.removeItem('payment_notification_sent');
-          }, 1000);
-          
-          if (wasFromChatbot) {
-            // Nếu từ chatbot, quay về history
-            navigate('/history', { replace: true });
-          } else {
-            navigate('/find-car', { 
-              replace: true,
-              state: { 
-                message: paymentStatus === 'cancelled' 
-                  ? 'Bạn đã hủy thanh toán. Vui lòng chọn xe khác.' 
-                  : 'Thanh toán thất bại. Vui lòng thử lại.',
-                type: 'error'
-              }
-            });
-          }
+          navigate('/find-car', { 
+            replace: true,
+            state: { 
+              message: paymentStatus === 'cancelled' 
+                ? 'Bạn đã hủy thanh toán. Vui lòng chọn xe khác.' 
+                : 'Thanh toán thất bại. Vui lòng thử lại.',
+              type: 'error'
+            }
+          });
         }
       }, 8000); // 8 seconds
 
       return () => clearTimeout(redirectTimer);
     }
-  }, [isProcessing, paymentStatus, navigate, searchParams]);
+  }, [isProcessing, paymentStatus, navigate, searchParams, isFromChatbot]);
 
   const getStatusIcon = () => {
     if (isProcessing) {
@@ -372,6 +415,19 @@ const VNPayCallback: React.FC = () => {
         return 'from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-700';
     }
   };
+
+  // Nếu thanh toán từ chatbot, chỉ hiển thị loading đơn giản
+  if (isFromChatbot) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-green-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <FaMotorcycle className="h-16 w-16 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-lg text-gray-700 dark:text-gray-300">Đang xử lý thanh toán...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Vui lòng đợi trong giây lát</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-green-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-8 flex items-center justify-center">

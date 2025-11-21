@@ -229,6 +229,18 @@ const VNPayPayment: React.FC = () => {
   const isExpiringSoon = timeRemaining <= 5 * 60; // Dưới 5 phút
   const isExpired = timeRemaining <= 0;
 
+  // Tính số ngày thuê
+  const calculateRentalDays = () => {
+    if (!bookingData.startDate || !bookingData.endDate) return 1;
+    const start = new Date(bookingData.startDate);
+    const end = new Date(bookingData.endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays === 0 ? 1 : diffDays;
+  };
+
+  const rentalDays = calculateRentalDays();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-green-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -421,7 +433,7 @@ const VNPayPayment: React.FC = () => {
                     </p>
                   </div>
 
-                  {bookingData.depositAmount > 0 && (
+                  {bookingData.depositAmount > 0 && rentalDays >= 2 && (
                     <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
                       <span className="text-gray-600 dark:text-gray-400">Tiền cọc (trả khi nhận xe):</span>
                       <span className="font-semibold">{formatPrice(bookingData.depositAmount)}</span>

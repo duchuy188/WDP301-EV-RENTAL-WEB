@@ -204,14 +204,9 @@ const FloatingChat: React.FC = () => {
 
   // Listen for payment notification event via localStorage (for cross-tab communication)
   useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      // Chỉ xử lý khi key là 'payment_notification'
-      if (event.key !== 'payment_notification' || !event.newValue) {
-        return;
-      }
-
+    // Helper function to process payment notification
+    const processPaymentNotification = (notificationData: any) => {
       try {
-        const notificationData = JSON.parse(event.newValue);
         const { type, bookingCode, message } = notificationData;
         
         let notificationMessage = '';
@@ -240,15 +235,42 @@ const FloatingChat: React.FC = () => {
           setIsMinimized(false);
         }
       } catch (error) {
-        console.error('Failed to parse payment notification:', error);
+        console.error('Failed to process payment notification:', error);
       }
     };
 
-    // Listen to storage event (fired when localStorage changes in another tab)
+    // Method 1: Listen to storage event (fired when localStorage changes in ANOTHER tab)
+    const handleStorageChange = (event: StorageEvent) => {
+      // Chỉ xử lý khi key là 'payment_notification'
+      if (event.key !== 'payment_notification' || !event.newValue) {
+        return;
+      }
+
+      try {
+        const notificationData = JSON.parse(event.newValue);
+        processPaymentNotification(notificationData);
+      } catch (error) {
+        console.error('Failed to parse payment notification from storage event:', error);
+      }
+    };
+
+    // Method 2: Listen to custom event (for same-tab communication)
+    const handleCustomPaymentEvent = (event: CustomEvent) => {
+      try {
+        const notificationData = event.detail;
+        processPaymentNotification(notificationData);
+      } catch (error) {
+        console.error('Failed to process payment notification from custom event:', error);
+      }
+    };
+
+    // Listen to both storage event (cross-tab) and custom event (same-tab)
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('paymentNotification', handleCustomPaymentEvent as EventListener);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('paymentNotification', handleCustomPaymentEvent as EventListener);
     };
   }, [isOpen]);
 
@@ -843,7 +865,7 @@ const FloatingChat: React.FC = () => {
                                       {isPaymentLink ? (
                                         <>
                                           <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                                          💳 Thanh toán ngay
+                                           Thanh toán ngay
                                         </>
                                       ) : (
                                         <>

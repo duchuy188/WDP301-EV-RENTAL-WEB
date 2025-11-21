@@ -270,8 +270,8 @@ const StepConfirm: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Deposit Amount */}
-            {depositPercentage != null && depositPercentage > 0 && (
+            {/* Deposit Amount - Only show when renting for 2 or more days */}
+            {depositPercentage != null && depositPercentage > 0 && numberOfDays && numberOfDays >= 2 && (
               <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg p-5 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

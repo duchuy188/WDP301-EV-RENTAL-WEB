@@ -79,6 +79,36 @@ const BookingSuccessPage: React.FC = () => {
   // Use fetched booking if available, otherwise use booking from state
   const booking: BookingType | undefined = fetchedBooking || bookingFromState;
 
+  // 📢 Gửi thông báo đến FloatingChat khi booking thành công (không phải từ payment callback)
+  useEffect(() => {
+    // Chỉ gửi thông báo nếu:
+    // 1. Có booking data
+    // 2. KHÔNG có bookingCodeFromUrl (tức là không phải từ payment callback)
+    // 3. Chưa gửi notification (kiểm tra sessionStorage)
+    if (booking && !bookingCodeFromUrl && !isLoading) {
+      const notificationSent = sessionStorage.getItem('booking_notification_sent');
+      
+      if (!notificationSent) {
+        // Gửi thông báo đến FloatingChat
+        window.dispatchEvent(new CustomEvent('paymentNotification', {
+          detail: {
+            type: 'success',
+            bookingCode: booking.code,
+            message: 'Booking đã được tạo thành công! Xe đã được giữ chỗ cho bạn.',
+          }
+        }));
+        
+        // Đánh dấu đã gửi notification
+        sessionStorage.setItem('booking_notification_sent', 'true');
+      }
+    }
+
+    // Cleanup: Xóa flag khi component unmount để lần sau có thể gửi lại
+    return () => {
+      sessionStorage.removeItem('booking_notification_sent');
+    };
+  }, [booking, bookingCodeFromUrl, isLoading]);
+
   // Use local formatting helpers (do not accept functions from location.state)
   const formatDateSafe = (s: string) => {
     if (!s) return 'Chưa có ngày';
@@ -229,7 +259,7 @@ const BookingSuccessPage: React.FC = () => {
                 <motion.div variants={itemVariants} className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
                   <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tổng tiền</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{formatPrice(booking.total_price ?? 0)}</p>
-                  {booking.deposit_amount != null && booking.deposit_amount > 0 && (
+                  {booking.deposit_amount != null && booking.deposit_amount > 0 && booking.total_days != null && booking.total_days >= 2 && (
                     <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-800">
                       <p className="text-xs text-gray-600 dark:text-gray-400">Đặt cọc: <span className="font-semibold text-orange-600 dark:text-orange-400">{formatPrice(booking.deposit_amount)}</span></p>
                     </div>

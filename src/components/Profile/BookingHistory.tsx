@@ -167,6 +167,35 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       return { canEdit: false, reason: 'Bạn đã sử dụng hết lượt chỉnh sửa (tối đa 1 lần)' };
     }
 
+    // Điều kiện 3: Phải chỉnh sửa trước thời gian nhận xe ít nhất 24 giờ
+    const startDate = parseBookingDate(booking.start_date);
+    
+    // Thêm pickup_time vào startDate để tính chính xác thời gian nhận xe
+    if (booking.pickup_time) {
+      const [hours, minutes] = booking.pickup_time.split(':').map(s => parseInt(s, 10));
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        startDate.setHours(hours, minutes, 0, 0);
+      } else {
+        // Nếu không parse được giờ, mặc định là 9:00 sáng
+        startDate.setHours(9, 0, 0, 0);
+      }
+    } else {
+      // Nếu không có pickup_time, mặc định là 9:00 sáng
+      startDate.setHours(9, 0, 0, 0);
+    }
+    
+    const now = new Date();
+    const hoursDiff = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursDiff < 24) {
+      const pickupTimeStr = booking.pickup_time || '09:00';
+      const startDateStr = formatDate(booking.start_date);
+      return { 
+        canEdit: false, 
+        reason: `Phải chỉnh sửa trước thời gian nhận xe ít nhất 24 giờ. Thời gian nhận xe: ${startDateStr} lúc ${pickupTimeStr}` 
+      };
+    }
+
     return { canEdit: true };
   };
 
@@ -554,13 +583,7 @@ const BookingHistory: React.FC<BookingHistoryProps> = ({ className }) => {
       </motion.div>
       {/* Modal for booking detail */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Chi tiết đặt xe</DialogTitle>
-            <DialogDescription>
-              Xem thông tin chi tiết về đặt xe của bạn.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto overflow-x-hidden">
           {selectedBooking && (
             <ViewBooking 
               booking={selectedBooking} 

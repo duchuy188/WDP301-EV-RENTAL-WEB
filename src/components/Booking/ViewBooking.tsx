@@ -99,7 +99,7 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = fa
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-4 w-full overflow-x-hidden">
         {/* Header với mã booking và trạng thái */}
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-lg p-4 shadow-lg">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -117,16 +117,23 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = fa
                 {getStatusText(booking.status)}
               </Badge>
               {onEdit && (
-                <Button
-                  onClick={onEdit}
-                  disabled={!canEdit}
-                  title={!canEdit ? editDisabledReason : 'Chỉnh sửa đặt xe'}
-                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 hover:border-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  size="sm"
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Chỉnh sửa
-                </Button>
+                <div className="relative group">
+                  <Button
+                    onClick={onEdit}
+                    disabled={!canEdit}
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30 hover:border-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    size="sm"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Chỉnh sửa
+                  </Button>
+                  {!canEdit && editDisabledReason && (
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none max-w-xs z-10">
+                      {editDisabledReason}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  )}
+                </div>
               )}
               {onRebook && canRebook && (
                 <Button
@@ -143,9 +150,9 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = fa
         </div>
 
         {/* Grid layout 3 cột với card hiện đại */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
           {/* Card 1: Thông tin xe */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700 min-w-0">
             <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg">
@@ -186,7 +193,7 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = fa
           </div>
 
           {/* Card 2: Thời gian & Trạm */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700 min-w-0">
             <div className="p-4 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
@@ -250,7 +257,7 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = fa
           </div>
 
           {/* Card 3: Thanh toán */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700 min-w-0">
             <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
@@ -331,7 +338,7 @@ const ViewBooking: React.FC<ViewBookingProps> = ({ booking, onEdit, canEdit = fa
 
         {/* Ghi chú và Yêu cầu đặc biệt */}
         {(booking.special_requests || booking.notes) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 w-full">
             {booking.special_requests && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-100 dark:border-gray-700 p-4">
                 <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-2 flex items-center gap-2">
