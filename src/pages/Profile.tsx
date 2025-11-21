@@ -124,6 +124,7 @@ const Profile: React.FC = () => {
         setUser(authUser);
         setFormData({
           fullname: authUser.fullname || '',
+          email: authUser.email || '',
           phone: authUser.phone || '',
           address: authUser.address || '',
         });
